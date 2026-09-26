@@ -53,7 +53,8 @@ package(
 module("random.py", base_path="$(PORT_DIR)/frozen")
 
 # CPython stdlib compatibility modules needed by SeedSigner (see each file)
-for _name in ("dataclasses", "enum", "typing", "gettext", "platform", "os", "pathlib", "re",
+for _name in ("dataclasses", "enum", "importlib", "threading", "traceback", "typing", "gettext",
+              "platform", "os", "pathlib", "re",
               "_pyre", "time", "unicodedata"):
     module(_name + ".py", base_path="$(PORT_DIR)/frozen/compat")
 
@@ -67,6 +68,7 @@ require("logging")
 # one and rejects str input (embit passes str to a2b_base64).
 module("base64.py", base_path="$(MPY_LIB_DIR)/python-stdlib/base64")
 module("zlib.py", base_path="$(MPY_LIB_DIR)/python-stdlib/zlib")
+module("datetime.py", base_path="$(MPY_LIB_DIR)/python-stdlib/datetime")
 
 # urtypes (Krux project, the commit SeedSigner pins)
 package("urtypes", base_path="$(PORT_DIR)/../third_party/urtypes/src")
@@ -78,4 +80,5 @@ package("seedsigner", base_path="$(PORT_DIR)/../build/frozen_py")
 module("psbt_parser_summary.py", base_path="$(PORT_DIR)/../tests/vectors")
 module("seedsigner_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("decode_qr_check.py", base_path="$(PORT_DIR)/../tests/host")
+module("flow_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("test_vectors.py", base_path="$(PORT_DIR)/../build/frozen_py")

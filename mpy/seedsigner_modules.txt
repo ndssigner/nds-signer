@@ -1,11 +1,13 @@
 # Upstream SeedSigner modules frozen into the ROM (relative to
 # third_party/seedsigner/src), transformed by tools/upy_transform.py.
-seedsigner/models/psbt_parser.py
-seedsigner/models/seed.py
-seedsigner/models/settings.py
-seedsigner/models/settings_definition.py
-seedsigner/models/singleton.py
+# Excluded (replaced by mpy/overlay): gui/, hardware/, views/screensaver.py,
+# helpers/qr.py. Excluded (not used on NDS): main.py, resources.
+seedsigner/__init__.py
+seedsigner/controller.py
+seedsigner/helpers/__init__.py
+seedsigner/helpers/embit_utils.py
 seedsigner/helpers/l10n.py
+seedsigner/helpers/mnemonic_generation.py
 seedsigner/helpers/ur2/__init__.py
 seedsigner/helpers/ur2/bytewords.py
 seedsigner/helpers/ur2/cbor_lite.py
@@ -20,5 +22,22 @@ seedsigner/helpers/ur2/ur_decoder.py
 seedsigner/helpers/ur2/ur_encoder.py
 seedsigner/helpers/ur2/utils.py
 seedsigner/helpers/ur2/xoshiro256.py
+seedsigner/helpers/version.py
+seedsigner/models/__init__.py
 seedsigner/models/decode_qr.py
+seedsigner/models/encode_qr.py
+seedsigner/models/psbt_parser.py
 seedsigner/models/qr_type.py
+seedsigner/models/seed.py
+seedsigner/models/seed_storage.py
+seedsigner/models/settings.py
+seedsigner/models/settings_definition.py
+seedsigner/models/singleton.py
+seedsigner/models/threads.py
+seedsigner/views/__init__.py
+seedsigner/views/psbt_views.py
+seedsigner/views/scan_views.py
+seedsigner/views/seed_views.py
+seedsigner/views/settings_views.py
+seedsigner/views/tools_views.py
+seedsigner/views/view.py

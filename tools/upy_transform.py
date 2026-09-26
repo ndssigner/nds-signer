@@ -10,6 +10,14 @@ constructs MicroPython cannot support are rewritten:
     are removed. The runtime shim (mpy/frozen/compat/dataclasses.py) builds
     __init__ from that list.
   * Annotated assignments in class bodies become plain assignments.
+  * Subscripted generic bases (PEP 585), e.g. `class BackStack(list[X])`,
+    become the plain type (`list`): identical at runtime, unsupported by
+    MicroPython.
+  * `cls.__new__(cls)` (SeedSigner's singletons) becomes
+    `object.__new__(cls)`: MicroPython classes do not expose `__new__`. Only
+    equivalent when no class defines its own `__new__`, which is checked.
+  * f-strings become the equivalent "...".format(...) calls: MicroPython's
+    f-string support is limited (e.g. no nested quotes, PEP 701).
 
 Everything else is emitted as-is (via ast.unparse, so comments are dropped).
 
@@ -31,8 +39,49 @@ def is_dataclass_decorator(node):
 
 
 class Transformer(ast.NodeTransformer):
+    def visit_FunctionDef(self, node):
+        if node.name == "__new__":
+            raise SystemExit("upy_transform: custom __new__ found; the __new__ rewrite "
+                             "would be wrong for it (line %d)" % node.lineno)
+        self.generic_visit(node)
+        return node
+
+    def visit_Call(self, node):
+        self.generic_visit(node)
+        func = node.func
+        if isinstance(func, ast.Attribute) and func.attr == "__new__" and not (
+                isinstance(func.value, ast.Name) and func.value.id == "object"):
+            node.func = ast.Attribute(value=ast.Name(id="object", ctx=ast.Load()),
+                                      attr="__new__", ctx=ast.Load())
+        return node
+
+    def visit_JoinedStr(self, node):
+        template, args = "", []
+        for part in node.values:
+            if isinstance(part, ast.Constant):
+                template += part.value.replace("{", "{{").replace("}", "}}")
+                continue
+            part.value = self.visit(part.value)
+            field = "{"
+            if part.conversion != -1:
+                field += "!" + chr(part.conversion)
+            if part.format_spec is not None:
+                spec = part.format_spec
+                if not all(isinstance(v, ast.Constant) for v in spec.values):
+                    raise SystemExit("upy_transform: dynamic f-string format spec (line %d)"
+                                     % node.lineno)
+                field += ":" + "".join(v.value for v in spec.values)
+            template += field + "}"
+            args.append(part.value)
+        if not args:
+            return ast.copy_location(ast.Constant(template.replace("{{", "{").replace("}}", "}")), node)
+        call = ast.Call(func=ast.Attribute(value=ast.Constant(template), attr="format", ctx=ast.Load()),
+                        args=args, keywords=[])
+        return ast.copy_location(call, node)
+
     def visit_ClassDef(self, node):
         self.generic_visit(node)
+        node.bases = [b.value if isinstance(b, ast.Subscript) else b for b in node.bases]
         is_dc = any(is_dataclass_decorator(d) for d in node.decorator_list)
         fields = []
         body = []

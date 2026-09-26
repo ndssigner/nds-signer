@@ -82,3 +82,4 @@ void nds_print_strn(const char *str, size_t len);
 #define MICROPY_PY_RE_MATCH_SPAN_START_END (1)
 #define MICROPY_PY_RE                   (1)  /* extended by frozen/compat/re.py */
 #define MICROPY_PY_DEFLATE              (1)  /* zlib, BBQr */
+#define MICROPY_PY_SYS_EXC_INFO         (1)  /* compat traceback.format_exc() */

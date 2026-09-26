@@ -29,11 +29,12 @@ all: $(LIB)
 USERMODS  := $(TOPDIR)/lib/mpy-usermods
 SECP256K1 := $(TOPDIR)/third_party/secp256k1
 USERMOD_C := $(wildcard $(USERMODS)/*/*.c $(USERMODS)/*/crypto/*.c $(USERMODS)/*/config/*.c) \
+             $(wildcard $(CURDIR)/usermods/*/*.c) \
              $(SECP256K1)/src/secp256k1.c
 SECP_GEN  := $(TOPDIR)/build/secp256k1_gen
 CFLAGS    += -I$(USERMODS)/uhashlib/crypto \
              -I$(SECP256K1) -I$(SECP256K1)/src -I$(USERMODS)/secp256k1/config -DHAVE_CONFIG_H \
-             -I$(SECP_GEN)
+             -I$(SECP_GEN) -I$(TOPDIR)/arm9/include -I$(TOPDIR)/shared/include
 
 # libsecp256k1's precomputed generator table, built with its own host tool
 $(SECP_GEN)/src/ecmult_static_context.h: $(SECP256K1)/src/gen_context.c
@@ -46,12 +47,20 @@ $(SECP_GEN)/src/ecmult_static_context.h: $(SECP256K1)/src/gen_context.c
 FROZEN_PY := $(TOPDIR)/build/frozen_py
 SS_MODULES := $(shell grep -v '^\#' seedsigner_modules.txt)
 
+OVERLAY := $(shell find overlay -name '*.py')
+
 $(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py $(wildcard $(TOPDIR)/tests/vectors/*.txt) \
+		$(TOPDIR)/tools/gen_gui_api.py $(TOPDIR)/tools/screen_api.py $(OVERLAY) \
 		$(addprefix $(TOPDIR)/third_party/seedsigner/src/,$(SS_MODULES))
 	@echo transforming SeedSigner modules
 	@rm -rf $(FROZEN_PY)
 	@python3 $(TOPDIR)/tools/upy_transform.py --src $(TOPDIR)/third_party/seedsigner/src \
 		--out $(FROZEN_PY) $(SS_MODULES)
+	@cp -R overlay/seedsigner $(FROZEN_PY)/
+	@rm -f $(FROZEN_PY)/seedsigner/README.md
+	@python3 $(TOPDIR)/tools/gen_gui_api.py $(TOPDIR)/third_party/seedsigner/src \
+		$(FROZEN_PY)/seedsigner/gui/_upstream.py \
+		$$(git -C $(TOPDIR)/third_party/seedsigner rev-parse --short HEAD 2>/dev/null)
 	@python3 $(TOPDIR)/tools/freeze_vectors.py $(TOPDIR)/tests/vectors $(FROZEN_PY)/test_vectors.py
 	@touch $@
 

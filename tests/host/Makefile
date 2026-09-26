@@ -1,7 +1,8 @@
 # Host-side tests (run on the development machine or CI).
 #   make -C tests/host            C unit tests (qr_type)
 #   make -C tests/host re-compat  MicroPython `re` compat vs CPython (Docker)
-#   make -C tests/host seedsigner SeedSigner/embit on MicroPython vs CPython refs
+#   make -C tests/host seedsigner SeedSigner/embit on MicroPython vs CPython refs,
+#                                 incl. the full Scan -> review -> sign UI flow
 CC     ?= cc
 # CPython with embit==0.8.0 and urtypes (tests/requirements.txt) for references
 PYTHON ?= python3
@@ -15,7 +16,7 @@ DOCKER_MPY = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
 
 # Same module search path as the frozen ROM contents (see mpy/manifest.py)
 MPY_LIB = /source/third_party/micropython/lib/micropython-lib/python-stdlib
-MPY_ROM_PATH = /source/mpy/frozen/compat:/source/mpy/frozen/hwstubs:/source/mpy/frozen:/source/build/frozen_py:/source/third_party/embit/src:/source/third_party/urtypes/src:$(MPY_LIB)/logging:$(MPY_LIB)/base64:$(MPY_LIB)/zlib:/source/tests/vectors:/source/tests/host
+MPY_ROM_PATH = /source/tests/host/sim:/source/mpy/frozen/compat:/source/mpy/frozen/hwstubs:/source/mpy/frozen:/source/build/frozen_py:/source/third_party/embit/src:/source/third_party/urtypes/src:$(MPY_LIB)/logging:$(MPY_LIB)/base64:$(MPY_LIB)/zlib:$(MPY_LIB)/datetime:/source/tests/vectors:/source/tests/host
 DOCKER_MPY_ROM = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
              -e MICROPYPATH=$(MPY_ROM_PATH) nds-signer-builder /source/build/mpy-unix/micropython
 
@@ -44,6 +45,7 @@ seedsigner:
 	@$(DOCKER_MPY_ROM) decode_qr_check.py /source/tests/vectors > $(TOPDIR)/build/decode_qr.mpy.txt
 	@diff $(TOPDIR)/build/decode_qr.cpython.txt $(TOPDIR)/build/decode_qr.mpy.txt \
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
+	@$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors 2>/dev/null | grep -E "^(ok|FAIL)|PASSED|FAILED"
 
 clean:
 	rm -rf test_qr_type test_qr_type.dSYM

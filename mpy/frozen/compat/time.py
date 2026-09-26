@@ -10,5 +10,16 @@ def localtime(t=None):
     return (2000, 1, 1, 0, 0, 0, 5, 1)
 
 
+gmtime = localtime
+
+
+def mktime(t):
+    return 0
+
+
 def strftime(fmt, t=None):
     return ""
+
+
+def sleep(seconds):
+    pass

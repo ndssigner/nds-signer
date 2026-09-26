@@ -3,7 +3,7 @@
 MICROPYTHON_TOP = ../third_party/micropython
 
 # C modules (lib/mpy-usermods/*/micropython.mk) and frozen Python (manifest.py)
-USER_C_MODULES = $(CURDIR)/../lib/mpy-usermods
+USER_C_MODULES = $(CURDIR)/../lib/mpy-usermods $(CURDIR)/usermods
 FROZEN_MANIFEST = $(CURDIR)/manifest.py
 MICROPY_MANIFEST_PORT_DIR = $(CURDIR)
 
