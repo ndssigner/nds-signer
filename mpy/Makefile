@@ -42,7 +42,20 @@ $(SECP_GEN)/src/ecmult_static_context.h: $(SECP256K1)/src/gen_context.c
 	@gcc -O2 -I$(SECP256K1) -I$(SECP256K1)/src -DECMULT_GEN_PREC_BITS=4 $< -o $(SECP_GEN)/gen_context
 	@cd $(SECP_GEN) && ./gen_context
 
-$(EMBED)/.stamp: mpconfigport.h micropython_embed.mk manifest.py $(wildcard frozen/*.py) $(USERMOD_C)
+# Upstream SeedSigner Python, transformed for MicroPython at build time
+FROZEN_PY := $(TOPDIR)/build/frozen_py
+SS_MODULES := $(shell grep -v '^\#' seedsigner_modules.txt)
+
+$(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py \
+		$(addprefix $(TOPDIR)/third_party/seedsigner/src/,$(SS_MODULES))
+	@echo transforming SeedSigner modules
+	@rm -rf $(FROZEN_PY)
+	@python3 $(TOPDIR)/tools/upy_transform.py --src $(TOPDIR)/third_party/seedsigner/src \
+		--out $(FROZEN_PY) $(SS_MODULES)
+	@touch $@
+
+$(EMBED)/.stamp: mpconfigport.h micropython_embed.mk manifest.py $(wildcard frozen/*.py frozen/*/*.py) \
+		$(USERMOD_C) $(FROZEN_PY)/.stamp
 	@echo generating MicroPython embed package
 	@$(MAKE) --no-print-directory -f micropython_embed.mk PACKAGE_DIR=$(EMBED) \
 		CC=gcc CROSS_COMPILE= nds-embed-package >/dev/null
@@ -67,4 +80,4 @@ $(LIB): $(EMBED)/.stamp $(wildcard *.c) $(SECP_GEN)/src/ecmult_static_context.h
 	@echo built ... $(notdir $@)
 
 clean:
-	@rm -rf $(EMBED) $(OBJDIR) $(LIB) $(SECP_GEN) build-embed
+	@rm -rf $(EMBED) $(OBJDIR) $(LIB) $(SECP_GEN) $(FROZEN_PY) build-embed

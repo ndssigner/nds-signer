@@ -47,7 +47,7 @@
 #define MICROPY_PY_BUILTINS_HELP        (0)
 
 #define MICROPY_PY_UCTYPES              (0)
-#define MICROPY_PY_SYS_STDFILES         (0)
+#define MICROPY_PY_SYS_STDFILES         (1)  /* logging needs sys.stderr */
 
 /* The ARM NLR assembly targets newer cores; use the portable setjmp version */
 #define MICROPY_NLR_SETJMP              (1)
@@ -76,3 +76,4 @@
 void nds_print_strn(const char *str, size_t len);
 #define MP_PLAT_PRINT_STRN(str, len)    nds_print_strn(str, len)
 #define MODULE_SECP256K1_ENABLED        (1)  /* lib/mpy-usermods/secp256k1 */
+#define MICROPY_PY_JSON                 (1)  /* SeedSigner settings */

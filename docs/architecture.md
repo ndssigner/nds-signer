@@ -117,6 +117,24 @@ Python heap in use after signing: 24 KB (of 4 MB reserved). ROM grows from
 201 KB to 750 KB. Timings come from the emulator; they must be confirmed on a
 real DSi (melonDS does not model memory/cache timing exactly).
 
+Milestone 3: SeedSigner's own `models/psbt_parser.py` (upstream `cfaf443`,
+unmodified) runs on the DSi on top of it and produces the same summary as on
+CPython (amounts, fee, destinations, change detection):
+`tests/vectors/psbt_base64_singlesig.summary.txt`. Import + parse: ~1.0 s,
+mostly the second PBKDF2 inside `Seed()`.
+
+To make upstream code importable, two techniques were needed:
+
+- `tools/upy_transform.py`: build-time AST rewrite of upstream sources for the
+  few constructs MicroPython cannot run. Today only `@dataclass` (MicroPython
+  drops class annotations, so fields are recorded explicitly). Output is
+  readable Python in `build/frozen_py/`.
+- `mpy/frozen/compat/`: small stand-ins for CPython stdlib modules
+  (`dataclasses`, `typing`, `gettext`, `os`, `pathlib`, `platform`, `time`,
+  `unicodedata`). Anything touching storage fails on purpose, and
+  `unicodedata.normalize` refuses non-ASCII text rather than risk deriving a
+  different seed from a passphrase.
+
 Findings:
 
 - On MicroPython, embit 0.8.0 **requires** the native `secp256k1` module

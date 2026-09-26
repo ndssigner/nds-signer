@@ -8,6 +8,8 @@
 #include "py/builtin.h"
 #include "py/lexer.h"
 #include "py/mperrno.h"
+#include "py/mphal.h"
+#include "py/stream.h"
 #include "py/runtime.h"
 
 mp_import_stat_t mp_import_stat(const char *path)
@@ -38,4 +40,23 @@ void nds_print_strn(const char *str, size_t len)
 {
 	printf("%.*s", (int)len, str);
 	nocashWrite(str, len);
+}
+
+/* sys.stdout / sys.stderr (shared/runtime/sys_stdio_mphal.c) */
+mp_uint_t mp_hal_stdout_tx_strn(const char *str, size_t len)
+{
+	nds_print_strn(str, len);
+	return len;
+}
+
+/* There is no keyboard stream: reading sys.stdin always fails. */
+int mp_hal_stdin_rx_chr(void)
+{
+	mp_raise_OSError(MP_EPERM);
+}
+
+uintptr_t mp_hal_stdio_poll(uintptr_t poll_flags)
+{
+	/* stdout/stderr are always writable, stdin never readable */
+	return poll_flags & MP_STREAM_POLL_WR;
 }

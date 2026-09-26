@@ -1,0 +1,8 @@
+spend_amount 24857
+change_amount 0
+fee_amount 143
+num_inputs 1
+num_destinations 2
+num_change_outputs 0
+destination_addresses 2N1Agr9voB5g4BhaTihLCuGFTFbbPBHVt7T,tb1qrgkyutwsjmp5vr3fxeuecll8qpvgwvnth2wa5k
+is_high_fee False

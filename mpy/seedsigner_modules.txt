@@ -1,0 +1,8 @@
+# Upstream SeedSigner modules frozen into the ROM (relative to
+# third_party/seedsigner/src), transformed by tools/upy_transform.py.
+seedsigner/models/psbt_parser.py
+seedsigner/models/seed.py
+seedsigner/models/settings.py
+seedsigner/models/settings_definition.py
+seedsigner/models/singleton.py
+seedsigner/helpers/l10n.py

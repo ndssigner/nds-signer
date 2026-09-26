@@ -51,3 +51,16 @@ package(
 
 # NDS-Signer shims
 module("random.py", base_path="$(PORT_DIR)/frozen")
+
+# CPython stdlib compatibility modules needed by SeedSigner (see each file)
+for _name in ("dataclasses", "typing", "gettext", "platform", "os", "pathlib", "time", "unicodedata"):
+    module(_name + ".py", base_path="$(PORT_DIR)/frozen/compat")
+
+# From micropython-lib
+require("logging")
+
+# Upstream SeedSigner, transformed by tools/upy_transform.py (mpy/Makefile)
+package("seedsigner", base_path="$(PORT_DIR)/../build/frozen_py")
+
+# SPIKE: shared test helper, identical on CPython and on the DSi
+module("psbt_parser_summary.py", base_path="$(PORT_DIR)/../tests/vectors")

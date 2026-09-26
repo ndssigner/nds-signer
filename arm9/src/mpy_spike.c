@@ -34,6 +34,8 @@ static const Step s_steps[] = {
 	  "n = psbt.sign_with(root)\nprint('signed', n)\n" },
 	{ "compare",
 	  "print('MATCH' if psbt.to_string() == 'cHNidP8BAHICAAAAAQDo5ey+2HIrNUkExsFhsImv1OK1cYA9x/bRjYQD+0UaAQAAAAD9////Apg6AAAAAAAAF6kUVuVZEcdpQ2zgABa9dRUNYHD4VuaHgSYAAAAAAAAWABQaLE4t0JbDRg4pNnmcf+cAWIcyawAAAAAAAQEfqGEAAAAAAAAWABRyuw9od6yuS0yiZljV0X12wG9e5CICA/ZlEZvQubb6PmcnK+vlnd8aftYnrQ8wHYSxsD8tDp61RzBEAiAlB9Dg15hrxxFXX6yhOGTcoB8pMmsbcl1l6uctCPpIfAIgQy2qLfkhXj8AeWAMkkvQPObqWliOQH/j55ko4seVjBoBIgYD9mURm9C5tvo+Zycr6+Wd3xp+1ietDzAdhLGwPy0OnrUYiyGOgVQAAIABAACAAAAAgAAAAAAAAAAAAAAA' else 'MISMATCH')\ngc.collect()\nprint('heap used', gc.mem_alloc() // 1024, 'KB')\n" },
+	{ "seedsigner PSBTParser",
+	  "import psbt_parser_summary as t\ns = t.summary('cHNidP8BAHICAAAAAQDo5ey+2HIrNUkExsFhsImv1OK1cYA9x/bRjYQD+0UaAQAAAAD9////Apg6AAAAAAAAF6kUVuVZEcdpQ2zgABa9dRUNYHD4VuaHgSYAAAAAAAAWABQaLE4t0JbDRg4pNnmcf+cAWIcyawAAAAAAAQEfqGEAAAAAAAAWABRyuw9od6yuS0yiZljV0X12wG9e5CIGA/ZlEZvQubb6PmcnK+vlnd8aftYnrQ8wHYSxsD8tDp61GIshjoFUAACAAQAAgAAAAIAAAAAAAAAAAAAAAA==', 'height demise useless trap grow lion found off key clown transfer enroll')\nprint(s)\nprint('SUMMARY MATCH' if s == 'spend_amount 24857\\nchange_amount 0\\nfee_amount 143\\nnum_inputs 1\\nnum_destinations 2\\nnum_change_outputs 0\\ndestination_addresses 2N1Agr9voB5g4BhaTihLCuGFTFbbPBHVt7T,tb1qrgkyutwsjmp5vr3fxeuecll8qpvgwvnth2wa5k\\nis_high_fee False' else 'SUMMARY MISMATCH')\n" },
 };
 
 void mpySpikeRun(void)
