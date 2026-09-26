@@ -77,3 +77,6 @@ void nds_print_strn(const char *str, size_t len);
 #define MP_PLAT_PRINT_STRN(str, len)    nds_print_strn(str, len)
 #define MODULE_SECP256K1_ENABLED        (1)  /* lib/mpy-usermods/secp256k1 */
 #define MICROPY_PY_JSON                 (1)  /* SeedSigner settings */
+/* SeedSigner uses match.groups(); tests/host/test_re_compat compares with CPython */
+#define MICROPY_PY_RE_MATCH_GROUPS      (1)
+#define MICROPY_PY_RE_MATCH_SPAN_START_END (1)

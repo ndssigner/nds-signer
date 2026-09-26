@@ -1,6 +1,7 @@
 [submodule "third_party/micropython"]
 	path = third_party/micropython
 	url = https://github.com/micropython/micropython
+	ignore = dirty
 [submodule "third_party/embit"]
 	path = third_party/embit
 	url = https://github.com/diybitcoinhardware/embit

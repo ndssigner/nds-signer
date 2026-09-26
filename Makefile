@@ -27,7 +27,7 @@ GAME_ICON      :=
 
 include $(DEVKITARM)/ds_rules
 
-.PHONY: checkarm7 checkarm9 checkmpy clean
+.PHONY: checkarm7 checkarm9 checkmpy clean mpy-unix
 
 #---------------------------------------------------------------------------------
 all: checkarm7 checkmpy checkarm9 $(TARGET).nds
@@ -52,6 +52,15 @@ arm7/$(TARGET).elf:
 
 arm9/$(TARGET).elf:
 	$(MAKE) -C arm9
+
+#---------------------------------------------------------------------------------
+# MicroPython unix port with the same `re` options as the ROM, used by the
+# host tests (make -C tests/host re-compat). Run inside the builder image.
+mpy-unix:
+	$(MAKE) -C third_party/micropython/mpy-cross
+	$(MAKE) -C third_party/micropython/ports/unix BUILD=$(TOPDIR)/build/mpy-unix PROG=micropython \
+		MICROPY_PY_FFI=0 MICROPY_PY_BTREE=0 MICROPY_PY_SSL=0 MICROPY_USE_READLINE=0 \
+		CFLAGS_EXTRA="-DMICROPY_PY_RE_MATCH_GROUPS=1 -DMICROPY_PY_RE_MATCH_SPAN_START_END=1"
 
 #---------------------------------------------------------------------------------
 clean:
