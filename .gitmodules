@@ -15,3 +15,6 @@
 [submodule "third_party/urtypes"]
 	path = third_party/urtypes
 	url = https://github.com/selfcustody/urtypes
+[submodule "third_party/utf8proc"]
+	path = third_party/utf8proc
+	url = https://github.com/JuliaStrings/utf8proc

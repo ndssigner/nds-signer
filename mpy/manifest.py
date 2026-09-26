@@ -55,7 +55,7 @@ module("random.py", base_path="$(PORT_DIR)/frozen")
 # CPython stdlib compatibility modules needed by SeedSigner (see each file)
 for _name in ("dataclasses", "enum", "importlib", "threading", "traceback", "typing", "gettext",
               "platform", "os", "pathlib", "re",
-              "_pyre", "time", "unicodedata"):
+              "_pyre", "time"):
     module(_name + ".py", base_path="$(PORT_DIR)/frozen/compat")
 
 # Stand-ins for Raspberry Pi hardware libraries (QR decoding is native here)
@@ -82,6 +82,7 @@ module("psbt_parser_summary.py", base_path="$(PORT_DIR)/../tests/vectors")
 module("seedsigner_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("decode_qr_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("flow_check.py", base_path="$(PORT_DIR)/../tests/host")
+module("bip39_jp_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("test_vectors.py", base_path="$(PORT_DIR)/../build/frozen_py")
 
 # Python entry point

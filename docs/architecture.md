@@ -136,10 +136,13 @@ To make upstream code importable, two techniques were needed:
   drops class annotations, so fields are recorded explicitly). Output is
   readable Python in `build/frozen_py/`.
 - `mpy/frozen/compat/`: small stand-ins for CPython stdlib modules
-  (`dataclasses`, `typing`, `gettext`, `os`, `pathlib`, `platform`, `time`,
-  `unicodedata`). Anything touching storage fails on purpose, and
-  `unicodedata.normalize` refuses non-ASCII text rather than risk deriving a
-  different seed from a passphrase.
+  (`dataclasses`, `typing`, `gettext`, `os`, `pathlib`, `platform`, `time`).
+  Anything touching storage fails on purpose.
+- `unicodedata.normalize` (BIP-39 mnemonic/passphrase NFKD) is a native module
+  backed by utf8proc v2.12.0 (`lib/mpy-usermods/unicodedata`). Verified against
+  CPython 3.11 for every character assigned in Unicode 14 plus 20k combining
+  sequences in all four forms (0 mismatches), and with the 24 official Japanese
+  BIP-39 vectors (NFKD mnemonic + passphrase -> seed), also on the DSi.
 
 Milestone 4a: SeedSigner's `models/decode_qr.py` (QR type detection, base64
 and animated UR PSBTs, addresses, SeedQR) runs unmodified on the DSi. It needed

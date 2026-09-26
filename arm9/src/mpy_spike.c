@@ -23,10 +23,8 @@ typedef struct {
 static const Step s_steps[] = {
 	{ "seedsigner_check",
 	  "import seedsigner_check\n" },
-	{ "decode_qr_check",
-	  "import decode_qr_check\n" },
-	{ "verdict",
-	  "import sys\nref = 'psbt-base64 status=3 type=psbt__base64 complete=True parts=1 psbt_sha256=a120fc689ed50aee'\nprint('\\n=== seedsigner_check:', 'PASSED' if seedsigner_check.failures == 0 else 'FAILED')\n" },
+	{ "bip39_jp_check (utf8proc NFKD, 24 vectors)",
+	  "import bip39_jp_check\n" },
 };
 
 void mpySpikeRun(void)

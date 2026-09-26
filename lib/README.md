@@ -11,7 +11,8 @@ line that ends up in the binary is reviewable in this repository.
 | `mpy-usermods/secp256k1/` | `mpy/` wrapper from [diybitcoinhardware/secp256k1-embedded](https://github.com/diybitcoinhardware/secp256k1-embedded) | MIT | `036f465` — **modified**, see below |
 | `../tools/third_party/qrcodegen.py` | [nayuki/QR-Code-generator](https://github.com/nayuki/QR-Code-generator) (host tool only) | MIT | `3c6d0b3cefb4e049dc337e82237c9644399716a8` |
 
-Git submodules (pinned, in `third_party/`): MicroPython `v1.29.0`, embit
+Git submodules (pinned, in `third_party/`): utf8proc `v2.12.0` (Unicode
+normalization for `unicodedata`, MIT), MicroPython `v1.29.0`, embit
 `v0.8.0` (the version SeedSigner pins), libsecp256k1 `v0.8.0` (upgraded from
 `be8d9c2`, the 2021 commit secp256k1-embedded was tested with).
 

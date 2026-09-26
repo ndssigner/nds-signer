@@ -31,12 +31,14 @@ SECP256K1 := $(TOPDIR)/third_party/secp256k1
 USERMOD_C := $(wildcard $(USERMODS)/*/*.c $(USERMODS)/*/crypto/*.c $(USERMODS)/*/config/*.c) \
              $(wildcard $(CURDIR)/usermods/*/*.c) \
              $(SECP256K1)/src/secp256k1.c $(SECP256K1)/src/precomputed_ecmult.c \
-             $(SECP256K1)/src/precomputed_ecmult_gen.c
+             $(SECP256K1)/src/precomputed_ecmult_gen.c \
+             $(TOPDIR)/third_party/utf8proc/utf8proc.c
 # libsecp256k1 configuration (same as lib/mpy-usermods/secp256k1/micropython.mk)
 SECP_DEFS := -DENABLE_MODULE_ECDH=1 -DENABLE_MODULE_RECOVERY=1 -DENABLE_MODULE_EXTRAKEYS=1 \
              -DENABLE_MODULE_SCHNORRSIG=1 -DECMULT_WINDOW_SIZE=8 -DUSE_EXTERNAL_DEFAULT_CALLBACKS=1
 CFLAGS    += -I$(USERMODS)/uhashlib/crypto -I$(SECP256K1) -I$(SECP256K1)/src $(SECP_DEFS) \
-             -I$(TOPDIR)/arm9/include -I$(TOPDIR)/shared/include
+             -I$(TOPDIR)/arm9/include -I$(TOPDIR)/shared/include \
+             -I$(TOPDIR)/third_party/utf8proc -DUTF8PROC_STATIC
 
 # Upstream SeedSigner Python, transformed for MicroPython at build time
 FROZEN_PY := $(TOPDIR)/build/frozen_py

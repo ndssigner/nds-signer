@@ -41,6 +41,14 @@ for prefix in ("psbt_base64_singlesig", "psbt_base64_10in"):
     print("ok  " if ok else "FAIL", prefix, "signature")
     failures += not ok
 
+# Non-ASCII BIP-39 passphrase through SeedSigner's Seed (NFKD normalization)
+from seedsigner.models.seed import Seed  # noqa: E402
+
+seed = Seed(read("psbt_base64_singlesig.mnemonic.txt").split(), passphrase=read("passphrase_es.txt"))
+ok = seed.get_fingerprint() == read("passphrase_es.fingerprint.txt")
+print("ok  " if ok else "FAIL", "Seed with non-ASCII passphrase (NFKD) fingerprint")
+failures += not ok
+
 print("PASSED" if not failures else "FAILED")
 if __name__ == "__main__":
     sys.exit(1 if failures else 0)

@@ -20,7 +20,7 @@ MPY_ROM_PATH = /source/tests/host/sim:/source/mpy/frozen/compat:/source/mpy/froz
 DOCKER_MPY_ROM = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
              -e MICROPYPATH=$(MPY_ROM_PATH) nds-signer-builder /source/build/mpy-unix/micropython
 
-.PHONY: all clean re-compat seedsigner qrdecode
+.PHONY: all clean re-compat seedsigner qrdecode unicode frozen
 all: test_qr_type
 	./test_qr_type
 
@@ -38,7 +38,12 @@ re-compat:
 	done
 
 # Requires `make mpy-unix` and a ROM build (for build/frozen_py) in Docker
-seedsigner:
+# (re)generates build/frozen_py: transformed upstream modules, overlay, vectors
+frozen:
+	@docker run --rm -v "$(TOPDIR)":/source nds-signer-builder \
+		make -s -C mpy TOPDIR=/source /source/build/frozen_py/.stamp
+
+seedsigner: frozen
 	$(DOCKER_MPY_ROM) seedsigner_check.py /source/tests/vectors
 	@PYTHONPATH=$(TOPDIR)/third_party/seedsigner/src:$(TOPDIR)/mpy/frozen/hwstubs $(PYTHON) decode_qr_check.py $(TOPDIR)/tests/vectors \
 		> $(TOPDIR)/build/decode_qr.cpython.txt
@@ -48,6 +53,13 @@ seedsigner:
 	@for mode in preloaded typed seedqr passphrase settings; do \
 		$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors $$mode 2>/dev/null | grep -E "^(ok|FAIL)"; \
 	done
+
+# Native unicodedata (utf8proc) vs CPython 3.11 + Japanese BIP-39 vectors
+unicode: frozen
+	@docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host nds-signer-builder \
+		python3 unicode_gen.py > $(TOPDIR)/build/unicode_cases.json
+	@$(DOCKER_MPY_ROM) -X heapsize=1024M unicode_check.py /source/build/unicode_cases.json \
+		/source/tests/vectors/bip39_japanese.json
 
 # Host QR decoder (same quirc as the ROM) for emulator screenshots:
 #   tools/png_to_pgm.py shot.png | ../../build/qrdecode
