@@ -134,6 +134,18 @@ static mp_obj_t nds_camera_stats(void)
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_stats_obj, nds_camera_stats);
 
+/* qr_show(text, border=2, background=255): QR code on the top screen.
+ * Returns its size in modules (0 if the text does not fit). */
+static mp_obj_t nds_qr_show(size_t n_args, const mp_obj_t *args)
+{
+	size_t len;
+	const char *text = mp_obj_str_get_data(args[0], &len);
+	int border = n_args > 1 ? mp_obj_get_int(args[1]) : 2;
+	int background = n_args > 2 ? mp_obj_get_int(args[2]) : 255;
+	return mp_obj_new_int(ndsbQrShow(text, len, border, background));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_show_obj, 1, 3, nds_qr_show);
+
 static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_nds) },
 	{ MP_ROM_QSTR(MP_QSTR_COLS), MP_ROM_INT(NDSB_COLS) },
@@ -152,6 +164,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_poll), MP_ROM_PTR(&nds_camera_poll_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stop), MP_ROM_PTR(&nds_camera_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stats), MP_ROM_PTR(&nds_camera_stats_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_qr_show), MP_ROM_PTR(&nds_qr_show_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_A), MP_ROM_INT(NDSB_KEY_A) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_B), MP_ROM_INT(NDSB_KEY_B) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_X), MP_ROM_INT(NDSB_KEY_X) },

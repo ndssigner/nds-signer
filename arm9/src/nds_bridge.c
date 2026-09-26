@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "nds_bridge.h"
+#include "qr_display.h"
 #include "qr_scanner.h"
 #include "ui.h"
 
@@ -100,4 +101,13 @@ void ndsbCameraStats(uint32_t *frames, uint32_t *decodeMs)
 	const ScanStats *s = scannerStats();
 	*frames = s->frames;
 	*decodeMs = s->lastDecodeUs / 1000;
+}
+
+int ndsbQrShow(const char *text, size_t len, int border, int background)
+{
+	if (background < 0)
+		background = 0;
+	if (background > 255)
+		background = 255;
+	return qrDisplayShow(text, len, border, (u8)background);
 }

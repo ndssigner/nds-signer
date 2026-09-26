@@ -99,6 +99,9 @@ def frame():
         x, y = _find_label(ev[1])
         _touch_xy = (x, y, "down")
         _keys_down = KEY_TOUCH
+    elif kind == "wait":  # let n frames pass
+        if ev[1] > 1:
+            _events.insert(0, ("wait", ev[1] - 1))
     elif kind == "camera":
         _camera_queue.append(ev[1])
     elif kind == "expect_top":
@@ -151,6 +154,14 @@ def camera_stop():
 
 def camera_stats():
     return (_camera_frames, 0)
+
+
+qr_shown = []  # texts passed to qr_show, for tests
+
+
+def qr_show(text, border=2, background=255):
+    qr_shown.append(text)
+    return 1
 
 
 # ---- simulator controls (not part of the native API) ----

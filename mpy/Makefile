@@ -64,7 +64,7 @@ $(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py $(w
 	@python3 $(TOPDIR)/tools/freeze_vectors.py $(TOPDIR)/tests/vectors $(FROZEN_PY)/test_vectors.py
 	@touch $@
 
-$(EMBED)/.stamp: mpconfigport.h micropython_embed.mk manifest.py $(wildcard frozen/*.py frozen/*/*.py) \
+$(EMBED)/.stamp: mpconfigport.h micropython_embed.mk manifest.py $(wildcard frozen/*.py frozen/*/*.py frozen/*/*/*.py) \
 		$(USERMOD_C) $(FROZEN_PY)/.stamp
 	@echo generating MicroPython embed package
 	@rm -rf build-embed/frozen_content.c build-embed/frozen_mpy

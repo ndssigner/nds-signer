@@ -18,8 +18,8 @@ include $(DEVKITARM)/ds_rules
 # DATA     : directories containing binary files embedded with bin2o
 #---------------------------------------------------------------------------------
 BUILD    := build
-SOURCES  := src ../lib/quirc
-INCLUDES := include ../shared/include ../lib/quirc
+SOURCES  := src ../lib/quirc ../lib/qrcodegen
+INCLUDES := include ../shared/include ../lib/quirc ../lib/qrcodegen
 DATA     := data
 
 #---------------------------------------------------------------------------------
@@ -112,7 +112,7 @@ $(ARM9ELF): $(OFILES)
 $(OFILES_SOURCES): $(HFILES)
 
 # Vendored third-party code is kept unmodified: silence -Wextra noise there only
-decode.o identify.o quirc.o version_db.o: \
+decode.o identify.o quirc.o version_db.o qrcodegen.o: \
 	CFLAGS += -Wno-unused-parameter -Wno-sign-compare -Wno-type-limits
 
 #---------------------------------------------------------------------------------

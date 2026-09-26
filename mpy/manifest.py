@@ -90,5 +90,5 @@ module("nds_main.py", base_path="$(PORT_DIR)/frozen")
 # AUTOTEST builds only (make AUTOTEST=1): scripted taps for unattended runs
 import os as _os
 if _os.environ.get("NDS_AUTOTEST"):
-    module("autopilot.py", base_path="$(PORT_DIR)/frozen")
+    module("autopilot.py", base_path="$(PORT_DIR)/frozen/autotest")
     module("autopilot_script.py", base_path="$(PORT_DIR)/../tests/host")

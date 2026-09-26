@@ -6,6 +6,7 @@ line that ends up in the binary is reviewable in this repository.
 | Directory | Project | License | Upstream commit |
 | :--- | :--- | :--- | :--- |
 | `quirc/` | [dlbeer/quirc](https://github.com/dlbeer/quirc) (`lib/` + `LICENSE`) | ISC | `927d680904dc95fdff4cd9d022eb374b438ff8f2` |
+| `qrcodegen/` | [nayuki/QR-Code-generator](https://github.com/nayuki/QR-Code-generator) (`c/qrcodegen.[ch]`) | MIT | `3c6d0b3cefb4e049dc337e82237c9644399716a8` |
 | `mpy-usermods/uhashlib/` | `usermods/uhashlib` from [diybitcoinhardware/f469-disco](https://github.com/diybitcoinhardware/f469-disco) (hashlib with sha512/ripemd160/pbkdf2, hmac); crypto from trezor-crypto | MIT (f469-disco), MIT/BSD-3 (crypto files, see headers) | `9dd8515` — **modified**, see below |
 | `mpy-usermods/secp256k1/` | `mpy/` wrapper from [diybitcoinhardware/secp256k1-embedded](https://github.com/diybitcoinhardware/secp256k1-embedded) | MIT | `036f465` — **modified**, see below |
 | `../tools/third_party/qrcodegen.py` | [nayuki/QR-Code-generator](https://github.com/nayuki/QR-Code-generator) (host tool only) | MIT | `3c6d0b3cefb4e049dc337e82237c9644399716a8` |

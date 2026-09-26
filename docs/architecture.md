@@ -161,6 +161,14 @@ select signer -> review, incl. upstream's "Full Spend!" warning -> recipients
 -> approve) runs in under 15 s and ends with the signed PSBT as an 8-part
 animated UR, identical to what SeedSigner produces on CPython.
 
+Milestone 4c: the signed PSBT is shown as an animated QR code drawn natively
+(Project Nayuki's qrcodegen, ECC L like SeedSigner, a new part every 5/30 s,
+UP/DOWN change the background brightness and are saved to Settings, as
+upstream). Frames are composed off-screen and copied by DMA after VBlank, so a
+half-drawn QR is never visible. Verified from the outside: screenshots of the
+emulator decoded on the host (`tools/png_to_pgm.py | build/qrdecode`, same
+quirc) reassemble, via SeedSigner's DecodeQR, the exact signed PSBT expected.
+
 How the upstream UI code is reused:
 
 - Views call `self.run_screen(ScreenClass, **kwargs)`. NDS-Signer implements

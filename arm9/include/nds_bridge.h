@@ -52,4 +52,8 @@ void ndsbCameraStats(uint32_t *frames, uint32_t *decodeMs);
 
 #define NDSB_MAX_PAYLOAD 8896
 
+/* Draws a QR code of `text` on the top screen (see qr_display.h).
+ * Returns the QR size in modules, 0 if the text does not fit. */
+int ndsbQrShow(const char *text, size_t len, int border, int background);
+
 #endif /* NDS_SIGNER_NDS_BRIDGE_H */

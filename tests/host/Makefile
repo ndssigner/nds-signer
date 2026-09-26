@@ -20,7 +20,7 @@ MPY_ROM_PATH = /source/tests/host/sim:/source/mpy/frozen/compat:/source/mpy/froz
 DOCKER_MPY_ROM = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
              -e MICROPYPATH=$(MPY_ROM_PATH) nds-signer-builder /source/build/mpy-unix/micropython
 
-.PHONY: all clean re-compat seedsigner
+.PHONY: all clean re-compat seedsigner qrdecode
 all: test_qr_type
 	./test_qr_type
 
@@ -46,6 +46,12 @@ seedsigner:
 	@diff $(TOPDIR)/build/decode_qr.cpython.txt $(TOPDIR)/build/decode_qr.mpy.txt \
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
 	@$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors 2>/dev/null | grep -E "^(ok|FAIL)|PASSED|FAILED"
+
+# Host QR decoder (same quirc as the ROM) for emulator screenshots:
+#   tools/png_to_pgm.py shot.png | ../../build/qrdecode
+qrdecode: ../../build/qrdecode
+../../build/qrdecode: qrdecode.c
+	$(CC) -O2 -I../../lib/quirc -o $@ qrdecode.c ../../lib/quirc/*.c -lm
 
 clean:
 	rm -rf test_qr_type test_qr_type.dSYM

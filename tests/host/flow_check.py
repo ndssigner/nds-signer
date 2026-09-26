@@ -26,10 +26,9 @@ RESULT = {}
 def check_signed(prefix):
     """Decodes the QR parts shown by QRDisplayScreen and compares the signed
     PSBT with the CPython reference."""
-    from seedsigner.gui.screens.screen import QRDisplayScreen
     from seedsigner.models.decode_qr import DecodeQR
 
-    parts = QRDisplayScreen.last_parts
+    parts = list(nds.qr_shown)
     if not parts:
         raise FlowBasedTestException("no QR was displayed")
     decoder = DecodeQR()
@@ -37,7 +36,7 @@ def check_signed(prefix):
         decoder.add_data(part)
     ok = decoder.is_complete and decoder.get_psbt().to_string() == read(prefix + ".signed_trimmed.txt")
     RESULT[prefix] = ok
-    print("ok  " if ok else "FAIL", prefix, "flow: signed PSBT QR (%d parts)" % len(parts))
+    print("ok  " if ok else "FAIL", prefix, "flow: signed PSBT QR (%d frames shown)" % len(parts))
 
 
 def stop():
@@ -66,7 +65,8 @@ def run_flow(prefix, taps):
         events += [("call", dump), ("tap_label", tap), ("key", 0)]
         if tap == "Scan":
             events.append(("camera", read(prefix + ".txt").encode()))
-    events += [("call", dump), ("call", lambda: check_signed(prefix)), ("call", stop)]
+    # let the animated QR run through all its parts (~6 per second) first
+    events += [("wait", 200), ("call", dump), ("call", lambda: check_signed(prefix)), ("call", stop)]
     nds.sim_script(events)
     controller.start(initial_destination=Destination(MainMenuView))
 

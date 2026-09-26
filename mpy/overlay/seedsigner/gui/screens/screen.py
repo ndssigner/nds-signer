@@ -8,6 +8,7 @@ from gettext import gettext as _
 
 
 from seedsigner.gui import nds_ui
+from seedsigner.gui.hw import nds
 from seedsigner.gui._upstream import POST_INIT, SCREEN_FIELDS, SCREEN_INFO
 
 RET_CODE__BACK_BUTTON = 1000
@@ -189,19 +190,43 @@ class KeyboardScreen(BaseTopNavScreen):
 
 
 class QRDisplayScreen(BaseScreen):
-    """Shows the encoder's QR parts. Native QR rendering is TODO; for now the
-    part text is shown so the flow can be exercised end to end."""
+    """Animated QR display, as upstream: a new part every 5/30 s, UP/DOWN
+    change the QR background brightness (saved to Settings on exit)."""
 
-    last_parts = None  # for tests: the parts shown last time
+    FRAME_MS = 167  # upstream: time.sleep(5 / 30.0) between parts
+    BORDER = 2      # upstream: next_part_image(..., border=2)
+
+    def _render(self):
+        nds.top_clear()
 
     def _run(self):
-        encoder = self.qr_encoder
-        count = encoder.seq_len() if hasattr(encoder, "seq_len") else 1
-        parts = [encoder.next_part() for _i in range(max(1, count))]
-        QRDisplayScreen.last_parts = parts
-        nds_ui.top_page("QR", ["%d QR part(s)" % len(parts), ""] + nds_ui.wrap(parts[0])[:16])
-        result = nds_ui.ButtonPanel([_("Done")], show_back=True).run()
-        return RET_CODE__BACK_BUTTON if result == nds_ui.BACK else result
+        from seedsigner.models.settings import Settings, SettingsConstants
+
+        settings = Settings.get_instance()
+        brightness = int(settings.get_value(SettingsConstants.SETTING__QR_BRIGHTNESS))
+        panel = nds_ui.ButtonPanel([_("Done")], show_back=False)
+        panel.draw()
+        nds.bottom_print(17, -1, _("Up/Down: QR brightness"))
+        next_part_at = 0
+        try:
+            while True:
+                nds.frame()
+                now = nds.ticks_ms()
+                if now >= next_part_at:
+                    nds.qr_show(self.qr_encoder.next_part(), self.BORDER, brightness)
+                    next_part_at = now + self.FRAME_MS
+                down = nds.keys_down()
+                if down & nds.KEY_UP:
+                    brightness = min(brightness + 31, 255)
+                    next_part_at = 0
+                elif down & nds.KEY_DOWN:
+                    brightness = max(31, brightness - 31)
+                    next_part_at = 0
+                elif down & nds.KEY_B or panel.handle_frame() is not None:
+                    return None
+        finally:
+            settings.set_value(SettingsConstants.SETTING__QR_BRIGHTNESS, brightness)
+            nds.top_clear()
 
 
 class LoadingScreenThread:
