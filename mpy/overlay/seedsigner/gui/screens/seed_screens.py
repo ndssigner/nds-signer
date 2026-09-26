@@ -80,10 +80,12 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
 
     def _run(self):
         self._draw()
+        taps = nds_ui.TapTracker()
         while True:
             nds.frame()
+            tap = taps.update()
             down = nds.keys_down()
-            if not down:
+            if not down and tap is None:
                 continue
             if down & nds.KEY_A and len(self.candidates) == 1:
                 return self.candidates[0]
@@ -93,13 +95,10 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                     self._draw()
                     continue
                 return RET_CODE__BACK_BUTTON
-            if not down & nds.KEY_TOUCH:
-                continue
-            xy = nds.touch()
-            if xy is None:
+            if tap is None:
                 continue
             key = nds_keyboard.key_at(self.candidate_keys + self.keys + [self.del_key, self.back_key],
-                                      xy[0], xy[1])
+                                      tap[0], tap[1])
             if key is None:
                 continue
             action = key.action
@@ -177,15 +176,16 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
 
     def _run(self):
         self._draw()
+        taps = nds_ui.TapTracker()
         while True:
             nds.frame()
+            tap = taps.update()
             down = nds.keys_down()
             if down & nds.KEY_B and self.show_back_button:
                 return dict(passphrase=self.passphrase, is_back_button=True)
-            if not down & nds.KEY_TOUCH:
+            if tap is None:
                 continue
-            xy = nds.touch()
-            key = nds_keyboard.key_at(nds_keyboard.ACTIVE_KEYS, xy[0], xy[1]) if xy else None
+            key = nds_keyboard.key_at(nds_keyboard.ACTIVE_KEYS, tap[0], tap[1])
             if key is None:
                 continue
             action = key.action

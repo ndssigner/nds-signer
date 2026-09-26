@@ -86,11 +86,33 @@ def _box(row, col, width, label, selected):
         nds.bottom_print(row + i, col, text)
 
 
+class TapTracker:
+    """Turns stylus contact into taps, like a regular touch UI: a tap is
+    reported when the stylus is lifted, at the last valid position read while
+    it was down. On a real DSi the position read on the first frame of a touch
+    is not reliable yet (often 0,0), so acting on the touch-down frame misses
+    buttons (the emulator reports it exactly, which hid the problem)."""
+
+    def __init__(self):
+        self.last = None
+
+    def update(self):
+        """Call once per frame. Returns (x, y) when a tap ends, else None."""
+        xy = nds.touch()
+        if xy is not None:
+            if xy[0] or xy[1]:  # (0, 0) = no valid reading yet
+                self.last = xy
+            return None
+        tap, self.last = self.last, None
+        return tap
+
+
 class ButtonPanel:
     """A pageable list of full-width touch buttons on the bottom screen."""
 
     def __init__(self, labels, show_back=True, selected=0, header=None, redraw=None):
         self.redraw = redraw  # redraws the top screen after the dev overlay
+        self.taps = TapTracker()
         self.labels = list(labels)
         self.show_back = show_back
         self.selected = selected if 0 <= selected < len(self.labels) else 0
@@ -134,12 +156,9 @@ class ButtonPanel:
 
     def handle_frame(self):
         """Processes one frame of input. Returns an index, BACK or None."""
-        down = nds.keys_down()
-        if not down:
-            return None
-        if down & nds.KEY_TOUCH:
-            xy = nds.touch()
-            action = self._hit(xy[0], xy[1]) if xy else None
+        tap = self.taps.update()
+        if tap is not None:
+            action = self._hit(tap[0], tap[1])
             if action == "prev":
                 self.selected = (self.page() - 1) * BUTTONS_PER_PAGE
                 self.draw()
@@ -149,6 +168,9 @@ class ButtonPanel:
                 self.draw()
                 return None
             return action
+        down = nds.keys_down()
+        if not down:
+            return None
         if down & nds.KEY_A and self.labels:
             return self.selected
         if down & nds.KEY_B and self.show_back:

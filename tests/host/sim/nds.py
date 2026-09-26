@@ -28,6 +28,9 @@ _events = []
 _camera_queue = []
 _keys_down = 0
 _touch_xy = None
+# Touch readings for the coming frames. Like a real DSi (not like melonDS),
+# the first frame of a touch reads (0, 0): the position is not stable yet.
+_touch_queue = []
 _ticks = 0
 _idle_frames = 0
 _camera_on = False
@@ -74,12 +77,19 @@ def _find_label(label):
     raise AssertionError("label %r not on the bottom screen:\n%s" % (label, sim_text(1)))
 
 
+def _start_touch(x, y):
+    global _touch_xy, _keys_down
+    _touch_queue[:] = [(x, y), (x, y)]
+    _touch_xy = (0, 0)
+    _keys_down = KEY_TOUCH
+
+
 def frame():
     global _keys_down, _touch_xy, _ticks, _idle_frames
     _ticks += 16
     _keys_down = 0
-    if _touch_xy is not None and _touch_xy[2] == "down":
-        _touch_xy = (_touch_xy[0], _touch_xy[1], "up")  # release next frame
+    if _touch_queue:  # stylus still down: next reading
+        _touch_xy = _touch_queue.pop(0)
         return
     _touch_xy = None
     if not _events:
@@ -93,17 +103,12 @@ def frame():
     if kind == "key":
         _keys_down = ev[1]
     elif kind == "tap":
-        _touch_xy = (ev[1], ev[2], "down")
-        _keys_down = KEY_TOUCH
+        _start_touch(ev[1], ev[2])
     elif kind == "tap_key":  # a letter of the touch keyboard
         from seedsigner.gui.nds_keyboard import key_center
-        x, y = key_center(ev[1])
-        _touch_xy = (x, y, "down")
-        _keys_down = KEY_TOUCH
+        _start_touch(*key_center(ev[1]))
     elif kind == "tap_label":
-        x, y = _find_label(ev[1])
-        _touch_xy = (x, y, "down")
-        _keys_down = KEY_TOUCH
+        _start_touch(*_find_label(ev[1]))
     elif kind == "wait":  # let n frames pass
         if ev[1] > 1:
             _events.insert(0, ("wait", ev[1] - 1))
@@ -121,13 +126,11 @@ def keys_down():
 
 
 def keys_held():
-    return KEY_TOUCH if _touch_xy is not None and _touch_xy[2] == "down" else 0
+    return KEY_TOUCH if _touch_xy is not None else 0
 
 
 def touch():
-    if _touch_xy is not None and _touch_xy[2] == "down":
-        return (_touch_xy[0], _touch_xy[1])
-    return None
+    return _touch_xy
 
 
 def ticks_ms():

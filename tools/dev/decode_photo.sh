@@ -3,7 +3,8 @@
 # e.g. the developer build's diagnostics or error report QR. macOS only (sips).
 cd "$(dirname "$0")/../.."
 make -s -C tests/host qrdecode >/dev/null
-for photo in "${@:-fotos/*}"; do
+if [ $# -eq 0 ]; then set -- fotos/*; fi
+for photo in "$@"; do
 	[ -f "$photo" ] || continue
 	tmp=$(mktemp -d)
 	# downscale big phone photos a bit: quirc is faster and just as reliable
