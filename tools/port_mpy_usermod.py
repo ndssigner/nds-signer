@@ -31,6 +31,31 @@ def port(src: str) -> str:
     src = re.sub(r'mp_raise_ValueError\("([^"]*)"\)', r'mp_raise_ValueError(MP_ERROR_TEXT("\1"))', src)
     src = re.sub(r'mp_raise_TypeError\("([^"]*)"\)', r'mp_raise_TypeError(MP_ERROR_TEXT("\1"))', src)
     src = re.sub(r"mp_obj_new_str_from_vstr\(&mp_type_bytes, ", "mp_obj_new_bytes_from_vstr(", src)
+    src = port_secp256k1(src)
+    return src
+
+
+def port_secp256k1(src):
+    """secp256k1-embedded (2021) -> libsecp256k1 v0.8 API."""
+    if "secp256k1_context_preallocated_create" not in src:
+        return src
+    # removed deprecated names: privkey_* -> seckey_*, schnorrsig_sign -> sign32
+    src = re.sub(r"(?<![u\w])secp256k1_ec_privkey_(negate|tweak_add|tweak_mul)\(",
+                 r"secp256k1_ec_seckey_\1(", src)
+    src = re.sub(r"(?<![u\w])secp256k1_schnorrsig_sign\(", "secp256k1_schnorrsig_sign32(", src)
+    # The context size was hard-coded ("880 // 440 for 32-bit. FIXME:
+    # autodetect"): a larger context in a newer library would overflow it.
+    src = src.replace(
+        "#define PREALLOCATED_CTX_SIZE 880 // 440 for 32-bit. FIXME: autodetect",
+        "// NDS-Signer: generous buffer, size checked at runtime (maybe_init_ctx)\n"
+        "#define PREALLOCATED_CTX_SIZE 2048")
+    src = src.replace(
+        "    ctx = secp256k1_context_preallocated_create((void *)preallocated_ctx, "
+        "SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);",
+        "    if (secp256k1_context_preallocated_size(SECP256K1_CONTEXT_NONE) > PREALLOCATED_CTX_SIZE) {\n"
+        "        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT(\"secp256k1 context buffer too small\"));\n"
+        "    }\n"
+        "    ctx = secp256k1_context_preallocated_create((void *)preallocated_ctx, SECP256K1_CONTEXT_NONE);")
     return src
 
 

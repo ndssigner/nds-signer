@@ -21,7 +21,8 @@
 #endif
 
 // global context
-#define PREALLOCATED_CTX_SIZE 880 // 440 for 32-bit. FIXME: autodetect
+// NDS-Signer: generous buffer, size checked at runtime (maybe_init_ctx)
+#define PREALLOCATED_CTX_SIZE 2048
 
 static unsigned char preallocated_ctx[PREALLOCATED_CTX_SIZE];
 static secp256k1_context * ctx = NULL;
@@ -31,7 +32,10 @@ void maybe_init_ctx(){
         return;
     }
     // ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
-    ctx = secp256k1_context_preallocated_create((void *)preallocated_ctx, SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
+    if (secp256k1_context_preallocated_size(SECP256K1_CONTEXT_NONE) > PREALLOCATED_CTX_SIZE) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("secp256k1 context buffer too small"));
+    }
+    ctx = secp256k1_context_preallocated_create((void *)preallocated_ctx, SECP256K1_CONTEXT_NONE);
 }
 
 // randomize context using 32-byte seed
@@ -482,7 +486,7 @@ static mp_obj_t usecp256k1_ec_privkey_negate(mp_obj_t arg){
     vstr_init_len(&vstr, 32);
     memcpy((byte*)vstr.buf, buf.buf, 32);
 
-    int res = secp256k1_ec_privkey_negate(ctx, (unsigned char *)vstr.buf);
+    int res = secp256k1_ec_seckey_negate(ctx, (unsigned char *)vstr.buf);
     if(!res){ // never happens according to the API
         mp_raise_ValueError(MP_ERROR_TEXT("Failed to negate the private key"));
         return mp_const_none;
@@ -533,7 +537,7 @@ static mp_obj_t usecp256k1_ec_privkey_tweak_add(mp_obj_t privarg, const mp_obj_t
         return mp_const_none;
     }
 
-    int res = secp256k1_ec_privkey_tweak_add(ctx, privbuf.buf, tweakbuf.buf);
+    int res = secp256k1_ec_seckey_tweak_add(ctx, privbuf.buf, tweakbuf.buf);
     if(!res){ // never happens according to the API
         mp_raise_ValueError(MP_ERROR_TEXT("Failed to tweak the private key"));
         return mp_const_none;
@@ -564,7 +568,7 @@ static mp_obj_t usecp256k1_ec_privkey_add(mp_obj_t privarg, const mp_obj_t tweak
     vstr_init_len(&priv2, 32);
     memcpy((byte*)priv2.buf, privbuf.buf, 32);
 
-    int res = secp256k1_ec_privkey_tweak_add(ctx, priv2.buf, tweakbuf.buf);
+    int res = secp256k1_ec_seckey_tweak_add(ctx, priv2.buf, tweakbuf.buf);
     if(!res){ // never happens according to the API
         mp_raise_ValueError(MP_ERROR_TEXT("Failed to tweak the private key"));
         return mp_const_none;
@@ -654,7 +658,7 @@ static mp_obj_t usecp256k1_ec_privkey_tweak_mul(mp_obj_t privarg, const mp_obj_t
         return mp_const_none;
     }
 
-    int res = secp256k1_ec_privkey_tweak_mul(ctx, privbuf.buf, tweakbuf.buf);
+    int res = secp256k1_ec_seckey_tweak_mul(ctx, privbuf.buf, tweakbuf.buf);
     if(!res){ // never happens according to the API
         mp_raise_ValueError(MP_ERROR_TEXT("Failed to tweak the public key"));
         return mp_const_none;
@@ -859,7 +863,7 @@ static mp_obj_t usecp256k1_schnorrsig_sign(mp_uint_t n_args, const mp_obj_t *arg
 
     int res=0;
     if(n_args == 2){
-        res = secp256k1_schnorrsig_sign(ctx, sig, msgbuf.buf, (secp256k1_keypair *)keypair, NULL);
+        res = secp256k1_schnorrsig_sign32(ctx, sig, msgbuf.buf, (secp256k1_keypair *)keypair, NULL);
     }else if(n_args >= 3){
         mp_nonce_callback = args[2];
         if(n_args > 3){
@@ -870,7 +874,7 @@ static mp_obj_t usecp256k1_schnorrsig_sign(mp_uint_t n_args, const mp_obj_t *arg
             }
             data = databuf.buf;
         }
-        res = secp256k1_schnorrsig_sign(ctx, sig, msgbuf.buf, (secp256k1_keypair *)keypair, data);
+        res = secp256k1_schnorrsig_sign32(ctx, sig, msgbuf.buf, (secp256k1_keypair *)keypair, data);
     }
     if(!res){
         mp_raise_ValueError(MP_ERROR_TEXT("Failed to sign"));

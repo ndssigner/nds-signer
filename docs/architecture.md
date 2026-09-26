@@ -189,5 +189,6 @@ Findings:
   (no pure-Python fallback), which matches the plan (crypto in C).
 - `random` is replaced by a frozen module that raises on use: embit only needs
   it for key generation helpers, and NDS-Signer must never use a PRNG.
-- Follow-ups: update libsecp256k1 from the 2021 commit used by
-  secp256k1-embedded to a current release; confirm timings on hardware.
+- libsecp256k1 upgraded to v0.8.0 (from the 2021 commit secp256k1-embedded
+  used); signatures unchanged, library tests pass in 32-bit mode.
+- Follow-up: confirm timings on hardware.
