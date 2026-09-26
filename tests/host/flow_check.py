@@ -86,6 +86,45 @@ def run_typed_seed_flow(prefix):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+PASSPHRASE_MODES = (("abc", "abcdefghijklmnopqrstuvwxyz"), ("ABC", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                    ("123", "0123456789"), ("!@#", """!@#$%&();:,.-+='"?"""),
+                    ("*[]", """^*[]{}_\\|<>/`~"""))
+
+
+def type_passphrase(text):
+    """Taps on the passphrase keyboard, switching layouts as needed."""
+    events, mode = [], "abc"
+    for ch in text:
+        wanted = next(name for name, chars in PASSPHRASE_MODES if ch in chars)
+        if wanted != mode:
+            events += [("tap_key", wanted), ("key", 0)]
+            mode = wanted
+        events += [("tap_key", ch), ("key", 0)]
+    return events
+
+
+def run_passphrase_flow(prefix):
+    """Typed seed + BIP-39 passphrase: the fingerprint shown must match
+    SeedSigner on CPython for that seed and passphrase."""
+    from seedsigner.views.view import Destination, MainMenuView
+
+    def check_fingerprint():
+        expected = read("passphrase.fingerprint.txt")
+        ok = expected in nds.sim_text(0)
+        RESULT["passphrase"] = ok
+        print("ok  " if ok else "FAIL", "passphrase flow: fingerprint", expected, "shown")
+
+    events = [("tap_label", "Seeds"), ("key", 0), ("tap_label", "Enter 12-word seed"), ("key", 0)]
+    events += type_mnemonic(read(prefix + ".mnemonic.txt").split())
+    events += [("call", dump), ("tap_label", "BIP-39 Passphrase"), ("key", 0)]
+    events += type_passphrase(read("passphrase.txt"))
+    events += [("call", dump), ("tap_key", "Save"), ("key", 0), ("wait", 5), ("call", dump),
+               ("call", check_fingerprint), ("tap_label", "Done"), ("key", 0), ("call", dump),
+               ("call", check_fingerprint), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_seedqr_flow():
     """Home -> Seeds -> Scan a SeedQR (camera) -> Finalize: the fingerprint
     shown must be the one SeedSigner computes on CPython."""
@@ -137,6 +176,8 @@ if MODE == "typed":
     run_typed_seed_flow("psbt_base64_singlesig")
 elif MODE == "seedqr":
     run_seedqr_flow()
+elif MODE == "passphrase":
+    run_passphrase_flow("psbt_base64_singlesig")
 else:
     run_flow("psbt_base64_singlesig", SINGLESIG_TAPS if MODE == "preloaded" else MODE.split(","))
 print("PASSED" if RESULT and all(RESULT.values()) else "FAILED")

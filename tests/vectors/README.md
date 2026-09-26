@@ -13,6 +13,10 @@ for melonDS with `tools/qr_to_png.py` (see its `--help`).
 | `psbt_base64_10in.*` | Synthetic 10-input P2WPKH testnet PSBT (made-up prevouts), public seed "abandon ... about"; `.summary.txt` / `.signed.txt` are the CPython references | `tools/make_test_psbt.py` |
 | `psbt_base64_singlesig.summary.txt` | SeedSigner `PSBTParser` summary on CPython (reference) | `psbt_parser_summary.py` |
 | `psbt_parser_summary.py` | Helper that prints the summary, identical on CPython and the DSi | NDS-Signer |
+| `passphrase.txt`, `passphrase.fingerprint.txt` | Test BIP-39 passphrase for the singlesig seed and the resulting fingerprint (SeedSigner on CPython) | NDS-Signer |
+| `seedqr_12words.fingerprint.txt` | Fingerprint of the SeedQR seed (SeedSigner on CPython) | NDS-Signer |
+| `*.signed_trimmed.txt` | Signed and trimmed PSBT, as SeedSigner's PSBTFinalizeView outputs it | `tools/make_trimmed_ref.py` |
+| `*.ur.txt` | Animated UR parts of the PSBT (SeedSigner's own encoder) | `tools/make_ur_parts.py` |
 | `plain_text.txt` | `INVALID` (not a Bitcoin payload) | NDS-Signer |
 
 All keys and seeds here are public test data. **Never put real funds on them.**

@@ -8,6 +8,7 @@
 [submodule "third_party/secp256k1"]
 	path = third_party/secp256k1
 	url = https://github.com/bitcoin-core/secp256k1
+	ignore = untracked
 [submodule "third_party/seedsigner"]
 	path = third_party/seedsigner
 	url = https://github.com/SeedSigner/seedsigner

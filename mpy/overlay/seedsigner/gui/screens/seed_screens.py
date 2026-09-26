@@ -74,6 +74,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
             nds_keyboard.draw_key(key, enabled=key.label in enabled)
         if self.show_back_button:
             nds_keyboard.draw_key(self.back_key)
+        nds_keyboard.set_active(self.keys + [self.del_key, self.back_key] + self.candidate_keys)
         self.enabled = enabled
         self.candidates = candidates
 
@@ -114,6 +115,103 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
             elif action in self.enabled:
                 self.prefix += action
                 self._draw()
+
+
+# Character sets as in upstream SeedAddPassphraseScreen.__post_init__; letters
+# use a QWERTY layout here (upstream is alphabetical for its joystick UI).
+PASSPHRASE_KEYBOARDS = (
+    ("abc", ("qwertyuiop", "asdfghjkl", "zxcvbnm")),
+    ("ABC", ("QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")),
+    ("123", ("1234567890",)),
+    ("!@#", ("""!@#$%&();:""", """,.-+='"?""")),
+    ("*[]", ("""^*[]{}_\\|<""", """>/`~""")),
+)
+PASSPHRASE_KEY_ROW = 4
+
+
+class SeedAddPassphraseScreen(BaseTopNavScreen):
+    """BIP-39 passphrase on the touch keyboard. Returns, like upstream,
+    dict(passphrase=...) on save and dict(passphrase=..., is_back_button=True)
+    on back."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.passphrase = self.passphrase or ""
+        labels = [name for name, _rows in PASSPHRASE_KEYBOARDS]
+        wanted = self.initial_keyboard or labels[0]
+        self.mode = labels.index(wanted) if wanted in labels else 0
+        self.tabs = [nds_keyboard.Key(label, 0, 1 + i * 6, width=6, action=("mode", i))
+                     for i, label in enumerate(labels)]
+        self.space_key = nds_keyboard.Key("space", 15, 1, width=17, action=" ")
+        self.del_key = nds_keyboard.Key("Del", 15, 19, width=6, action="del")
+        self.back_key = nds_keyboard.Key("< Back", 20, 1, width=10, action="back")
+        self.save_key = nds_keyboard.Key("Save", 20, 21, width=10, action="save")
+
+    def _render(self):
+        pass
+
+    def _keys(self):
+        keys = []
+        for r, row in enumerate(PASSPHRASE_KEYBOARDS[self.mode][1]):
+            col = (nds_ui.COLS - len(row) * 3) // 2
+            for i, ch in enumerate(row):
+                keys.append(nds_keyboard.Key(ch, PASSPHRASE_KEY_ROW + r * 3, col + i * 3))
+        return keys
+
+    def _draw(self):
+        shown = self.passphrase
+        nds_ui.top_page(_(self.title), [_("Passphrase:"), ""] + nds_ui.wrap(shown or " ") +
+                        ["", "%d %s" % (len(shown), _("characters"))])
+        nds.bottom_clear()
+        self.keys = self._keys()
+        for i, tab in enumerate(self.tabs):
+            nds_keyboard.draw_key(tab, highlighted=i == self.mode)
+        for key in self.keys:
+            nds_keyboard.draw_key(key)
+        for key in (self.space_key, self.del_key, self.save_key):
+            nds_keyboard.draw_key(key)
+        if self.show_back_button:
+            nds_keyboard.draw_key(self.back_key)
+        nds_keyboard.set_active(self.tabs + self.keys + [self.space_key, self.del_key,
+                                                         self.back_key, self.save_key])
+
+    def _run(self):
+        self._draw()
+        while True:
+            nds.frame()
+            down = nds.keys_down()
+            if down & nds.KEY_B and self.show_back_button:
+                return dict(passphrase=self.passphrase, is_back_button=True)
+            if not down & nds.KEY_TOUCH:
+                continue
+            xy = nds.touch()
+            key = nds_keyboard.key_at(nds_keyboard.ACTIVE_KEYS, xy[0], xy[1]) if xy else None
+            if key is None:
+                continue
+            action = key.action
+            if isinstance(action, tuple):
+                self.mode = action[1]
+            elif action == "back":
+                if self.show_back_button:
+                    return dict(passphrase=self.passphrase, is_back_button=True)
+                continue
+            elif action == "save":
+                return dict(passphrase=self.passphrase)
+            elif action == "del":
+                self.passphrase = self.passphrase[:-1]
+            else:
+                self.passphrase += action
+            self._draw()
+
+
+class SeedReviewPassphraseScreen(ButtonListScreen):
+    """Like upstream: the passphrase and how it changes the fingerprint."""
+
+    def top_lines(self):
+        lines = [_("Passphrase:")] + nds_ui.wrap(self.passphrase or "") + [""]
+        lines.append("%s -> %s" % (self.fingerprint_without or "", self.fingerprint_with or ""))
+        lines += ["", _("Without -> with passphrase")]
+        return lines
 
 
 class SeedFinalizeScreen(ButtonListScreen):

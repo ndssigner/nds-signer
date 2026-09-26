@@ -47,6 +47,16 @@ def draw_key(key, enabled=True, highlighted=False):
     nds.bottom_print(key.row + 2, key.col, "+" + edge * inner + "+")
 
 
+# Keys currently on screen, set by the screen that drew them last; lets tests
+# and the emulator autopilot tap a key by its label.
+ACTIVE_KEYS = []
+
+
+def set_active(keys):
+    global ACTIVE_KEYS
+    ACTIVE_KEYS = list(keys)
+
+
 def key_at(keys, x, y):
     row, col = y // CELL, x // CELL
     for key in keys:
@@ -55,9 +65,9 @@ def key_at(keys, x, y):
     return None
 
 
-def key_center(label, first_row=10):
-    """Screen position of a letter key (used by tests and the autopilot)."""
-    for key in qwerty_keys(first_row):
+def key_center(label):
+    """Screen position of a key on screen by its label (tests, autopilot)."""
+    for key in ACTIVE_KEYS:
         if key.label == label:
             return key.center()
-    raise KeyError(label)
+    raise KeyError("key %r not on screen" % label)
