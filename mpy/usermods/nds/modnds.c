@@ -11,6 +11,8 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 
+#include <string.h>
+
 #include "nds_bridge.h"
 
 static mp_obj_t print_on(int screen, mp_obj_t row, mp_obj_t col, mp_obj_t text_in)
@@ -146,6 +148,25 @@ static mp_obj_t nds_qr_show(size_t n_args, const mp_obj_t *args)
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_show_obj, 1, 3, nds_qr_show);
 
+/* info(): (dsi_mode, camera_ok, c_heap_kb, uptime_s) */
+static mp_obj_t nds_info(void)
+{
+	NdsbInfo info;
+	ndsbInfo(&info);
+	mp_obj_t t[4] = {
+		mp_obj_new_bool(info.dsiMode), mp_obj_new_bool(info.cameraOk),
+		mp_obj_new_int(info.cHeapKB), mp_obj_new_int(info.uptimeS),
+	};
+	return mp_obj_new_tuple(4, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_info_obj, nds_info);
+
+static mp_obj_t nds_version(void)
+{
+	return mp_obj_new_str(ndsbVersion(), strlen(ndsbVersion()));
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_version_obj, nds_version);
+
 static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_nds) },
 	{ MP_ROM_QSTR(MP_QSTR_COLS), MP_ROM_INT(NDSB_COLS) },
@@ -165,6 +186,8 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_stop), MP_ROM_PTR(&nds_camera_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stats), MP_ROM_PTR(&nds_camera_stats_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_show), MP_ROM_PTR(&nds_qr_show_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&nds_version_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_A), MP_ROM_INT(NDSB_KEY_A) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_B), MP_ROM_INT(NDSB_KEY_B) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_X), MP_ROM_INT(NDSB_KEY_X) },

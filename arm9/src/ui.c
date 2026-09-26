@@ -33,6 +33,32 @@ static void setFont(PrintConsole *console)
 }
 static int s_pressed = -1;
 
+/* VBlank interrupt: counts frames (the time base for uiMillis(), which keeps
+ * counting while the CPU is busy) and, in the developer build, draws a
+ * spinner in the bottom-right corner. The spinner keeps turning even if the
+ * Python app is stuck; if it stops, the whole console has frozen. It is
+ * written straight into the console tile map (printf is not IRQ-safe). */
+static volatile u32 s_frames;
+
+static void onVBlank(void)
+{
+	s_frames++;
+#ifdef NDS_SIGNER_DEVBUILD
+	static const char spin[] = "|/-\\";
+	/* same entry format as libnds' console (fontCurPal is pre-shifted) */
+	u16 *map = g_uiBottom.fontBgMap;
+	char c = spin[(s_frames / 8) % 4];
+	if (map)
+		map[23 * 32 + 31] = (u16)(g_uiBottom.fontCurPal | (c + g_uiBottom.fontCharOffset));
+#endif
+}
+
+u32 uiMillis(void)
+{
+	/* the DS refreshes at ~59.83 Hz: 16.715 ms per frame */
+	return (u32)((u64)s_frames * 16715 / 1000);
+}
+
 void uiInit(void)
 {
 	/* Top: VRAM A+B form 256 KB of main BG memory.
@@ -55,7 +81,10 @@ void uiInit(void)
 
 	lcdMainOnTop();
 	uiClearTop();
+	irqSet(IRQ_VBLANK, onVBlank);
+	irqEnable(IRQ_VBLANK);
 }
+
 
 u16 *uiTopBitmap(void)
 {

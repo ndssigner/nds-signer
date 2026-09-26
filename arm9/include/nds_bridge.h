@@ -56,4 +56,15 @@ void ndsbCameraStats(uint32_t *frames, uint32_t *decodeMs);
  * Returns the QR size in modules, 0 if the text does not fit. */
 int ndsbQrShow(const char *text, size_t len, int border, int background);
 
+/* Diagnostics for the developer build / crash reports */
+typedef struct {
+	bool dsiMode;       /* running with DSi features (camera, 16 MB, 134 MHz) */
+	bool cameraOk;      /* cameras initialized and answering */
+	uint32_t cHeapKB;   /* C heap in use (malloc), KB */
+	uint32_t uptimeS;   /* seconds since boot */
+} NdsbInfo;
+
+void ndsbInfo(NdsbInfo *info);
+const char *ndsbVersion(void);
+
 #endif /* NDS_SIGNER_NDS_BRIDGE_H */

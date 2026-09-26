@@ -21,10 +21,17 @@ def _fatal(exc):
             nds.top_print(row, 0, line[:nds.COLS])
             line = line[nds.COLS:]
             row += 1
+    # The same report as a QR code: a phone photo of it can be decoded exactly
+    report = "NDS-Signer " + nds.version() + "\n" + text
     nds.bottom_clear()
+    nds.bottom_print(9, -1, "A: show error as QR code")
     nds.bottom_print(11, -1, "Switch the console off")
     while True:
         nds.frame()
+        if nds.keys_down() & nds.KEY_A:
+            nds.top_clear()
+            if not nds.qr_show(report[:1500], 2, 255):
+                nds.top_print(0, 0, "report too long for a QR")
 
 
 try:

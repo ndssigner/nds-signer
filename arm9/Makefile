@@ -42,6 +42,14 @@ endif
 ifneq ($(strip $(MPY_SPIKE)),)
 CFLAGS   += -DNDS_SIGNER_MPY_SPIKE
 endif
+# Version shown on screen and in reports (git describe; set by the top Makefile)
+ifneq ($(strip $(NDS_VERSION)),)
+CFLAGS   += -DNDS_SIGNER_VERSION='"$(NDS_VERSION)"'
+endif
+# Developer build (`make DEVBUILD=1`): heartbeat, diagnostics screen
+ifneq ($(strip $(DEVBUILD)),)
+CFLAGS   += -DNDS_SIGNER_DEVBUILD
+endif
 # SPIKE: `make MPY_APP=1` runs the Python app (SeedSigner Controller)
 ifneq ($(strip $(MPY_APP)),)
 CFLAGS   += -DNDS_SIGNER_MPY_APP

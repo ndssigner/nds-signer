@@ -11,3 +11,5 @@ tests/host/test_qr_type
 tests/host/*.dSYM/
 __pycache__/
 mpy/build-embed/
+dist/
+fotos/

@@ -4,7 +4,10 @@
 # kept in a text shadow, so a "tap by label" can find the button on screen.
 # A tap waits until its label is visible (e.g. while the camera is scanning).
 # Never included in release builds (see mpy/manifest.py).
-import autopilot_script
+try:
+    import autopilot_dev as autopilot_script
+except ImportError:
+    import autopilot_script
 
 COLS, ROWS = 32, 24
 

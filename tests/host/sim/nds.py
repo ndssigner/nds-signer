@@ -169,6 +169,14 @@ def qr_show(text, border=2, background=255):
     return 1
 
 
+def info():
+    return (True, True, 0, _ticks // 1000)
+
+
+def version():
+    return "sim"
+
+
 # ---- simulator controls (not part of the native API) ----
 
 def sim_script(events):

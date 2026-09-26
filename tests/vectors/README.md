@@ -17,6 +17,9 @@ for melonDS with `tools/qr_to_png.py` (see its `--help`).
 | `seedqr_12words.fingerprint.txt` | Fingerprint of the SeedQR seed (SeedSigner on CPython) | NDS-Signer |
 | `*.signed_trimmed.txt` | Signed and trimmed PSBT, as SeedSigner's PSBTFinalizeView outputs it | `tools/make_trimmed_ref.py` |
 | `*.ur.txt` | Animated UR parts of the PSBT (SeedSigner's own encoder) | `tools/make_ur_parts.py` |
+| `psbt_base64_singlesig.seedqr.txt` | SeedQR (standard) of the singlesig test seed, fingerprint `8b218e81` | NDS-Signer (BIP-39 word indexes) |
+| `bip39_japanese.json` | Official Japanese BIP-39 test vectors | [bip32JP](https://github.com/bip32JP/bip32JP.github.io) |
+| `passphrase_es.*` | Non-ASCII passphrase and resulting fingerprint (SeedSigner on CPython) | NDS-Signer |
 | `plain_text.txt` | `INVALID` (not a Bitcoin payload) | NDS-Signer |
 
 All keys and seeds here are public test data. **Never put real funds on them.**

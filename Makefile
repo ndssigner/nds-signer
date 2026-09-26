@@ -17,6 +17,9 @@ $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>dev
 endif
 
 export TARGET := nds-signer
+# Version string for screens and reports (git inside the builder container
+# sees a repo owned by another user, hence safe.directory)
+export NDS_VERSION := $(shell git -c safe.directory='*' describe --tags --always --dirty 2>/dev/null)
 export TOPDIR := $(CURDIR)
 
 # Banner text shown by TWiLight Menu++ / the DSi menu

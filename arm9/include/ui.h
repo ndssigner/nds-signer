@@ -34,6 +34,9 @@ void uiDrawButtons(const UiButton *buttons, int count);
  * the tapped button or -1. */
 int uiPollButtons(const UiButton *buttons, int count);
 
+/* Milliseconds since uiInit(), from the VBlank interrupt (~17 ms steps). */
+u32 uiMillis(void);
+
 /* Prints `text` centred on `row` of the currently selected console. */
 void uiPrintCentered(int row, const char *text);
 

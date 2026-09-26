@@ -145,7 +145,7 @@ class ButtonListScreen(BaseTopNavScreen):
         labels = [("* " if i in checked else "") + button_label(b)
                   for i, b in enumerate(self.button_data or [])]
         panel = nds_ui.ButtonPanel(labels, show_back=self.show_back_button,
-                                   selected=self.selected_button or 0)
+                                   selected=self.selected_button or 0, redraw=self._render)
         return self._back_or(panel.run())
 
 
@@ -155,7 +155,11 @@ class LargeButtonScreen(ButtonListScreen):
 
 class MainMenuScreen(LargeButtonScreen):
     def top_lines(self):
-        return ["", "", "", "      NDS-Signer", "", "  Air-gapped Bitcoin signer"]
+        lines = ["", "", "", "      NDS-Signer", "", "  Air-gapped Bitcoin signer"]
+        lines += [""] * 12 + [nds_ui.center(nds.version())]
+        if nds_ui.nds_dev is not None:
+            lines.append(nds_ui.center("DEV build - SELECT: diagnostics"))
+        return lines
 
 
 class LargeIconStatusScreen(ButtonListScreen):
@@ -219,6 +223,12 @@ class QRDisplayScreen(BaseScreen):
         panel = nds_ui.ButtonPanel([_("Done")], show_back=False)
         panel.draw()
         nds.bottom_print(17, -1, _("Up/Down: QR brightness"))
+        psbt = getattr(self.qr_encoder, "psbt", None)
+        if nds_ui.nds_dev is not None and psbt is not None:
+            import hashlib
+            from binascii import hexlify
+            digest = hexlify(hashlib.sha256(psbt.serialize()).digest()).decode()[:8]
+            nds.bottom_print(19, -1, "check: " + digest)
         next_part_at = 0
         try:
             while True:

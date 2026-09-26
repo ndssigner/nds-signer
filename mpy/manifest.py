@@ -88,8 +88,16 @@ module("test_vectors.py", base_path="$(PORT_DIR)/../build/frozen_py")
 # Python entry point
 module("nds_main.py", base_path="$(PORT_DIR)/frozen")
 
-# AUTOTEST builds only (make AUTOTEST=1): scripted taps for unattended runs
 import os as _os
+
+# Developer build only (make DEVBUILD=1): diagnostics screen
+if _os.environ.get("NDS_DEVBUILD"):
+    module("nds_dev.py", base_path="$(PORT_DIR)/frozen/dev")
+
+# AUTOTEST builds only (make AUTOTEST=1): scripted taps for unattended runs
 if _os.environ.get("NDS_AUTOTEST"):
     module("autopilot.py", base_path="$(PORT_DIR)/frozen/autotest")
-    module("autopilot_script.py", base_path="$(PORT_DIR)/../tests/host")
+    if _os.environ.get("NDS_AUTOPILOT") == "dev":
+        module("autopilot_dev.py", base_path="$(PORT_DIR)/../tests/host")
+    else:
+        module("autopilot_script.py", base_path="$(PORT_DIR)/../tests/host")

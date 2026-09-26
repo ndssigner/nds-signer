@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <nds.h>
+#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -58,7 +59,7 @@ bool ndsbTouch(int *x, int *y)
 
 uint32_t ndsbTicksMs(void)
 {
-	return (uint32_t)(tickGetCount() * 1000 / TICK_FREQ);
+	return uiMillis();
 }
 
 static bool s_haveCamera;
@@ -110,4 +111,22 @@ int ndsbQrShow(const char *text, size_t len, int border, int background)
 	if (background > 255)
 		background = 255;
 	return qrDisplayShow(text, len, border, (u8)background);
+}
+
+#ifndef NDS_SIGNER_VERSION
+#define NDS_SIGNER_VERSION "unknown"
+#endif
+
+const char *ndsbVersion(void)
+{
+	return NDS_SIGNER_VERSION;
+}
+
+void ndsbInfo(NdsbInfo *info)
+{
+	struct mallinfo mi = mallinfo();
+	info->dsiMode = isDSiMode();
+	info->cameraOk = s_haveCamera;
+	info->cHeapKB = (uint32_t)mi.uordblks / 1024;
+	info->uptimeS = uiMillis() / 1000;
 }

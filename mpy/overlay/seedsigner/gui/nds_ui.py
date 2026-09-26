@@ -5,6 +5,11 @@
 # Everything is drawn with the `nds` module (native) or its host simulator.
 from seedsigner.gui.hw import nds
 
+try:
+    import nds_dev  # developer build only
+except ImportError:
+    nds_dev = None
+
 COLS = nds.COLS
 ROWS = nds.ROWS
 BUTTON_ROWS = 3           # each button is a 3-row box
@@ -84,7 +89,8 @@ def _box(row, col, width, label, selected):
 class ButtonPanel:
     """A pageable list of full-width touch buttons on the bottom screen."""
 
-    def __init__(self, labels, show_back=True, selected=0, header=None):
+    def __init__(self, labels, show_back=True, selected=0, header=None, redraw=None):
+        self.redraw = redraw  # redraws the top screen after the dev overlay
         self.labels = list(labels)
         self.show_back = show_back
         self.selected = selected if 0 <= selected < len(self.labels) else 0
@@ -157,6 +163,12 @@ class ButtonPanel:
         self.draw()
         while True:
             nds.frame()
+            if nds_dev is not None and nds.keys_down() & nds.KEY_SELECT:
+                nds_dev.diagnostics()
+                if self.redraw is not None:
+                    self.redraw()
+                self.draw()
+                continue
             result = self.handle_frame()
             if result is not None:
                 return result

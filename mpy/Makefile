@@ -65,7 +65,7 @@ $(EMBED)/.stamp: mpconfigport.h micropython_embed.mk manifest.py $(wildcard froz
 		$(USERMOD_C) $(FROZEN_PY)/.stamp
 	@echo generating MicroPython embed package
 	@rm -rf build-embed/frozen_content.c build-embed/frozen_mpy
-	@NDS_AUTOTEST=$(AUTOTEST) $(MAKE) --no-print-directory -f micropython_embed.mk PACKAGE_DIR=$(EMBED) \
+	@NDS_AUTOTEST=$(AUTOTEST) NDS_DEVBUILD=$(DEVBUILD) NDS_AUTOPILOT=$(AUTOPILOT) $(MAKE) --no-print-directory -f micropython_embed.mk PACKAGE_DIR=$(EMBED) \
 		CC=gcc CROSS_COMPILE= nds-embed-package >/dev/null
 	@touch $@
 
