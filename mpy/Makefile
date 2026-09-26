@@ -26,25 +26,45 @@ all: $(LIB)
 
 # The package is regenerated when the configuration changes. The generator
 # needs a host compiler/Python, both present in the builder image.
-$(EMBED)/.stamp: mpconfigport.h micropython_embed.mk
+USERMODS  := $(TOPDIR)/lib/mpy-usermods
+SECP256K1 := $(TOPDIR)/third_party/secp256k1
+USERMOD_C := $(wildcard $(USERMODS)/*/*.c $(USERMODS)/*/crypto/*.c $(USERMODS)/*/config/*.c) \
+             $(SECP256K1)/src/secp256k1.c
+SECP_GEN  := $(TOPDIR)/build/secp256k1_gen
+CFLAGS    += -I$(USERMODS)/uhashlib/crypto \
+             -I$(SECP256K1) -I$(SECP256K1)/src -I$(USERMODS)/secp256k1/config -DHAVE_CONFIG_H \
+             -I$(SECP_GEN)
+
+# libsecp256k1's precomputed generator table, built with its own host tool
+$(SECP_GEN)/src/ecmult_static_context.h: $(SECP256K1)/src/gen_context.c
+	@echo generating secp256k1 static context
+	@mkdir -p $(SECP_GEN)/src
+	@gcc -O2 -I$(SECP256K1) -I$(SECP256K1)/src -DECMULT_GEN_PREC_BITS=4 $< -o $(SECP_GEN)/gen_context
+	@cd $(SECP_GEN) && ./gen_context
+
+$(EMBED)/.stamp: mpconfigport.h micropython_embed.mk manifest.py $(wildcard frozen/*.py) $(USERMOD_C)
 	@echo generating MicroPython embed package
 	@$(MAKE) --no-print-directory -f micropython_embed.mk PACKAGE_DIR=$(EMBED) \
-		CC=gcc CROSS_COMPILE= >/dev/null
+		CC=gcc CROSS_COMPILE= nds-embed-package >/dev/null
 	@touch $@
 
-$(LIB): $(EMBED)/.stamp $(wildcard *.c)
+$(LIB): $(EMBED)/.stamp $(wildcard *.c) $(SECP_GEN)/src/ecmult_static_context.h
 	@mkdir -p $(OBJDIR)
 	@echo compiling MicroPython
-	@for f in $$(cd $(EMBED) && find py shared port -name '*.c'); do \
+	@for f in $$(cd $(EMBED) && find py shared port extmod -name '*.c'); do \
 		o=$(OBJDIR)/$$(echo $$f | tr / _ | sed 's/\.c$$/.o/'); \
 		$(CC) $(CFLAGS) -c $(EMBED)/$$f -o $$o || exit 1; \
 	done
 	@for f in *.c; do \
 		$(CC) $(CFLAGS) -Wall -c $$f -o $(OBJDIR)/nds_$${f%.c}.o || exit 1; \
 	done
+	@for f in $(USERMOD_C); do \
+		o=$(OBJDIR)/usermod_$$(basename $${f%.c}).o; \
+		$(CC) $(CFLAGS) -c $$f -o $$o || exit 1; \
+	done
 	@rm -f $@
 	@$(AR) rcs $@ $(OBJDIR)/*.o
 	@echo built ... $(notdir $@)
 
 clean:
-	@rm -rf $(EMBED) $(OBJDIR) $(LIB) build-embed
+	@rm -rf $(EMBED) $(OBJDIR) $(LIB) $(SECP_GEN) build-embed

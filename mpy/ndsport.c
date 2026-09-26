@@ -30,3 +30,12 @@ static mp_obj_t nds_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs)
 	mp_raise_OSError(MP_EPERM);
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, nds_open);
+
+#include <stdio.h>
+#include <nds/debug.h>
+
+void nds_print_strn(const char *str, size_t len)
+{
+	printf("%.*s", (int)len, str);
+	nocashWrite(str, len);
+}

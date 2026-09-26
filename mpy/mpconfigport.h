@@ -51,3 +51,28 @@
 
 /* The ARM NLR assembly targets newer cores; use the portable setjmp version */
 #define MICROPY_NLR_SETJMP              (1)
+
+/* Modules for embit */
+#define MICROPY_PY_BINASCII             (1)
+#define MICROPY_PY_BINASCII_CRC32       (0)
+#define MICROPY_PY_HASHLIB              (0)  /* replaced by lib/mpy-usermods/uhashlib */
+#define MODULE_HASHLIB_ENABLED          (1)
+#define MICROPY_PY_RANDOM               (0)  /* see frozen/random.py */
+#define MICROPY_PY_COLLECTIONS          (1)
+#define MICROPY_PY_COLLECTIONS_ORDEREDDICT (1)
+
+/* Frozen bytecode (manifest.py). The build also passes these as -D when
+ * generating the package; guard against redefinition. */
+#ifndef MICROPY_MODULE_FROZEN_MPY
+#define MICROPY_MODULE_FROZEN_MPY       (1)
+#endif
+#ifndef MICROPY_QSTR_EXTRA_POOL
+#define MICROPY_QSTR_EXTRA_POOL         mp_qstr_frozen_const_pool
+#endif
+#define MICROPY_ENABLE_EXTERNAL_IMPORT  (1)
+
+/* All Python output goes to the on-screen console and to the NO$GBA debug
+ * channel (melonDS writes it to its log), see ndsport.c */
+void nds_print_strn(const char *str, size_t len);
+#define MP_PLAT_PRINT_STRN(str, len)    nds_print_strn(str, len)
+#define MODULE_SECP256K1_ENABLED        (1)  /* lib/mpy-usermods/secp256k1 */

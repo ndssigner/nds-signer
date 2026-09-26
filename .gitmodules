@@ -1,3 +1,9 @@
 [submodule "third_party/micropython"]
 	path = third_party/micropython
 	url = https://github.com/micropython/micropython
+[submodule "third_party/embit"]
+	path = third_party/embit
+	url = https://github.com/diybitcoinhardware/embit
+[submodule "third_party/secp256k1"]
+	path = third_party/secp256k1
+	url = https://github.com/bitcoin-core/secp256k1

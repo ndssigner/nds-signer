@@ -1,7 +1,7 @@
 # NDS-Signer architecture: reusing SeedSigner
 
-Status: **proposed** (2026-09-26). To be confirmed by the MicroPython spike
-described at the end of this document.
+Status: **proposed** (2026-09-26). The MicroPython spike (end of this
+document) succeeded in the emulator; pending validation on real hardware.
 
 ## Goal
 
@@ -96,3 +96,32 @@ Success criteria, all in melonDS:
 2. Upstream embit and `models/psbt_parser.py`, **unmodified**, parse the
    testnet PSBT from `tests/vectors/` and sign it with a test seed.
 3. Measurements recorded: ROM size, free RAM, time to parse and sign.
+
+### Spike results (2026-09-26, melonDS, DSi mode, ARM9 @ 134 MHz)
+
+Branch `spike/micropython`: MicroPython v1.29.0 + embit v0.8.0 **unmodified**
+(frozen bytecode) + libsecp256k1 as a native module. Signing the testnet PSBT
+from `tests/vectors/` with its test seed produces **byte-identical output** to
+embit 0.8.0 on CPython.
+
+| Step | Time |
+| :--- | ---: |
+| Import embit (frozen) | 59 ms |
+| BIP-39 seed (PBKDF2-HMAC-SHA512, 2048 rounds) | 718 ms |
+| BIP-32 root key | 29 ms |
+| Parse PSBT | 22 ms |
+| Sign (1 input) | 167 ms |
+| **Total** | **~1.15 s** |
+
+Python heap in use after signing: 24 KB (of 4 MB reserved). ROM grows from
+201 KB to 750 KB. Timings come from the emulator; they must be confirmed on a
+real DSi (melonDS does not model memory/cache timing exactly).
+
+Findings:
+
+- On MicroPython, embit 0.8.0 **requires** the native `secp256k1` module
+  (no pure-Python fallback), which matches the plan (crypto in C).
+- `random` is replaced by a frozen module that raises on use: embit only needs
+  it for key generation helpers, and NDS-Signer must never use a PRNG.
+- Follow-ups: update libsecp256k1 from the 2021 commit used by
+  secp256k1-embedded to a current release; confirm timings on hardware.
