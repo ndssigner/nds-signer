@@ -152,6 +152,26 @@ def main():
                 parts.append("    ),\n")
     parts.append("}\n\n")
 
+    # plain class-level constants (e.g. SeedAddPassphraseScreen.
+    # KEYBOARD__LOWERCASE_BUTTON_TEXT), which upstream views read
+    parts.append("CLASS_ATTRS = {\n")
+    for path in sorted((src_root / "seedsigner/gui").rglob("*.py")):
+        for node in ast.parse(path.read_text()).body:
+            if not isinstance(node, ast.ClassDef) or node.name in CONSTANT_CLASSES:
+                continue
+            attrs = []
+            for stmt in node.body:
+                if (isinstance(stmt, ast.Assign) and len(stmt.targets) == 1
+                        and isinstance(stmt.targets[0], ast.Name)
+                        and not (names_in(stmt.value) - (KNOWN_NAMES - {"ButtonOption", "field"}))):
+                    attrs.append((stmt.targets[0].id, ast.unparse(stmt.value)))
+            if attrs:
+                parts.append("    %r: {\n" % node.name)
+                for attr, value in attrs:
+                    parts.append("        %r: %s,\n" % (attr, value))
+                parts.append("    },\n")
+    parts.append("}\n\n")
+
     # module and bases of every upstream GUI class, so native modules can
     # provide generic stand-ins for screens they do not implement yet
     parts.append("SCREEN_INFO = {\n")

@@ -59,8 +59,17 @@ class Autopilot:
             self._touch = xy
             self._keys = self._n.KEY_TOUCH
             self._release = True
+        elif kind == "tap_key":
+            from seedsigner.gui.nds_keyboard import key_center
+            self._touch = key_center(arg)
+            self._keys = self._n.KEY_TOUCH
+            self._release = True
         elif kind == "key":
             self._keys = arg
+        elif kind == "wait":  # hold for n frames (e.g. for screenshots)
+            if arg > 1:
+                self._events[0] = ("wait", arg - 1)
+                return
         elif kind == "log":
             print("autopilot:", arg)
         elif kind == "exec":  # test setup that a user would do by hand

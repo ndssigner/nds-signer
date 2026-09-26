@@ -48,6 +48,63 @@ def dump():
         nds.sim_dump()
 
 
+def type_mnemonic(words):
+    """Taps for SeedSigner's word-by-word entry: 4 letters identify any
+    BIP-39 word, then its candidate button."""
+    events = []
+    for word in words:
+        for letter in word[:4]:
+            events += [("tap_key", letter), ("key", 0)]
+        events += [("tap_label", word), ("key", 0)]
+    return events
+
+
+def run_typed_seed_flow(prefix):
+    """Home -> Seeds -> Load -> type 12 words -> Done -> Scan transaction ->
+    review -> sign: the seed is entered through the touch keyboard."""
+    from seedsigner.models.settings import Settings, SettingsConstants
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
+
+    def taps(*labels):
+        out = []
+        for label in labels:
+            out += [("call", dump), ("tap_label", label), ("key", 0)]
+        return out
+
+    # with no seed loaded, SeedsMenuView goes straight to "Load a Seed"
+    events = taps("Seeds", "Enter 12-word seed")
+    events += type_mnemonic(read(prefix + ".mnemonic.txt").split())
+    events += taps("Done", "Scan transaction")
+    events.append(("camera", read(prefix + ".txt").encode()))
+    events += taps("Review details", "Continue", "Review recipients", "Next recipient", "Next",
+                   "Approve transaction")
+    events += [("wait", 200), ("call", dump), ("call", lambda: check_signed(prefix)), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
+def run_seedqr_flow():
+    """Home -> Seeds -> Scan a SeedQR (camera) -> Finalize: the fingerprint
+    shown must be the one SeedSigner computes on CPython."""
+    from seedsigner.views.view import Destination, MainMenuView
+
+    def check_fingerprint():
+        expected = read("seedqr_12words.fingerprint.txt")
+        ok = expected in nds.sim_text(0)
+        RESULT["seedqr"] = ok
+        print("ok  " if ok else "FAIL", "seedqr flow: fingerprint", expected, "shown")
+
+    events = [("call", dump), ("tap_label", "Seeds"), ("key", 0),
+              ("call", dump), ("tap_label", "Scan a SeedQR"), ("key", 0),
+              ("camera", read("seedqr_12words.txt").encode()),
+              ("wait", 10), ("call", dump), ("call", check_fingerprint), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -75,6 +132,11 @@ def run_flow(prefix, taps):
 SINGLESIG_TAPS = ["Scan", "8b218e81", "Review details", "Continue", "Review recipients",
                   "Next recipient", "Next", "Approve transaction"]
 
-TAPS = sys.argv[2].split(",") if len(sys.argv) > 2 and not sys.argv[2].startswith("-") else SINGLESIG_TAPS
-run_flow("psbt_base64_singlesig", TAPS)
+MODE = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith("-") else "preloaded"
+if MODE == "typed":
+    run_typed_seed_flow("psbt_base64_singlesig")
+elif MODE == "seedqr":
+    run_seedqr_flow()
+else:
+    run_flow("psbt_base64_singlesig", SINGLESIG_TAPS if MODE == "preloaded" else MODE.split(","))
 print("PASSED" if RESULT and all(RESULT.values()) else "FAILED")

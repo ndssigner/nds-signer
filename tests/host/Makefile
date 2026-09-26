@@ -45,7 +45,9 @@ seedsigner:
 	@$(DOCKER_MPY_ROM) decode_qr_check.py /source/tests/vectors > $(TOPDIR)/build/decode_qr.mpy.txt
 	@diff $(TOPDIR)/build/decode_qr.cpython.txt $(TOPDIR)/build/decode_qr.mpy.txt \
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
-	@$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors 2>/dev/null | grep -E "^(ok|FAIL)|PASSED|FAILED"
+	@for mode in preloaded typed seedqr; do \
+		$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors $$mode 2>/dev/null | grep -E "^(ok|FAIL)"; \
+	done
 
 # Host QR decoder (same quirc as the ROM) for emulator screenshots:
 #   tools/png_to_pgm.py shot.png | ../../build/qrdecode

@@ -9,7 +9,7 @@ from gettext import gettext as _
 
 from seedsigner.gui import nds_ui
 from seedsigner.gui.hw import nds
-from seedsigner.gui._upstream import POST_INIT, SCREEN_FIELDS, SCREEN_INFO
+from seedsigner.gui._upstream import CLASS_ATTRS, POST_INIT, SCREEN_FIELDS, SCREEN_INFO
 
 RET_CODE__BACK_BUTTON = 1000
 RET_CODE__POWER_BUTTON = 1001
@@ -271,6 +271,15 @@ def define_generic_screens(namespace, module):
     for name, info in SCREEN_INFO.items():
         if info[0] == module and name.endswith(("Screen", "Option")):
             resolve(name)
+
+    # upstream class-level constants, unless the native class defines them
+    for name, attrs in CLASS_ATTRS.items():
+        cls = namespace.get(name)
+        if cls is None or SCREEN_INFO.get(name, (None,))[0] != module:
+            continue
+        for attr, value in attrs.items():
+            if attr not in cls.__dict__:
+                setattr(cls, attr, value)
 
 
 define_generic_screens(globals(), "screen")

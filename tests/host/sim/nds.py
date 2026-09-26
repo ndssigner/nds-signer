@@ -95,6 +95,11 @@ def frame():
     elif kind == "tap":
         _touch_xy = (ev[1], ev[2], "down")
         _keys_down = KEY_TOUCH
+    elif kind == "tap_key":  # a letter of the touch keyboard
+        from seedsigner.gui.nds_keyboard import key_center
+        x, y = key_center(ev[1])
+        _touch_xy = (x, y, "down")
+        _keys_down = KEY_TOUCH
     elif kind == "tap_label":
         x, y = _find_label(ev[1])
         _touch_xy = (x, y, "down")
