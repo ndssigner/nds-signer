@@ -1,0 +1,9 @@
+build/
+*.elf
+*.nds
+*.lst
+*.map
+.DS_Store
+
+# Emulator binaries, BIOS/firmware/NAND dumps are copyrighted: never commit them.
+emulator/
