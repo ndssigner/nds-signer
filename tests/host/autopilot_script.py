@@ -2,11 +2,11 @@
 # is typed on the touch keyboard, then the camera scans the PSBT QR
 # (tools/qr_to_png.py tests/vectors/psbt_base64_singlesig.txt) and it is signed.
 #
-# Setup a user would do in Settings, until that screen is native: testnet.
-SETUP = """
-from seedsigner.models.settings import Settings, SettingsConstants
-Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
-"""
+# Everything goes through the UI, as a user would do it: first the network
+# (Settings -> Advanced -> Bitcoin network -> Testnet), back home with B.
+KEY_B = 1 << 1
+SETTINGS = ([("tap_label", label) for label in ("Settings", "Advanced", "Bitcoin network", "Testnet")]
+            + [("key", KEY_B), ("wait", 10)] * 3)
 
 # PUBLIC test seed of the vector (tests/vectors/psbt_base64_singlesig.mnemonic.txt)
 WORDS = "height demise useless trap grow lion found off key clown transfer enroll".split()
@@ -23,7 +23,7 @@ def _type(words):
     return events
 
 
-EVENTS = ([("log", "start"), ("exec", SETUP), ("tap_label", "Seeds"),
+EVENTS = ([("log", "start")] + SETTINGS + [("tap_label", "Seeds"),
            ("tap_label", "Enter 12-word seed")] + _type(WORDS) +
           [("wait", 180), ("tap_label", "Done"), ("wait", 180), ("tap_label", "Scan transaction")] +
           [("tap_label", label) for label in ("Review details", "Continue", "Review recipients",

@@ -126,12 +126,24 @@ class BaseTopNavScreen(BaseScreen):
         return result
 
 
+class _ButtonState:
+    """Upstream views read screen.buttons[i].scroll_y to restore the list
+    position; native lists are paged, so there is no scroll offset."""
+    scroll_y = 0
+
+
 class ButtonListScreen(BaseTopNavScreen):
+    def __post_init__(self):
+        super().__post_init__()
+        self.buttons = [_ButtonState() for _b in (self.button_data or [])]
+
     def top_lines(self):
         return []
 
     def _run(self):
-        labels = [button_label(b) for b in (self.button_data or [])]
+        checked = getattr(self, "checked_buttons", None) or []
+        labels = [("* " if i in checked else "") + button_label(b)
+                  for i, b in enumerate(self.button_data or [])]
         panel = nds_ui.ButtonPanel(labels, show_back=self.show_back_button,
                                    selected=self.selected_button or 0)
         return self._back_or(panel.run())
@@ -250,9 +262,13 @@ def define_generic_screens(namespace, module):
     """Creates stand-ins for upstream screen classes of `module` that have no
     native implementation yet (generic title/text/buttons rendering), so every
     upstream view module can be imported."""
+    native = globals()  # screens implemented natively in this module
+
     def resolve(name):
         if name in namespace:
             return namespace[name]
+        if name in native and isinstance(native[name], type):
+            return native[name]
         info = SCREEN_INFO.get(name)
         if info is None:
             return None

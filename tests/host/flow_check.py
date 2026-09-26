@@ -125,6 +125,25 @@ def run_passphrase_flow(prefix):
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_settings_flow():
+    """Settings -> Advanced -> Bitcoin network -> Testnet, through the UI."""
+    from seedsigner.models.settings import Settings, SettingsConstants
+    from seedsigner.views.view import Destination, MainMenuView
+
+    def check_network():
+        value = Settings.get_instance().get_value(SettingsConstants.SETTING__NETWORK)
+        ok = value == SettingsConstants.TESTNET
+        RESULT["settings"] = ok
+        print("ok  " if ok else "FAIL", "settings flow: network =", value)
+
+    events = []
+    for label in ("Settings", "Advanced", "Bitcoin network", "Testnet"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    events += [("call", dump), ("call", check_network), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_seedqr_flow():
     """Home -> Seeds -> Scan a SeedQR (camera) -> Finalize: the fingerprint
     shown must be the one SeedSigner computes on CPython."""
@@ -176,6 +195,8 @@ if MODE == "typed":
     run_typed_seed_flow("psbt_base64_singlesig")
 elif MODE == "seedqr":
     run_seedqr_flow()
+elif MODE == "settings":
+    run_settings_flow()
 elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
 else:
