@@ -7,3 +7,6 @@ build/
 
 # Emulator binaries, BIOS/firmware/NAND dumps are copyrighted: never commit them.
 emulator/
+tests/host/test_qr_type
+tests/host/*.dSYM/
+__pycache__/

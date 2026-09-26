@@ -18,8 +18,8 @@ include $(DEVKITARM)/ds_rules
 # DATA     : directories containing binary files embedded with bin2o
 #---------------------------------------------------------------------------------
 BUILD    := build
-SOURCES  := src
-INCLUDES := include ../shared/include
+SOURCES  := src ../lib/quirc
+INCLUDES := include ../shared/include ../lib/quirc
 DATA     := data
 
 #---------------------------------------------------------------------------------
@@ -30,14 +30,20 @@ ARCH := -march=armv5te -mtune=arm946e-s
 # -ffile-prefix-map keeps absolute host paths out of the binary (reproducibility)
 CFLAGS   := -std=gnu99 -g -Wall -Wextra -O2 -ffunction-sections -fdata-sections \
             -ffile-prefix-map=$(TOPDIR)=. \
-            $(ARCH) $(INCLUDE) -DARM9
+            $(ARCH) $(INCLUDE) -DARM9 \
+            -DQUIRC_FLOAT_TYPE=float -DQUIRC_USE_TGMATH
+# Development only: `make AUTOTEST=1` boots straight into the scanner so the
+# emulator can be driven without input. Never use for release builds.
+ifneq ($(strip $(AUTOTEST)),)
+CFLAGS   += -DNDS_SIGNER_AUTOTEST
+endif
 CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions
 ASFLAGS  := -g $(ARCH)
 LDFLAGS   = -specs=ds_arm9.specs -g $(ARCH) -Wl,--gc-sections -Wl,-Map,$(notdir $*).map
 
 # NOTE: dswifi / libfat are deliberately NOT linked. The signer is air-gapped
 # and stateless: it must never touch the network or the SD card.
-LIBS := -lnds9
+LIBS := -lnds9 -lm
 
 LIBDIRS := $(LIBNDS) $(PORTLIBS)
 
@@ -94,6 +100,10 @@ $(ARM9ELF): $(OFILES)
 
 # source files depend on generated headers
 $(OFILES_SOURCES): $(HFILES)
+
+# Vendored third-party code is kept unmodified: silence -Wextra noise there only
+decode.o identify.o quirc.o version_db.o: \
+	CFLAGS += -Wno-unused-parameter -Wno-sign-compare -Wno-type-limits
 
 #---------------------------------------------------------------------------------
 %.bin.o %_bin.h: %.bin

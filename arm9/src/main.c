@@ -2,186 +2,220 @@
  * NDS-Signer - Air-gapped Bitcoin PSBT signer for Nintendo DSi / 3DS
  * SPDX-License-Identifier: MIT
  *
- * Phase 2: live camera feed on the top screen, touch input on the bottom one.
- * When no camera is available (DS mode, or an emulator without camera
- * support) a test pattern is shown instead so the UI stays usable.
+ * Phase 3: SeedSigner-style main menu and QR scanning.
+ * Screen flow and texts are ported from SeedSigner's MainMenuView and ScanView
+ * (src/seedsigner/views/view.py, scan_views.py; MIT).
  */
 #include <nds.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "camera.h"
+#include "qr_scanner.h"
+#include "quirc.h"
+#include "qr_type.h"
+#include "ui.h"
 
-/* Bottom screen text console: 32x24 cells of 8x8 pixels */
-#define CELL 8
+#define APP_VERSION "0.3.0-dev"
 
-typedef struct {
-	int col, row, width; /* in text cells; buttons are 3 rows high */
-	const char *label;
-} Button;
+typedef enum { SCREEN_HOME, SCREEN_SCAN, SCREEN_RESULT, SCREEN_EXIT } Screen;
 
-enum { BTN_SWAP, BTN_EXIT, BTN_COUNT };
+static bool s_haveCamera;
 
-static const Button s_buttons[BTN_COUNT] = {
-	[BTN_SWAP] = { 1, 19, 14, "Swap camera" },
-	[BTN_EXIT] = { 17, 19, 14, "Exit" },
+/* ------------------------------------------------------------------ home */
+
+enum { HOME_SCAN, HOME_SEEDS, HOME_TOOLS, HOME_SETTINGS, HOME_EXIT, HOME_COUNT };
+
+static const UiButton s_homeButtons[HOME_COUNT] = {
+	[HOME_SCAN]     = { 1, 3, 14, "Scan" },
+	[HOME_SEEDS]    = { 17, 3, 14, "Seeds" },
+	[HOME_TOOLS]    = { 1, 8, 14, "Tools" },
+	[HOME_SETTINGS] = { 17, 8, 14, "Settings" },
+	[HOME_EXIT]     = { 9, 19, 14, "Exit" },
 };
 
-static PrintConsole s_bottom;
-static u16 *s_topFramebuffer;
-
-static void initScreens(void)
+static Screen homeScreen(void)
 {
-	/* Top: 16-bit bitmap the camera DMA writes straight into */
-	videoSetMode(MODE_5_2D);
-	vramSetBankA(VRAM_A_MAIN_BG);
-	int bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
-	s_topFramebuffer = bgGetGfxPtr(bg);
+	/* MainMenuView: title "Home" */
+	uiClearTop();
+	uiPrintCentered(1, "Home");
+	uiPrintCentered(8, "NDS-Signer");
+	uiPrintCentered(10, "Air-gapped Bitcoin signer");
+	uiPrintCentered(12, "v" APP_VERSION);
+	uiPrintCentered(22, isDSiMode() ? "DSi mode" : "DS mode");
+	if (!s_haveCamera)
+		uiPrintCentered(16, "No camera available");
 
-	/* Bottom: text console for status and touch buttons */
-	videoSetModeSub(MODE_0_2D);
-	vramSetBankC(VRAM_C_SUB_BG);
-	consoleInit(&s_bottom, 0, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+	uiClearBottom();
+	uiDrawButtons(s_homeButtons, HOME_COUNT);
 
-	lcdMainOnTop();
-}
+	for (;;) {
+		swiWaitForVBlank();
+		scanKeys();
+		if (keysDown() & KEY_START)
+			return SCREEN_EXIT;
 
-/* Color bars shown when there is no camera */
-static void drawTestPattern(void)
-{
-	static const u16 bars[] = {
-		RGB15(31, 31, 31), RGB15(31, 31, 0), RGB15(0, 31, 31), RGB15(0, 31, 0),
-		RGB15(31, 0, 31), RGB15(31, 0, 0), RGB15(0, 0, 31), RGB15(0, 0, 0),
-	};
-	const int nbars = sizeof(bars) / sizeof(bars[0]);
-
-	for (int y = 0; y < CAMERA_PREVIEW_HEIGHT; y++)
-		for (int x = 0; x < CAMERA_PREVIEW_WIDTH; x++)
-			s_topFramebuffer[y * 256 + x] =
-				bars[x * nbars / CAMERA_PREVIEW_WIDTH] | BIT(15);
-}
-
-static void drawButton(const Button *b)
-{
-	int inner = b->width - 2;
-	int pad = (inner - (int)strlen(b->label)) / 2;
-
-	printf("\x1b[%d;%dH+", b->row, b->col);
-	for (int i = 0; i < inner; i++) putchar('-');
-	printf("+\x1b[%d;%dH|%*s%s%*s|", b->row + 1, b->col,
-	       pad, "", b->label, inner - pad - (int)strlen(b->label), "");
-	printf("\x1b[%d;%dH+", b->row + 2, b->col);
-	for (int i = 0; i < inner; i++) putchar('-');
-	putchar('+');
-}
-
-static int hitTest(const touchPosition *t)
-{
-	for (int i = 0; i < BTN_COUNT; i++) {
-		const Button *b = &s_buttons[i];
-		if (t->px >= b->col * CELL && t->px < (b->col + b->width) * CELL &&
-		    t->py >= b->row * CELL && t->py < (b->row + 3) * CELL)
-			return i;
-	}
-	return -1;
-}
-
-static const char *cameraName(Camera cam)
-{
-	switch (cam) {
-	case CAM_INNER: return "inner";
-	case CAM_OUTER: return "outer";
-	default:        return "none (test pattern)";
+		switch (uiPollButtons(s_homeButtons, HOME_COUNT)) {
+		case HOME_SCAN:
+			if (s_haveCamera)
+				return SCREEN_SCAN;
+			consoleSelect(&g_uiBottom);
+			uiPrintCentered(15, "No camera available ");
+			break;
+		case HOME_SEEDS:
+		case HOME_TOOLS:
+		case HOME_SETTINGS:
+			consoleSelect(&g_uiBottom);
+			uiPrintCentered(15, "Not implemented yet ");
+			break;
+		case HOME_EXIT:
+			return SCREEN_EXIT;
+		}
 	}
 }
 
-static void drawStatus(unsigned frames)
+/* ------------------------------------------------------------------ scan */
+
+enum { SCAN_CANCEL, SCAN_BUTTON_COUNT };
+
+static const UiButton s_scanButtons[SCAN_BUTTON_COUNT] = {
+	[SCAN_CANCEL] = { 9, 19, 14, "Cancel" },
+};
+
+static Screen scanScreen(void)
 {
-	printf("\x1b[4;0HCamera: %-24s", cameraName(cameraActive()));
-	printf("\x1b[5;0HFrames: %-10u", frames);
+	/* ScanView.instructions_text, drawn over the live preview */
+	uiClearTop();
+	uiPrintCentered(22, "Scan a QR code");
+	uiClearBottom();
+	uiDrawButtons(s_scanButtons, SCAN_BUTTON_COUNT);
+
+	if (!scannerStart()) {
+		printf("\x1b[3;0HCamera error");
+		return SCREEN_HOME;
+	}
+
+	Screen next = SCREEN_HOME;
+	for (;;) {
+		swiWaitForVBlank();
+		scanKeys();
+		if ((keysDown() & KEY_B) || uiPollButtons(s_scanButtons, SCAN_BUTTON_COUNT) == SCAN_CANCEL)
+			break;
+
+		ScanStatus st = scannerPoll(uiTopBitmap());
+		if (st == SCAN_IDLE)
+			continue;
+		if (st == SCAN_ERROR)
+			break;
+
+		const ScanStats *stats = scannerStats();
+		consoleSelect(&g_uiBottom);
+		printf("\x1b[3;0HFrames:  %-8lu", (unsigned long)stats->frames);
+		printf("\x1b[4;0HDecode:  %4lu ms   ", (unsigned long)(stats->lastDecodeUs / 1000));
+		printf("\x1b[5;0HQR seen: %-3d", stats->lastGrids);
+		printf("\x1b[6;0HError:   %-20s", stats->lastError ? quirc_strerror(stats->lastError) : "-");
+
+		if (st == SCAN_DECODED) {
+			next = SCREEN_RESULT;
+			break;
+		}
+	}
+
+	scannerStop();
+	return next;
 }
 
-static void drawTouch(const touchPosition *t, bool down)
+/* ---------------------------------------------------------------- result */
+
+/* SeedSigner shows QR types as e.g. "seed: compactseedqr":
+ *   qr_type.replace("__", ": ").replace("_", " ") */
+static void formatQrType(QrType type, char *out, size_t size)
 {
-	if (down)
-		printf("\x1b[7;0HTouch:  x=%3d y=%3d   ", t->px, t->py);
-	else
-		printf("\x1b[7;0HTouch:  -              ");
+	const char *name = qrTypeName(type);
+	size_t o = 0;
+	for (size_t i = 0; name[i] && o + 3 < size; i++) {
+		if (name[i] == '_' && name[i + 1] == '_') {
+			out[o++] = ':';
+			out[o++] = ' ';
+			i++;
+		} else {
+			out[o++] = name[i] == '_' ? ' ' : name[i];
+		}
+	}
+	out[o] = '\0';
+}
+
+/* Port of the routing at the end of SeedSigner's ScanView.run(). Until the
+ * seed / PSBT / address flows are ported, recognised types end up in
+ * NotYetImplementedView, as SeedSigner itself does for unsupported ones. */
+static Screen resultScreen(void)
+{
+	size_t len;
+	const u8 *payload = scannerPayload(&len);
+	QrType type = qrDetectSegmentType(payload, len);
+
+	/* The payload is no longer needed: never leave it (possibly a seed) in RAM */
+	scannerClearPayload();
+
+	if (type == QR_INVALID) {
+		/* ScanInvalidQRTypeView */
+		uiWarningScreen("Error", "Unknown QR Type",
+		                "QRCode is invalid or is a data format not yet supported.",
+		                NULL, "Back to Main Menu");
+		return SCREEN_HOME;
+	}
+
+	/* NotYetImplementedView, plus the detected type for development */
+	char typeText[40], detail[64];
+	formatQrType(type, typeText, sizeof(typeText));
+	snprintf(detail, sizeof(detail), "Detected: %s (%u bytes)", typeText, (unsigned)len);
+	uiWarningScreen("Work In Progress", "Not Yet Implemented",
+	                "This is still on our to-do list!", detail, "Back to main menu");
+	return SCREEN_HOME;
+}
+
+/* ------------------------------------------------------------------ main */
+
+/* The default ARM9 stack lives in the 16 KB DTCM, too small for quirc
+ * (quirc_decode alone keeps ~13 KB on the stack). The app runs in a thread
+ * with a larger stack in main RAM instead. */
+#define APP_STACK_SIZE (128 * 1024)
+
+static Thread s_appThread;
+alignas(8) static u8 s_appStack[APP_STACK_SIZE];
+
+static int appMain(void *arg)
+{
+	(void)arg;
+
+	/* 134 MHz ARM9 on DSi: QR decoding is CPU bound */
+	if (isDSiMode())
+		setCpuClock(true);
+
+	uiInit();
+	s_haveCamera = scannerInit();
+
+	Screen screen = SCREEN_HOME;
+#ifdef NDS_SIGNER_AUTOTEST
+	if (s_haveCamera)
+		screen = SCREEN_SCAN;
+#endif
+	while (screen != SCREEN_EXIT) {
+		switch (screen) {
+		case SCREEN_HOME:   screen = homeScreen(); break;
+		case SCREEN_SCAN:   screen = scanScreen(); break;
+		case SCREEN_RESULT: screen = resultScreen(); break;
+		default:            screen = SCREEN_EXIT; break;
+		}
+	}
+
+	/* Turns the camera (and its LED) off and wipes buffers */
+	scannerShutdown();
+	return 0;
 }
 
 int main(void)
 {
-	initScreens();
-	consoleSelect(&s_bottom);
-
-	printf("NDS-Signer  (camera test)\n");
-	printf("%s mode\n", isDSiMode() ? "DSi" : "DS");
-
-	bool haveCamera = cameraInit() && cameraActivate(CAM_OUTER);
-	if (!haveCamera) {
-		drawTestPattern();
-		printf("\x1b[9;0HNo camera available.");
-	}
-
-	for (int i = 0; i < BTN_COUNT; i++)
-		drawButton(&s_buttons[i]);
-
-	unsigned frames = 0;
-	bool transferring = false;
-	int pressedButton = -1;
-
-	for (;;) {
-		swiWaitForVBlank();
-
-		if (haveCamera && cameraActive() != CAM_NONE) {
-			if (transferring && !cameraTransferActive()) {
-				frames++;
-				transferring = false;
-			}
-			if (!transferring) {
-				cameraTransferStart(s_topFramebuffer, CAPTURE_MODE_PREVIEW);
-				transferring = true;
-			}
-		}
-
-		scanKeys();
-		u32 down = keysDown();
-		u32 held = keysHeld();
-
-		touchPosition touch = { 0 };
-		bool touching = held & KEY_TOUCH;
-		if (touching)
-			touchRead(&touch);
-		drawTouch(&touch, touching);
-		drawStatus(frames);
-
-		/* A button fires when the stylus is lifted over the same button it
-		 * went down on, like a regular touch UI. */
-		if (down & KEY_TOUCH)
-			pressedButton = hitTest(&touch);
-		int released = -1;
-		if (pressedButton >= 0 && !touching) {
-			released = pressedButton;
-			pressedButton = -1;
-		} else if (pressedButton >= 0 && hitTest(&touch) != pressedButton) {
-			pressedButton = -1; /* slid off the button: cancel */
-		}
-
-		if (released == BTN_EXIT || (down & KEY_START))
-			break;
-
-		if ((released == BTN_SWAP || (down & KEY_A)) && haveCamera) {
-			Camera next = cameraActive() == CAM_INNER ? CAM_OUTER : CAM_INNER;
-			cameraTransferStop();
-			transferring = false;
-			if (!cameraActivate(next))
-				printf("\x1b[9;0HCamera switch failed.");
-		}
-	}
-
-	/* Turn the camera (and its LED) off before returning to the loader */
-	if (haveCamera)
-		cameraDeactivate();
-
-	return 0;
+	threadPrepare(&s_appThread, appMain, NULL, &s_appStack[APP_STACK_SIZE], MAIN_THREAD_PRIO);
+	threadStart(&s_appThread);
+	return threadJoin(&s_appThread);
 }
