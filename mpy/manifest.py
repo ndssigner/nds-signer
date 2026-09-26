@@ -60,6 +60,7 @@ for _name in ("dataclasses", "enum", "importlib", "threading", "traceback", "typ
 
 # Stand-ins for Raspberry Pi hardware libraries (QR decoding is native here)
 package("pyzbar", base_path="$(PORT_DIR)/frozen/hwstubs")
+package("PIL", base_path="$(PORT_DIR)/frozen/hwstubs")
 
 # From micropython-lib
 require("logging")
@@ -82,3 +83,12 @@ module("seedsigner_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("decode_qr_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("flow_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("test_vectors.py", base_path="$(PORT_DIR)/../build/frozen_py")
+
+# Python entry point
+module("nds_main.py", base_path="$(PORT_DIR)/frozen")
+
+# AUTOTEST builds only (make AUTOTEST=1): scripted taps for unattended runs
+import os as _os
+if _os.environ.get("NDS_AUTOTEST"):
+    module("autopilot.py", base_path="$(PORT_DIR)/frozen")
+    module("autopilot_script.py", base_path="$(PORT_DIR)/../tests/host")

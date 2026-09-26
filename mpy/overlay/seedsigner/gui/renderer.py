@@ -33,6 +33,6 @@ class Renderer(ConfigurableSingleton):
         pass
 
     def display_blank_screen(self):
-        import nds
+        from seedsigner.gui.hw import nds
         nds.top_clear()
         nds.bottom_clear()

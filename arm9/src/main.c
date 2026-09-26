@@ -20,6 +20,9 @@
 #ifdef NDS_SIGNER_MPY_SPIKE
 void mpySpikeRun(void);
 #endif
+#ifdef NDS_SIGNER_MPY_APP
+void mpyRunApp(void);
+#endif
 
 typedef enum { SCREEN_HOME, SCREEN_SCAN, SCREEN_RESULT, SCREEN_EXIT } Screen;
 
@@ -196,6 +199,11 @@ static int appMain(void *arg)
 		setCpuClock(true);
 
 	uiInit();
+#ifdef NDS_SIGNER_MPY_APP
+	mpyRunApp();
+	for (;;)
+		swiWaitForVBlank();
+#endif
 #ifdef NDS_SIGNER_MPY_SPIKE
 	mpySpikeRun();
 	for (;;)

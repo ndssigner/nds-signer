@@ -6,7 +6,7 @@
 # information on the top screen, touch buttons on the bottom screen.
 from gettext import gettext as _
 
-import nds
+
 from seedsigner.gui import nds_ui
 from seedsigner.gui._upstream import POST_INIT, SCREEN_FIELDS, SCREEN_INFO
 

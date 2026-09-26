@@ -154,6 +154,27 @@ the same native modules (`make mpy-unix`), and `make -C tests/host seedsigner`
 runs the same scripts on MicroPython and CPython and diffs the results. The
 same scripts also run unchanged on the DSi (`make MPY_SPIKE=1`).
 
+Milestone 4b: SeedSigner's own `controller.py` and `views/` run unmodified on
+NDS-Signer's native screens. In melonDS (`make AUTOTEST=1 MPY_APP=1`), with the
+emulated camera looking at the testnet PSBT QR, the full flow (Home -> Scan ->
+select signer -> review, incl. upstream's "Full Spend!" warning -> recipients
+-> approve) runs in under 15 s and ends with the signed PSBT as an 8-part
+animated UR, identical to what SeedSigner produces on CPython.
+
+How the upstream UI code is reused:
+
+- Views call `self.run_screen(ScreenClass, **kwargs)`. NDS-Signer implements
+  the screen classes natively (`mpy/overlay/seedsigner/gui`), with upstream's
+  class names. Their accepted arguments, default texts and the titles/buttons
+  upstream screens set in `__post_init__` are **generated from the upstream
+  sources** (`tools/gen_gui_api.py` -> `gui/_upstream.py`), so they follow
+  upstream changes automatically. Screens without a native version yet get a
+  generic stand-in (title, text, buttons), so every upstream view imports.
+- `tools/upy_transform.py` also rewrites PEP 585 generic bases, `cls.__new__`
+  and f-strings (MicroPython's are limited, e.g. no nested quotes).
+- A host simulator of the `nds` module (`tests/host/sim/nds.py`) runs the same
+  flow headlessly; `make -C tests/host seedsigner` checks it end to end.
+
 Findings:
 
 - On MicroPython, embit 0.8.0 **requires** the native `secp256k1` module

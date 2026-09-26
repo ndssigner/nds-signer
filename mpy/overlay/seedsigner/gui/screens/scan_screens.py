@@ -3,7 +3,7 @@
 # ScanScreen does with frames decoded by zbar (DecodeQR.add_data).
 from gettext import gettext as _
 
-import nds
+from seedsigner.gui.hw import nds
 from seedsigner.gui import nds_ui
 from seedsigner.gui.screens.screen import BaseScreen, RET_CODE__BACK_BUTTON
 

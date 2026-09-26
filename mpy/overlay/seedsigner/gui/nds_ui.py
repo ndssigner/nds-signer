@@ -3,7 +3,7 @@
 # Top screen: information (title, status, body text, live camera, QR codes).
 # Bottom screen: touch buttons; the D-pad + A also work, B goes back.
 # Everything is drawn with the `nds` module (native) or its host simulator.
-import nds
+from seedsigner.gui.hw import nds
 
 COLS = nds.COLS
 ROWS = nds.ROWS

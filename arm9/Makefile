@@ -42,6 +42,10 @@ endif
 ifneq ($(strip $(MPY_SPIKE)),)
 CFLAGS   += -DNDS_SIGNER_MPY_SPIKE
 endif
+# SPIKE: `make MPY_APP=1` runs the Python app (SeedSigner Controller)
+ifneq ($(strip $(MPY_APP)),)
+CFLAGS   += -DNDS_SIGNER_MPY_APP
+endif
 CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions
 ASFLAGS  := -g $(ARCH)
 LDFLAGS   = -specs=ds_arm9.specs -g $(ARCH) -Wl,--gc-sections -Wl,-Map,$(notdir $*).map \
