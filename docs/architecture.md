@@ -123,6 +123,12 @@ CPython (amounts, fee, destinations, change detection):
 `tests/vectors/psbt_base64_singlesig.summary.txt`. Import + parse: ~1.0 s,
 mostly the second PBKDF2 inside `Seed()`.
 
+Scaling (synthetic 10-input P2WPKH PSBT, `tests/vectors/psbt_base64_10in*`,
+results identical to CPython): parse ~0.75 s, sign 1.7 s (~170 ms per input,
+mostly Python-side BIP-32 derivation, not the C crypto), Python heap 74 KB.
+A 10-input PSBT is ~2,000 base64 characters: too dense for a single QR on the
+DSi camera, so animated UR QR scanning will be required, as in SeedSigner.
+
 To make upstream code importable, two techniques were needed:
 
 - `tools/upy_transform.py`: build-time AST rewrite of upstream sources for the

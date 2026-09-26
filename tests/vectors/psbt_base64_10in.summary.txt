@@ -1,0 +1,8 @@
+spend_amount 50000
+change_amount 48300
+fee_amount 1700
+num_inputs 10
+num_destinations 1
+num_change_outputs 1
+destination_addresses tb1q0gzpnp4yhr20p7tqdrqmm7872w0unmawzka9zu
+is_high_fee False

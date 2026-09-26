@@ -10,6 +10,9 @@ for melonDS with `tools/qr_to_png.py` (see its `--help`).
 | `seedqr_12words.txt` | `SEED__SEEDQR` | SeedSigner test suite (MIT) |
 | `psbt_base64_singlesig.mnemonic.txt` | Test seed that signs the PSBT above (fingerprint `8b218e81`) | SeedSigner `tests/test_decodepsbtqr.py` (MIT) |
 | `psbt_base64_singlesig.signed.txt` | Expected result of signing it with embit 0.8.0 (RFC 6979, deterministic) | Generated with embit 0.8.0 |
+| `psbt_base64_10in.*` | Synthetic 10-input P2WPKH testnet PSBT (made-up prevouts), public seed "abandon ... about"; `.summary.txt` / `.signed.txt` are the CPython references | `tools/make_test_psbt.py` |
+| `psbt_base64_singlesig.summary.txt` | SeedSigner `PSBTParser` summary on CPython (reference) | `psbt_parser_summary.py` |
+| `psbt_parser_summary.py` | Helper that prints the summary, identical on CPython and the DSi | NDS-Signer |
 | `plain_text.txt` | `INVALID` (not a Bitcoin payload) | NDS-Signer |
 
 All keys and seeds here are public test data. **Never put real funds on them.**
