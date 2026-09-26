@@ -17,6 +17,10 @@
 
 #define APP_VERSION "0.3.0-dev"
 
+#ifdef NDS_SIGNER_MPY_SPIKE
+void mpySpikeRun(void);
+#endif
+
 typedef enum { SCREEN_HOME, SCREEN_SCAN, SCREEN_RESULT, SCREEN_EXIT } Screen;
 
 static bool s_haveCamera;
@@ -192,6 +196,11 @@ static int appMain(void *arg)
 		setCpuClock(true);
 
 	uiInit();
+#ifdef NDS_SIGNER_MPY_SPIKE
+	mpySpikeRun();
+	for (;;)
+		swiWaitForVBlank();
+#endif
 	s_haveCamera = scannerInit();
 
 	Screen screen = SCREEN_HOME;

@@ -31,19 +31,25 @@ ARCH := -march=armv5te -mtune=arm946e-s
 CFLAGS   := -std=gnu99 -g -Wall -Wextra -O2 -ffunction-sections -fdata-sections \
             -ffile-prefix-map=$(TOPDIR)=. \
             $(ARCH) $(INCLUDE) -DARM9 \
-            -DQUIRC_FLOAT_TYPE=float -DQUIRC_USE_TGMATH
+            -DQUIRC_FLOAT_TYPE=float -DQUIRC_USE_TGMATH \
+            -I$(TOPDIR)/mpy -I$(TOPDIR)/build/micropython_embed
 # Development only: `make AUTOTEST=1` boots straight into the scanner so the
 # emulator can be driven without input. Never use for release builds.
 ifneq ($(strip $(AUTOTEST)),)
 CFLAGS   += -DNDS_SIGNER_AUTOTEST
 endif
+# SPIKE: `make MPY_SPIKE=1` boots into the MicroPython benchmark screen
+ifneq ($(strip $(MPY_SPIKE)),)
+CFLAGS   += -DNDS_SIGNER_MPY_SPIKE
+endif
 CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions
 ASFLAGS  := -g $(ARCH)
-LDFLAGS   = -specs=ds_arm9.specs -g $(ARCH) -Wl,--gc-sections -Wl,-Map,$(notdir $*).map
+LDFLAGS   = -specs=ds_arm9.specs -g $(ARCH) -Wl,--gc-sections -Wl,-Map,$(notdir $*).map \
+            -L$(TOPDIR)/build
 
 # NOTE: dswifi / libfat are deliberately NOT linked. The signer is air-gapped
 # and stateless: it must never touch the network or the SD card.
-LIBS := -lnds9 -lm
+LIBS := -lmicropython -lnds9 -lm
 
 LIBDIRS := $(LIBNDS) $(PORTLIBS)
 

@@ -27,15 +27,19 @@ GAME_ICON      :=
 
 include $(DEVKITARM)/ds_rules
 
-.PHONY: checkarm7 checkarm9 clean
+.PHONY: checkarm7 checkarm9 checkmpy clean
 
 #---------------------------------------------------------------------------------
-all: checkarm7 checkarm9 $(TARGET).nds
+all: checkarm7 checkmpy checkarm9 $(TARGET).nds
+
+# MicroPython static library (SPIKE, see docs/architecture.md)
+checkmpy:
+	$(MAKE) -C mpy TOPDIR=$(TOPDIR)
 
 checkarm7:
 	$(MAKE) -C arm7
 
-checkarm9:
+checkarm9: checkmpy
 	$(MAKE) -C arm9
 
 $(TARGET).nds: arm7/$(TARGET).elf arm9/$(TARGET).elf
@@ -53,4 +57,5 @@ arm9/$(TARGET).elf:
 clean:
 	$(MAKE) -C arm9 clean
 	$(MAKE) -C arm7 clean
+	$(MAKE) -C mpy clean TOPDIR=$(TOPDIR)
 	rm -f $(TARGET).nds
