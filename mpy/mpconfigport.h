@@ -80,3 +80,5 @@ void nds_print_strn(const char *str, size_t len);
 /* SeedSigner uses match.groups(); tests/host/test_re_compat compares with CPython */
 #define MICROPY_PY_RE_MATCH_GROUPS      (1)
 #define MICROPY_PY_RE_MATCH_SPAN_START_END (1)
+#define MICROPY_PY_RE                   (1)  /* extended by frozen/compat/re.py */
+#define MICROPY_PY_DEFLATE              (1)  /* zlib, BBQr */

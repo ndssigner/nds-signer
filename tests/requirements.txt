@@ -1,0 +1,4 @@
+# CPython packages for the host reference side of tests/host
+# (same versions SeedSigner pins in its requirements.txt)
+embit==0.8.0
+./third_party/urtypes

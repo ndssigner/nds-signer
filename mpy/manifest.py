@@ -53,15 +53,29 @@ package(
 module("random.py", base_path="$(PORT_DIR)/frozen")
 
 # CPython stdlib compatibility modules needed by SeedSigner (see each file)
-for _name in ("dataclasses", "typing", "gettext", "platform", "os", "pathlib", "re", "_pyre",
-              "time", "unicodedata"):
+for _name in ("dataclasses", "enum", "typing", "gettext", "platform", "os", "pathlib", "re",
+              "_pyre", "time", "unicodedata"):
     module(_name + ".py", base_path="$(PORT_DIR)/frozen/compat")
+
+# Stand-ins for Raspberry Pi hardware libraries (QR decoding is native here)
+package("pyzbar", base_path="$(PORT_DIR)/frozen/hwstubs")
 
 # From micropython-lib
 require("logging")
+# base64 / zlib without their manifest dependencies: require("base64") would
+# also freeze micropython-lib's pure-Python binascii, which shadows the native
+# one and rejects str input (embit passes str to a2b_base64).
+module("base64.py", base_path="$(MPY_LIB_DIR)/python-stdlib/base64")
+module("zlib.py", base_path="$(MPY_LIB_DIR)/python-stdlib/zlib")
+
+# urtypes (Krux project, the commit SeedSigner pins)
+package("urtypes", base_path="$(PORT_DIR)/../third_party/urtypes/src")
 
 # Upstream SeedSigner, transformed by tools/upy_transform.py (mpy/Makefile)
 package("seedsigner", base_path="$(PORT_DIR)/../build/frozen_py")
 
-# SPIKE: shared test helper, identical on CPython and on the DSi
+# SPIKE: the host test scripts and vectors, run unchanged on the DSi
 module("psbt_parser_summary.py", base_path="$(PORT_DIR)/../tests/vectors")
+module("seedsigner_check.py", base_path="$(PORT_DIR)/../tests/host")
+module("decode_qr_check.py", base_path="$(PORT_DIR)/../tests/host")
+module("test_vectors.py", base_path="$(PORT_DIR)/../build/frozen_py")

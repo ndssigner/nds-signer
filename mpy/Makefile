@@ -46,17 +46,19 @@ $(SECP_GEN)/src/ecmult_static_context.h: $(SECP256K1)/src/gen_context.c
 FROZEN_PY := $(TOPDIR)/build/frozen_py
 SS_MODULES := $(shell grep -v '^\#' seedsigner_modules.txt)
 
-$(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py \
+$(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py $(wildcard $(TOPDIR)/tests/vectors/*.txt) \
 		$(addprefix $(TOPDIR)/third_party/seedsigner/src/,$(SS_MODULES))
 	@echo transforming SeedSigner modules
 	@rm -rf $(FROZEN_PY)
 	@python3 $(TOPDIR)/tools/upy_transform.py --src $(TOPDIR)/third_party/seedsigner/src \
 		--out $(FROZEN_PY) $(SS_MODULES)
+	@python3 $(TOPDIR)/tools/freeze_vectors.py $(TOPDIR)/tests/vectors $(FROZEN_PY)/test_vectors.py
 	@touch $@
 
 $(EMBED)/.stamp: mpconfigport.h micropython_embed.mk manifest.py $(wildcard frozen/*.py frozen/*/*.py) \
 		$(USERMOD_C) $(FROZEN_PY)/.stamp
 	@echo generating MicroPython embed package
+	@rm -rf build-embed/frozen_content.c build-embed/frozen_mpy
 	@$(MAKE) --no-print-directory -f micropython_embed.mk PACKAGE_DIR=$(EMBED) \
 		CC=gcc CROSS_COMPILE= nds-embed-package >/dev/null
 	@touch $@

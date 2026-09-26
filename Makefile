@@ -56,11 +56,15 @@ arm9/$(TARGET).elf:
 #---------------------------------------------------------------------------------
 # MicroPython unix port with the same `re` options as the ROM, used by the
 # host tests (make -C tests/host re-compat). Run inside the builder image.
+# It includes the same native modules (lib/mpy-usermods) as the ROM.
 mpy-unix:
+	$(MAKE) -C mpy TOPDIR=$(TOPDIR) $(TOPDIR)/build/secp256k1_gen/src/ecmult_static_context.h
 	$(MAKE) -C third_party/micropython/mpy-cross
 	$(MAKE) -C third_party/micropython/ports/unix BUILD=$(TOPDIR)/build/mpy-unix PROG=micropython \
 		MICROPY_PY_FFI=0 MICROPY_PY_BTREE=0 MICROPY_PY_SSL=0 MICROPY_USE_READLINE=0 \
-		CFLAGS_EXTRA="-DMICROPY_PY_RE_MATCH_GROUPS=1 -DMICROPY_PY_RE_MATCH_SPAN_START_END=1"
+		USER_C_MODULES=$(TOPDIR)/lib/mpy-usermods \
+		CFLAGS_EXTRA="-DMICROPY_PY_RE_MATCH_GROUPS=1 -DMICROPY_PY_RE_MATCH_SPAN_START_END=1 \
+		              -DMODULE_HASHLIB_ENABLED=1 -DMODULE_SECP256K1_ENABLED=1"
 
 #---------------------------------------------------------------------------------
 clean:

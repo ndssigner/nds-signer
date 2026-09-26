@@ -10,4 +10,4 @@ SRC_USERMOD += $(BITCOIN_MOD_DIR)/hashlib.c
 SRC_USERMOD += $(BITCOIN_MOD_DIR)/uhmac.c
 
 # We can add our module folder to include paths if needed
-CFLAGS_USERMOD += -I$(BITCOIN_MOD_DIR)/crypto
+CFLAGS_USERMOD += -I$(BITCOIN_MOD_DIR)/crypto -Wno-array-parameter -Wno-pointer-sign -Wno-unused-function

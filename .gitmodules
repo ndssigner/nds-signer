@@ -11,3 +11,6 @@
 [submodule "third_party/seedsigner"]
 	path = third_party/seedsigner
 	url = https://github.com/SeedSigner/seedsigner
+[submodule "third_party/urtypes"]
+	path = third_party/urtypes
+	url = https://github.com/selfcustody/urtypes

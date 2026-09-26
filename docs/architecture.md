@@ -141,6 +141,19 @@ To make upstream code importable, two techniques were needed:
   `unicodedata.normalize` refuses non-ASCII text rather than risk deriving a
   different seed from a passphrase.
 
+Milestone 4a: SeedSigner's `models/decode_qr.py` (QR type detection, base64
+and animated UR PSBTs, addresses, SeedQR) runs unmodified on the DSi. It needed
+a `re` compatibility layer: MicroPython's regex engine has no flags and no
+counted repetition (`\d{3}` silently never matches) and cannot fit ranges like
+`{25,62}` at all, so `mpy/frozen/compat/re.py` translates what it can and
+falls back to a small pure-Python engine (`_pyre.py`) for the rest. It is
+verified against CPython with SeedSigner's patterns plus 6,000 random inputs.
+
+Host test loop (no emulator, ~0.5 s): the MicroPython unix port is built with
+the same native modules (`make mpy-unix`), and `make -C tests/host seedsigner`
+runs the same scripts on MicroPython and CPython and diffs the results. The
+same scripts also run unchanged on the DSi (`make MPY_SPIKE=1`).
+
 Findings:
 
 - On MicroPython, embit 0.8.0 **requires** the native `secp256k1` module
