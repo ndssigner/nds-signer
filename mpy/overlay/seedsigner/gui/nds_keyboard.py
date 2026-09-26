@@ -37,14 +37,8 @@ def qwerty_keys(first_row):
 
 def draw_key(key, enabled=True, highlighted=False):
     label = key.label if enabled else "."
-    inner = key.width - 2
-    text = label[:inner]
-    left = (inner - len(text)) // 2
-    body = " " * left + text + " " * (inner - len(text) - left)
-    edge = "#" if highlighted else "-"
-    nds.bottom_print(key.row, key.col, "+" + edge * inner + "+")
-    nds.bottom_print(key.row + 1, key.col, "|" + body + "|")
-    nds.bottom_print(key.row + 2, key.col, "+" + edge * inner + "+")
+    for i, text in enumerate(nds_ui.box_rows(key.width, label, highlighted)):
+        nds.bottom_print(key.row + i, key.col, text)
 
 
 # Keys currently on screen, set by the screen that drew them last; lets tests

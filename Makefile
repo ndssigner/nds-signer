@@ -27,7 +27,7 @@ GAME_ICON      :=
 
 include $(DEVKITARM)/ds_rules
 
-.PHONY: checkarm7 checkarm9 checkmpy clean mpy-unix
+.PHONY: checkarm7 checkarm9 checkmpy clean mpy-unix fonts
 
 #---------------------------------------------------------------------------------
 all: checkarm7 checkmpy checkarm9 $(TARGET).nds
@@ -39,8 +39,14 @@ checkmpy:
 checkarm7:
 	$(MAKE) -C arm7
 
-checkarm9: checkmpy
+checkarm9: checkmpy fonts
 	$(MAKE) -C arm9
+
+# Console font generated from the vendored BDF (lib/fonts)
+fonts: build/generated/nds_font.c
+build/generated/nds_font.c: lib/fonts/spleen-5x8.bdf tools/bdf_to_ndsfont.py
+	@mkdir -p build/generated
+	python3 tools/bdf_to_ndsfont.py $< $@
 
 $(TARGET).nds: arm7/$(TARGET).elf arm9/$(TARGET).elf
 	ndstool -c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \

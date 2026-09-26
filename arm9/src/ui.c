@@ -13,6 +13,24 @@ PrintConsole g_uiTop;
 PrintConsole g_uiBottom;
 
 static u16 *s_topBitmap;
+
+/* Spleen 5x8 (BSD-2), generated from lib/fonts by tools/bdf_to_ndsfont.py:
+ * thin 1-pixel strokes, far more legible than libnds' default bold font. */
+extern const uint8_t g_ndsFont[256 * 8];
+
+static void setFont(PrintConsole *console)
+{
+	ConsoleFont font = {
+		.gfx = (u16 *)g_ndsFont,
+		.pal = NULL,
+		.numColors = 0,
+		.bpp = 1,
+		.asciiOffset = 0,
+		.numChars = 256,
+		.convertSingleColor = true,
+	};
+	consoleSetFont(console, &font);
+}
 static int s_pressed = -1;
 
 void uiInit(void)
@@ -32,6 +50,8 @@ void uiInit(void)
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankC(VRAM_C_SUB_BG);
 	consoleInit(&g_uiBottom, 0, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+	setFont(&g_uiTop);
+	setFont(&g_uiBottom);
 
 	lcdMainOnTop();
 	uiClearTop();

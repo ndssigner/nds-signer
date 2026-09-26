@@ -41,8 +41,13 @@ class Autopilot:
                 return col * 8 + len(label) * 4, row * 8 + 4
         return None
 
+    def _status(self, text):
+        # visible progress on the top screen's last row (AUTOTEST builds only)
+        self._n.top_print(23, 0, (text + " " * 32)[:32])
+
     def frame(self):
         self._n.frame()
+        self._frames = getattr(self, "_frames", 0) + 1
         self._keys = 0
         if self._release:
             self._release = False
@@ -51,6 +56,7 @@ class Autopilot:
         if not self._events:
             return
         kind, arg = self._events[0]
+        self._status("AP %d left f%d %s %s" % (len(self._events), self._frames, kind, str(arg)[:10]))
         if kind == "tap_label":
             xy = self._find(arg)
             if xy is None:

@@ -12,6 +12,22 @@ FIRST_BUTTON_ROW = 1
 BUTTONS_PER_PAGE = 5      # rows 1..15
 NAV_ROW = 20              # "< Back" and paging, rows 20..22
 
+# Box-drawing glyphs of NDS-Signer's console font (tools/bdf_to_ndsfont.py):
+# (horizontal, vertical, top-left, top-right, bottom-left, bottom-right)
+BOX_SINGLE = ("\x10", "\x11", "\x12", "\x13", "\x14", "\x15")
+BOX_DOUBLE = ("\x16", "\x17", "\x18", "\x19", "\x1a", "\x1c")
+
+
+def box_rows(width, label, highlighted=False):
+    """The three text rows of a box of `width` cells around `label`."""
+    h, v, tl, tr, bl, br = BOX_DOUBLE if highlighted else BOX_SINGLE
+    inner = width - 2
+    text = label[:inner]
+    left = (inner - len(text)) // 2
+    body = " " * left + text + " " * (inner - len(text) - left)
+    return (tl + h * inner + tr, v + body + v, bl + h * inner + br)
+
+
 BACK = "back"
 _BACK_LABEL = "< Back"
 _PREV_LABEL = "Prev"
@@ -55,21 +71,14 @@ def top_page(title, lines):
     """Title bar on the top screen, then the given lines (clipped)."""
     nds.top_clear()
     nds.top_print(0, -1, title or "")
-    nds.top_print(1, 0, "-" * COLS)
+    nds.top_print(1, 0, BOX_SINGLE[0] * COLS)
     for i, line in enumerate(lines[:ROWS - 3]):
         nds.top_print(3 + i, 0, line)
 
 
 def _box(row, col, width, label, selected):
-    inner = width - 2
-    label = label[:inner - 2]
-    pad = inner - len(label)
-    left = pad // 2
-    mark_l, mark_r = (">", "<") if selected else (" ", " ")
-    text = " " * (left - 1) + mark_l + label + mark_r + " " * (pad - left - 1) if pad >= 2 else label
-    nds.bottom_print(row, col, "+" + "-" * inner + "+")
-    nds.bottom_print(row + 1, col, "|" + text[:inner] + "|")
-    nds.bottom_print(row + 2, col, "+" + "-" * inner + "+")
+    for i, text in enumerate(box_rows(width, label, selected)):
+        nds.bottom_print(row + i, col, text)
 
 
 class ButtonPanel:

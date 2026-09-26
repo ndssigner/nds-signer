@@ -179,9 +179,15 @@ def sim_camera(payloads):
     _camera_queue.extend(payloads)
 
 
+# box-drawing glyphs of the NDS font (see nds_ui.BOX_*) shown as ASCII
+_BOX_ASCII = {"\x10": "-", "\x11": "|", "\x12": "+", "\x13": "+", "\x14": "+", "\x15": "+",
+              "\x16": "=", "\x17": "#", "\x18": "#", "\x19": "#", "\x1a": "#", "\x1c": "#"}
+
+
 def sim_text(screen):
     border = "+" + "-" * COLS + "+"
-    return "\n".join([border] + ["|" + line + "|" for line in _screens[screen]] + [border])
+    lines = ["".join(_BOX_ASCII.get(c, c) for c in line) for line in _screens[screen]]
+    return "\n".join([border] + ["|" + line + "|" for line in lines] + [border])
 
 
 def sim_dump():

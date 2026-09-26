@@ -18,7 +18,7 @@ include $(DEVKITARM)/ds_rules
 # DATA     : directories containing binary files embedded with bin2o
 #---------------------------------------------------------------------------------
 BUILD    := build
-SOURCES  := src ../lib/quirc ../lib/qrcodegen
+SOURCES  := src ../lib/quirc ../lib/qrcodegen ../build/generated
 INCLUDES := include ../shared/include ../lib/quirc ../lib/qrcodegen
 DATA     := data
 
