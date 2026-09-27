@@ -16,5 +16,7 @@ build "DEVBUILD=1" nds-signer-dev.nds
 tools/qr_to_png.py tests/vectors/psbt_base64_singlesig.txt -o dist/imagenes-para-el-mac/1-transaccion-de-prueba.png
 tools/qr_to_png.py tests/vectors/psbt_base64_singlesig.seedqr.txt -o dist/imagenes-para-el-mac/2-semilla-de-prueba-SeedQR.png
 cp docs/guia-pruebas-dsi-xl.md dist/LEEME-guia-de-pruebas.md
+cp docs/guia-sparrow-signet.md dist/LEEME-2-sparrow-signet.md
+cp docs/guia-xpub-sparrow.md dist/LEEME-3-xpub-a-sparrow.md
 (cd dist/para-la-dsi && shasum -a 256 *.nds > SHA256.txt)
 echo "dist/ listo:"; find dist -type f | sort
