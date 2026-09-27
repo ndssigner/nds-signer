@@ -30,10 +30,12 @@ Necesitas la ROM nueva: copia `dist/para-la-dsi/nds-signer-dev.nds` a la SD
 4. Acerca la pantalla de arriba de la DSi a la cámara del Mac hasta que lo lea.
 5. Sparrow rellena solo la huella, la derivación y el xpub. Comprueba que la
    huella es **`8b218e81`** y la derivación **`m/84'/1'/0'`**, y pulsa **Apply**.
-6. Pestaña **Receive**: la primera dirección debe ser
+6. Pestaña **Addresses**: la primera dirección debe ser
    **`tb1qw2as76rh4jhykn9zvevdt5tawmqx7hhy7ydvvu`**, la misma que en la prueba
-   anterior. En **Transactions** deberían aparecer las monedas de prueba que ya
-   tenías: es el mismo monedero.
+   anterior, y la segunda **`tb1qdxl0syr9zqwxentq7mzvf7taglscyrmmnpfss6`**.
+   (*Receive* muestra la primera dirección **sin usar**: si la primera ya
+   recibió monedas, verás la segunda. Es normal.) En **Transactions** deberían
+   aparecer las monedas de prueba que ya tenías: es el mismo monedero.
 
 ## Qué me interesa que me cuentes
 
