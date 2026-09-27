@@ -164,6 +164,10 @@ def camera_stats():
     return (_camera_frames, 0, _camera_frames, _camera_frames, 0, 0, 0, _ticks, 0)
 
 
+def camera_exposure(target, center):
+    return True
+
+
 def scan_benchmark(text, pixels):
     return None
 

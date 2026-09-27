@@ -30,14 +30,16 @@ class ScanScreen(BaseScreen):
             return RET_CODE__BACK_BUTTON
         dev = nds_ui.nds_dev
         py_ms = parts = 0
+        if dev is not None:
+            dev.scan_start()
         try:
             while True:
                 nds.frame()
                 if panel.handle_frame() is not None or nds.keys_down() & nds.KEY_B:
                     return False
                 payload = nds.camera_poll()
-                if dev is not None and nds.camera_stats()[0] % 8 == 1:
-                    dev.show_scan_stats(parts, py_ms)
+                if dev is not None:
+                    dev.scan_frame(parts, py_ms, nds.camera_stats()[0] % 8 == 1)
                 if payload is None:
                     continue
                 t0 = nds.ticks_ms()

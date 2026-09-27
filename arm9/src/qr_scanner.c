@@ -32,6 +32,8 @@ static u16 s_vfColumn[VF_W];  /* viewfinder x -> capture x */
 static ScanStats s_stats;
 static int s_quickFails;      /* frames in a row with an undecoded QR, see decode() */
 static int s_refineWait;      /* frames left before refining again, see decode() */
+static u8 s_aeTarget = SCANNER_AE_TARGET_DEFAULT;
+static bool s_aeCenter = SCANNER_AE_CENTER_DEFAULT;
 
 #ifdef NDS_SIGNER_DEVBUILD
 /* quirc_end() stage times (lib/quirc/identify.c QUIRC_STAGE_MARK), in timer
@@ -104,10 +106,18 @@ void scannerClearPayload(void)
 		p[i] = 0;
 }
 
+bool scannerSetExposure(u8 target, bool center)
+{
+	s_aeTarget = target;
+	s_aeCenter = center;
+	return !s_streaming || cameraSetExposure(target, center);
+}
+
 bool scannerStart(void)
 {
 	if (!s_quirc || !cameraActivate(CAM_OUTER))
 		return false;
+	cameraSetExposure(s_aeTarget, s_aeCenter);
 
 	memset(&s_stats, 0, sizeof(s_stats));
 	s_stats.startMs = uiMillis();

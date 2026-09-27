@@ -39,6 +39,12 @@ typedef struct {
 bool scannerInit(void);
 void scannerShutdown(void);
 
+/* Camera auto-exposure used while scanning (see cameraSetExposure): applied
+ * now if streaming, and on every scannerStart(). */
+#define SCANNER_AE_TARGET_DEFAULT 0x70
+#define SCANNER_AE_CENTER_DEFAULT false
+bool scannerSetExposure(u8 target, bool center);
+
 /* Starts / stops streaming frames from the outer camera. */
 bool scannerStart(void);
 void scannerStop(void);

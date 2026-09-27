@@ -34,6 +34,10 @@ bool cameraDeactivate(void);
 
 Camera cameraActive(void);
 
+/* Auto-exposure of the active camera: target luma (AE_BASETARGET) and
+ * metering on the whole frame or its central half. */
+bool cameraSetExposure(u8 target, bool center);
+
 /* Starts one frame transfer into dst using NDMA channel 1.
  * PREVIEW: 256x192 RGB555 (can target VRAM directly).
  * CAPTURE: 640x480 raw YUV422. */

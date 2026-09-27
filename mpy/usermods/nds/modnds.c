@@ -126,6 +126,16 @@ static mp_obj_t nds_camera_stop(void)
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_stop_obj, nds_camera_stop);
 
+/* camera_exposure(target, center): auto-exposure target luma (1-255) and
+ * metering window (False = whole frame, True = central half) for scanning.
+ * Returns False if it could not be applied. */
+static mp_obj_t nds_camera_exposure(mp_obj_t target_in, mp_obj_t center_in)
+{
+	return mp_obj_new_bool(ndsbCameraExposure(mp_obj_get_int(target_in),
+	                                          mp_obj_is_true(center_in)));
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(nds_camera_exposure_obj, nds_camera_exposure);
+
 /* camera_stats(): (frames processed, last decode ms, frames with a QR
  * candidate, frames decoded, total us in luma copy / quirc identify / quirc
  * decode, ms since camera_start(), grids refined) */
@@ -208,6 +218,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_poll), MP_ROM_PTR(&nds_camera_poll_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stop), MP_ROM_PTR(&nds_camera_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stats), MP_ROM_PTR(&nds_camera_stats_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_camera_exposure), MP_ROM_PTR(&nds_camera_exposure_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_scan_benchmark), MP_ROM_PTR(&nds_scan_benchmark_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_show), MP_ROM_PTR(&nds_qr_show_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },

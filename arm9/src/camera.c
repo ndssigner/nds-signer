@@ -92,6 +92,11 @@ Camera cameraActive(void)
 	return s_activeCamera;
 }
 
+bool cameraSetExposure(u8 target, bool center)
+{
+	return s_activeCamera != CAM_NONE && command(CAM_EXPOSURE(target, center));
+}
+
 void cameraTransferStart(u16 *dst, CaptureMode mode)
 {
 	const bool preview = mode == CAPTURE_MODE_PREVIEW;
