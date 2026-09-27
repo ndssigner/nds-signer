@@ -122,6 +122,13 @@ $(OFILES_SOURCES): $(HFILES)
 # Vendored third-party code is kept unmodified: silence -Wextra noise there only
 decode.o identify.o quirc.o version_db.o qrcodegen.o: \
 	CFLAGS += -Wno-unused-parameter -Wno-sign-compare -Wno-type-limits
+# quirc's grid fitting in integer arithmetic (no FPU) and only on demand:
+# see lib/quirc/identify.c and quirc_refine() in qr_scanner.c
+decode.o identify.o quirc.o qr_scanner.o: CFLAGS += -DQUIRC_FIXED_POINT_GRID -DQUIRC_LAZY_JIGGLE
+identify.o: CFLAGS += -DQUIRC_DIV_ROUND=quircNdsDivRound
+ifneq ($(strip $(DEVBUILD)),)
+identify.o: CFLAGS += -DQUIRC_STAGE_MARK=scannerStageMark
+endif
 
 #---------------------------------------------------------------------------------
 %.bin.o %_bin.h: %.bin

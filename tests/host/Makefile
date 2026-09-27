@@ -3,6 +3,8 @@
 #   make -C tests/host re-compat  MicroPython `re` compat vs CPython (Docker)
 #   make -C tests/host seedsigner SeedSigner/embit on MicroPython vs CPython refs,
 #                                 incl. the full Scan -> review -> sign UI flow
+#   make -C tests/host quirc      quirc as built for the ROM (fixed-point grid)
+#                                 vs unmodified quirc on synthetic camera frames
 CC     ?= cc
 # CPython with embit==0.8.0 and urtypes (tests/requirements.txt) for references
 PYTHON ?= python3
@@ -20,12 +22,34 @@ MPY_ROM_PATH = /source/tests/host/sim:/source/mpy/frozen/compat:/source/mpy/froz
 DOCKER_MPY_ROM = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
              -e MICROPYPATH=$(MPY_ROM_PATH) nds-signer-builder /source/build/mpy-unix/micropython
 
-.PHONY: all clean re-compat seedsigner qrdecode unicode frozen
+.PHONY: all clean re-compat seedsigner qrdecode unicode frozen quirc
 all: test_qr_type
 	./test_qr_type
 
 test_qr_type: test_qr_type.c ../../arm9/src/qr_type.c ../../arm9/include/qr_type.h
 	$(CC) $(CFLAGS) -o $@ test_qr_type.c ../../arm9/src/qr_type.c
+
+# quirc: the ROM's build (QUIRC_FIXED_POINT_GRID, QUIRC_LAZY_JIGGLE) must
+# decode every frame the unmodified quirc decodes, on seeded synthetic frames
+QUIRC_SRC = $(wildcard ../../lib/quirc/*.c)
+QUIRC_IMAGES ?= 600
+# same quirc configuration as arm9/Makefile (upstream quirc casts NaN to int
+# on some degenerate grids: float-cast-overflow is not checked)
+QUIRC_CFLAGS := -std=gnu99 -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all \
+                -fno-sanitize=float-cast-overflow \
+                -DQUIRC_FLOAT_TYPE=float -DQUIRC_USE_TGMATH -I../../lib/quirc -lm
+$(TOPDIR)/build/quirc_scan_upstream: quirc_scan.c $(QUIRC_SRC) ../../lib/quirc/*.h
+	$(CC) $(QUIRC_CFLAGS) -o $@ quirc_scan.c $(QUIRC_SRC)
+$(TOPDIR)/build/quirc_scan_rom: quirc_scan.c $(QUIRC_SRC) ../../lib/quirc/*.h
+	$(CC) $(QUIRC_CFLAGS) -DQUIRC_FIXED_POINT_GRID -DQUIRC_LAZY_JIGGLE -o $@ quirc_scan.c $(QUIRC_SRC)
+quirc: $(TOPDIR)/build/quirc_scan_upstream $(TOPDIR)/build/quirc_scan_rom
+	@rm -rf $(TOPDIR)/build/quirc_images
+	@PYTHONPATH=$(TOPDIR)/third_party/seedsigner/src:$(TOPDIR)/third_party/urtypes/src \
+		$(PYTHON) quirc_images.py ../vectors $(TOPDIR)/build/quirc_images $(QUIRC_IMAGES)
+	@$(TOPDIR)/build/quirc_scan_upstream $(TOPDIR)/build/quirc_images/*.pgm > $(TOPDIR)/build/quirc.upstream.txt
+	@$(TOPDIR)/build/quirc_scan_rom $(TOPDIR)/build/quirc_images/*.pgm > $(TOPDIR)/build/quirc.rom.txt
+	@$(PYTHON) quirc_compare.py $(TOPDIR)/build/quirc_images $(TOPDIR)/build/quirc.upstream.txt \
+		$(TOPDIR)/build/quirc.rom.txt
 
 # Requires the MicroPython unix port: make -C ../.. mpy-unix
 re-compat:

@@ -161,6 +161,13 @@ struct quirc_data {
 int quirc_count(const struct quirc *q);
 
 /* Extract the QR-code specified by the given index. */
+#ifdef QUIRC_LAZY_JIGGLE
+/* NDS-Signer addition (built with QUIRC_LAZY_JIGGLE): quirc_end() skips
+ * the perspective fitness search; call this when decoding grid `index`
+ * fails, then extract and decode it again. Returns 0 if already done. */
+int quirc_refine(struct quirc *q, int index);
+#endif
+
 void quirc_extract(const struct quirc *q, int index,
 		   struct quirc_code *code);
 

@@ -91,6 +91,15 @@ struct quirc_grid {
 	/* Grid size and perspective transform */
 	int			grid_size;
 	quirc_float_t		c[QUIRC_PERSPECTIVE_PARAMS];
+
+#ifdef QUIRC_FIXED_POINT_GRID
+	/* NDS-Signer: c[] in Q32 fixed point, see perspective_map_cell() */
+	int64_t			cfix[QUIRC_PERSPECTIVE_PARAMS];
+	int			cfix_ok;
+#endif
+#ifdef QUIRC_LAZY_JIGGLE
+	int			refined;  /* NDS-Signer: see quirc_refine() */
+#endif
 };
 
 struct quirc_flood_fill_vars {

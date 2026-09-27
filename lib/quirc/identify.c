@@ -25,6 +25,14 @@
 #endif // QUIRC_USE_TGMATH
 #include "quirc_internal.h"
 
+/* NDS-Signer: optional per-stage timing hook (developer builds) */
+#ifdef QUIRC_STAGE_MARK
+void QUIRC_STAGE_MARK(int stage);
+#define STAGE_MARK(n) QUIRC_STAGE_MARK(n)
+#else
+#define STAGE_MARK(n) do { } while (0)
+#endif
+
 /************************************************************************
  * Linear algebra routines
  */
@@ -122,6 +130,68 @@ static void perspective_unmap(const quirc_float_t *c,
 	*v = (c[0]*(y-c[5]) - c[2]*c[6]*y + (c[5]*c[6]-c[3])*x + c[2]*c[3]) *
 		den;
 }
+
+#ifdef QUIRC_FIXED_POINT_GRID
+/* NDS-Signer addition. The grid fitness search (jiggle_perspective) maps
+ * ~160k cell points per QR code; with double emulated in software (no FPU
+ * on the DS's ARM946E-S) that took seconds per frame. Cell points are
+ * (x + k/10, y + k/10), so they are mapped here in integer arithmetic with
+ * the transform in Q32 (int64). Accuracy is ~0.002 px; anything outside the
+ * safe range falls back to the double version. */
+static void perspective_fix_update(struct quirc_grid *qr)
+{
+	int i;
+
+	/* |c| * 2^32 <= 1e15 and |u10|, |v10| < 2000 keep the sums in int64 */
+	qr->cfix_ok = 1;
+	for (i = 0; i < QUIRC_PERSPECTIVE_PARAMS; i++) {
+		quirc_float_t v = qr->c[i] * (quirc_float_t)4294967296.0;
+
+		if (!(v < (quirc_float_t)1.0e15 && v > (quirc_float_t)-1.0e15)) {
+			qr->cfix_ok = 0;
+			v = 0;
+		}
+		qr->cfix[i] = (int64_t)v;
+	}
+}
+
+/* round(n / d) for d > 0, halves up. A port can define it with a faster
+ * divider; n and d are below 2^53 and 2^40. */
+#ifdef QUIRC_DIV_ROUND
+int QUIRC_DIV_ROUND(int64_t n, int64_t d);
+#else
+#define QUIRC_DIV_ROUND(n, d) quirc_div_round(n, d)
+static int quirc_div_round(int64_t n, int64_t d)
+{
+	int64_t t = 2 * n + d, d2 = 2 * d;
+
+	return (int)(t >= 0 ? t / d2 : -((-t + d2 - 1) / d2));
+}
+#endif
+
+/* Maps grid point (u10 / 10, v10 / 10) like perspective_map(). */
+static void perspective_map_cell(const struct quirc_grid *qr, int u10, int v10,
+				 struct quirc_point *ret)
+{
+	const int64_t *c = qr->cfix;
+
+	if (qr->cfix_ok && u10 > -2000 && u10 < 2000 && v10 > -2000 && v10 < 2000) {
+		/* d = 10 * 2^32 * den; den ~ 1 for any sane transform */
+		int64_t d = c[6] * u10 + c[7] * v10 + ((int64_t)10 << 32);
+		int64_t x = c[0] * u10 + c[1] * v10 + c[2] * 10;
+		int64_t y = c[3] * u10 + c[4] * v10 + c[5] * 10;
+
+		if (d > ((int64_t)1 << 32) && d < ((int64_t)1 << 40) &&
+		    x > -((int64_t)1 << 52) && x < ((int64_t)1 << 52) &&
+		    y > -((int64_t)1 << 52) && y < ((int64_t)1 << 52)) {
+			ret->x = QUIRC_DIV_ROUND(x, d);
+			ret->y = QUIRC_DIV_ROUND(y, d);
+			return;
+		}
+	}
+	perspective_map(qr->c, u10 / (quirc_float_t)10.0, v10 / (quirc_float_t)10.0, ret);
+}
+#endif
 
 /************************************************************************
  * Span-based floodfill routine
@@ -692,7 +762,11 @@ static int read_cell(const struct quirc *q, int index, int x, int y)
 	const struct quirc_grid *qr = &q->grids[index];
 	struct quirc_point p;
 
+#ifdef QUIRC_FIXED_POINT_GRID
+	perspective_map_cell(qr, x * 10 + 5, y * 10 + 5, &p);
+#else
 	perspective_map(qr->c, x + (quirc_float_t)0.5, y + (quirc_float_t)0.5, &p);
+#endif
 	if (p.y < 0 || p.y >= q->h || p.x < 0 || p.x >= q->w)
 		return 0;
 
@@ -707,11 +781,18 @@ static int fitness_cell(const struct quirc *q, int index, int x, int y)
 
 	for (v = 0; v < 3; v++)
 		for (u = 0; u < 3; u++) {
-			static const quirc_float_t offsets[] = {0.3, 0.5, 0.7};
 			struct quirc_point p;
+#ifdef QUIRC_FIXED_POINT_GRID
+			static const int offsets10[] = {3, 5, 7};
+
+			perspective_map_cell(qr, x * 10 + offsets10[u],
+					     y * 10 + offsets10[v], &p);
+#else
+			static const quirc_float_t offsets[] = {0.3, 0.5, 0.7};
 
 			perspective_map(qr->c, x + offsets[u],
 					       y + offsets[v], &p);
+#endif
 			if (p.y < 0 || p.y >= q->h || p.x < 0 || p.x >= q->w)
 				continue;
 
@@ -830,6 +911,9 @@ static void jiggle_perspective(struct quirc *q, int index)
 				new = old - step;
 
 			qr->c[j] = new;
+#ifdef QUIRC_FIXED_POINT_GRID
+			perspective_fix_update(qr);
+#endif
 			test = fitness_all(q, index);
 
 			if (test > best)
@@ -861,8 +945,22 @@ static void setup_qr_perspective(struct quirc *q, int index)
 	memcpy(&rect[3], &q->capstones[qr->caps[0]].corners[0],
 	       sizeof(rect[0]));
 	perspective_setup(qr->c, rect, qr->grid_size - 7, qr->grid_size - 7);
+#ifdef QUIRC_FIXED_POINT_GRID
+	perspective_fix_update(qr);
+#endif
 
+#ifdef QUIRC_LAZY_JIGGLE
+	/* NDS-Signer: the fitness search is left for quirc_refine(), called
+	 * only when the grid read with this transform fails to decode */
+	qr->refined = 0;
+#else
+	STAGE_MARK(5);
 	jiggle_perspective(q, index);
+	STAGE_MARK(6);
+#ifdef QUIRC_FIXED_POINT_GRID
+	perspective_fix_update(qr);  /* jiggle may have restored an old c[j] */
+#endif
+#endif
 }
 
 /* Rotate the capstone with so that corner 0 is the leftmost with respect
@@ -1105,15 +1203,47 @@ void quirc_end(struct quirc *q)
 {
 	int i;
 
+	STAGE_MARK(0);
 	uint8_t threshold = otsu(q);
+	STAGE_MARK(1);
 	pixels_setup(q, threshold);
+	STAGE_MARK(2);
 
 	for (i = 0; i < q->h; i++)
 		finder_scan(q, i);
+	STAGE_MARK(3);
 
 	for (i = 0; i < q->num_capstones; i++)
 		test_grouping(q, i);
+	STAGE_MARK(4);
 }
+
+#ifdef QUIRC_LAZY_JIGGLE
+/* NDS-Signer addition: runs the perspective fitness search that quirc_end()
+ * skipped for grid `index`. Returns 0 if it had already run (nothing new to
+ * extract), 1 otherwise. Doing it only after a failed quirc_decode() saves
+ * most of quirc's time per frame on a CPU without FPU, and cannot lose a
+ * code: when the quick read fails, the grid gets exactly quirc's full
+ * treatment. */
+int quirc_refine(struct quirc *q, int index)
+{
+	struct quirc_grid *qr;
+
+	if (index < 0 || index >= q->num_grids)
+		return 0;
+	qr = &q->grids[index];
+	if (qr->refined)
+		return 0;
+	STAGE_MARK(5);
+	jiggle_perspective(q, index);
+	STAGE_MARK(6);
+#ifdef QUIRC_FIXED_POINT_GRID
+	perspective_fix_update(qr);
+#endif
+	qr->refined = 1;
+	return 1;
+}
+#endif
 
 void quirc_extract(const struct quirc *q, int index,
 		   struct quirc_code *code)

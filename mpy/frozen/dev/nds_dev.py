@@ -8,11 +8,12 @@ from seedsigner.gui.hw import nds
 from seedsigner.gui import nds_ui
 
 _benchmark = []
+_last_scan = []
 
 
 def report_lines():
     dsi, camera, cheap, uptime = nds.info()
-    frames, decode_ms = nds.camera_stats()
+    frames, decode_ms = nds.camera_stats()[:2]
     gc.collect()
     lines = [
         "NDS-Signer DEV " + nds.version(),
@@ -22,7 +23,31 @@ def report_lines():
         "cam frames %d decode %dms" % (frames, decode_ms),
         "python " + sys.version.split(" ")[0],
     ]
-    return lines + _benchmark
+    return lines + _last_scan + _benchmark
+
+
+def _scan_summary(parts, py_ms):
+    """Two lines: camera/quirc rates and averages, Python per decoded part."""
+    frames, _last, grids, decoded, copy_us, ident_us, dec_us, elapsed = nds.camera_stats()
+    n = max(frames, 1)
+    fps10 = frames * 10000 // max(elapsed, 1)
+    return [
+        "fps %d.%d qr %d/%d ok %d" % (fps10 // 10, fps10 % 10, grids, frames, decoded),
+        "ms cp%d id%d dc%d py%d" % (copy_us // n // 1000, ident_us // n // 1000,
+                                   dec_us // n // 1000, py_ms // max(parts, 1)),
+    ]
+
+
+def show_scan_stats(parts, py_ms):
+    """Live scan statistics on the bottom screen (called by ScanScreen)."""
+    for i, line in enumerate(_scan_summary(parts, py_ms)):
+        nds.bottom_print(8 + i, 1, nds_ui.pad(line, nds_ui.COLS - 2))
+
+
+def record_scan(parts, py_ms):
+    frames, elapsed = nds.camera_stats()[0], nds.camera_stats()[7]
+    _last_scan[:] = ["last scan %d.%ds, %d parts" % (elapsed // 1000, elapsed % 1000 // 100, parts)]
+    _last_scan.extend(_scan_summary(parts, py_ms))
 
 
 def _run_benchmark():
@@ -41,6 +66,43 @@ def _run_benchmark():
     t3 = nds.ticks_ms()
     del _benchmark[:]
     _benchmark.append("pbkdf2 %dms derive %dms sign %dms" % (t1 - t0, t2 - t1, (t3 - t2) // 10))
+    _benchmark.extend(_scan_benchmark())
+
+
+def _scan_benchmark():
+    """quirc on synthetic 640x480 frames of UR parts at SeedSigner's three
+    densities, and SeedSigner's DecodeQR cost per part (Python). One line per
+    density: "<density><chars> <copy>+<identify>+<decode>ms (QR ~400 px wide)
+    id <otsu>/<binarize>/<finder>/<grouping> py <ms per part>"."""
+    from binascii import a2b_base64
+
+    from seedsigner.helpers.ur2.ur import UR
+    from seedsigner.helpers.ur2.ur_encoder import UREncoder
+    from seedsigner.models.decode_qr import DecodeQR
+    from urtypes.crypto import PSBT as UR_PSBT
+    from test_vectors import DATA
+
+    psbt = a2b_base64(DATA["psbt_base64_10in.txt"].strip())
+    lines = []
+    for name, fragment in (("L", 10), ("M", 30), ("H", 120)):
+        encoder = UREncoder(ur=UR("crypto-psbt", UR_PSBT(psbt).to_cbor()), max_fragment_len=fragment)
+        part = encoder.next_part().upper()
+        r = nds.scan_benchmark(part, 400)
+        if r is None:
+            line = "%s%d n/a" % (name, len(part))
+        else:
+            line = "%s%d %s%d+%d+%d id%s" % (
+                name, len(part), "" if r[0] else "FAIL ", r[1] // 1000, r[2] // 1000, r[3] // 1000,
+                "/".join(str(us // 1000) for us in r[4:]))
+        parts = [part] + [encoder.next_part().upper() for _ in range(15)]
+        decoder = DecodeQR()
+        t0 = nds.ticks_ms()
+        for p in parts:
+            decoder.add_data(p)
+        line += " py%d" % ((nds.ticks_ms() - t0) // len(parts))
+        print("bench:", line)
+        lines.append(line)
+    return lines
 
 
 def diagnostics():

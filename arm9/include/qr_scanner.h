@@ -25,6 +25,14 @@ typedef struct {
 	u32 lastDecodeUs;    /* time spent in quirc for the last frame */
 	int lastGrids;       /* QR candidates found in the last frame */
 	int lastError;       /* last quirc decode error (0 = none) */
+	/* totals since scannerStart(), for averages (developer diagnostics) */
+	u32 gridFrames;      /* frames where quirc found a QR candidate */
+	u32 decoded;         /* frames decoded successfully */
+	u32 sumProcessUs;    /* luma copy + viewfinder */
+	u32 sumIdentifyUs;   /* quirc_end: thresholding and finder patterns */
+	u32 sumDecodeUs;     /* quirc_extract + quirc_decode (+ quirc_refine) */
+	u32 refines;         /* grids that needed quirc_refine() */
+	u32 startMs;         /* uiMillis() at scannerStart() */
 } ScanStats;
 
 /* Allocates buffers (~1.5 MB) and powers up the camera. */
@@ -46,5 +54,12 @@ const u8 *scannerPayload(size_t *len);
 void scannerClearPayload(void);
 
 const ScanStats *scannerStats(void);
+
+/* Developer benchmark without the camera: draws `text` as a QR code with
+ * about `pixels` wide (whole modules) into a capture buffer (640x480, like a camera
+ * frame) and runs the per-frame pipeline on it. Fills per-stage times and
+ * returns true if the QR was decoded back to `text`. */
+bool scannerBenchmark(const char *text, size_t len, int pixels, u32 *processUs,
+                      u32 *identifyUs, u32 *decodeUs);
 
 #endif /* NDS_SIGNER_QR_SCANNER_H */

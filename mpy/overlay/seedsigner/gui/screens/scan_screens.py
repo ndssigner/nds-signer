@@ -13,9 +13,12 @@ class ScanScreen(BaseScreen):
         nds.top_clear()
         nds.top_print(22, -1, _(self.instructions_text or "Scan a QR code"))
 
+    # below the Cancel button (rows 1-3)
+    PROGRESS_ROW = 5
+
     def _progress(self, status_text):
         nds.bottom_print(0, -1, _("Scanning..."))
-        nds.bottom_print(2, 1, nds_ui.pad(status_text, nds_ui.COLS - 2))
+        nds.bottom_print(self.PROGRESS_ROW, 1, nds_ui.pad(status_text, nds_ui.COLS - 2))
 
     def _run(self):
         from seedsigner.models.decode_qr import DecodeQRStatus
@@ -25,15 +28,22 @@ class ScanScreen(BaseScreen):
         self._progress("")
         if not nds.camera_start():
             return RET_CODE__BACK_BUTTON
+        dev = nds_ui.nds_dev
+        py_ms = parts = 0
         try:
             while True:
                 nds.frame()
                 if panel.handle_frame() is not None or nds.keys_down() & nds.KEY_B:
                     return False
                 payload = nds.camera_poll()
+                if dev is not None and nds.camera_stats()[0] % 8 == 1:
+                    dev.show_scan_stats(parts, py_ms)
                 if payload is None:
                     continue
+                t0 = nds.ticks_ms()
                 status = self.decoder.add_data(payload)
+                py_ms += nds.ticks_ms() - t0
+                parts += 1
                 if status in (DecodeQRStatus.COMPLETE, DecodeQRStatus.INVALID):
                     return None
                 percent = self.decoder.get_percent_complete()
@@ -41,3 +51,5 @@ class ScanScreen(BaseScreen):
                     self._progress("%s %d%%" % (_("Progress:"), percent))
         finally:
             nds.camera_stop()
+            if dev is not None:
+                dev.record_scan(parts, py_ms)

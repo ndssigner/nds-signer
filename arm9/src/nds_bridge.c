@@ -97,11 +97,35 @@ void ndsbCameraStop(void)
 	scannerStop();
 }
 
-void ndsbCameraStats(uint32_t *frames, uint32_t *decodeMs)
+void ndsbCameraStats(uint32_t stats[8])
 {
 	const ScanStats *s = scannerStats();
-	*frames = s->frames;
-	*decodeMs = s->lastDecodeUs / 1000;
+	stats[0] = s->frames;
+	stats[1] = s->lastDecodeUs / 1000;
+	stats[2] = s->gridFrames;
+	stats[3] = s->decoded;
+	stats[4] = s->sumProcessUs;
+	stats[5] = s->sumIdentifyUs;
+	stats[6] = s->sumDecodeUs;
+	stats[7] = uiMillis() - s->startMs;
+}
+
+#ifdef NDS_SIGNER_DEVBUILD
+extern u32 g_quircStageUs[5];
+#endif
+
+int ndsbScanBenchmark(const char *text, size_t len, int pixels, uint32_t times[8])
+{
+	if (!ndsbCameraInit())
+		return -1;
+	int ok = scannerBenchmark(text, len, pixels, &times[0], &times[1], &times[2]) ? 1 : 0;
+	for (int i = 0; i < 5; i++)
+#ifdef NDS_SIGNER_DEVBUILD
+		times[3 + i] = g_quircStageUs[i];
+#else
+		times[3 + i] = 0;
+#endif
+	return ok;
 }
 
 int ndsbQrShow(const char *text, size_t len, int border, int background)

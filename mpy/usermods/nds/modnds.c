@@ -126,15 +126,38 @@ static mp_obj_t nds_camera_stop(void)
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_stop_obj, nds_camera_stop);
 
-/* camera_stats(): (frames processed, last decode time in ms) */
+/* camera_stats(): (frames processed, last decode ms, frames with a QR
+ * candidate, frames decoded, total us in luma copy / quirc identify / quirc
+ * decode, ms since camera_start()) */
 static mp_obj_t nds_camera_stats(void)
 {
-	uint32_t frames, ms;
-	ndsbCameraStats(&frames, &ms);
-	mp_obj_t t[2] = { mp_obj_new_int(frames), mp_obj_new_int(ms) };
-	return mp_obj_new_tuple(2, t);
+	uint32_t stats[8];
+	ndsbCameraStats(stats);
+	mp_obj_t t[8];
+	for (int i = 0; i < 8; i++)
+		t[i] = mp_obj_new_int_from_uint(stats[i]);
+	return mp_obj_new_tuple(9, t);
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_stats_obj, nds_camera_stats);
+
+/* scan_benchmark(text, pixels): decodes `text` drawn as a QR code about
+ * `pixels` wide in a synthetic 640x480 frame, without the camera.
+ * Returns (decoded_ok, copy_us, identify_us, decode_us, otsu_us, binarize_us,
+ * finder_us, grouping_us, jiggle_us) or None; the stage times are 0 in release builds. */
+static mp_obj_t nds_scan_benchmark(mp_obj_t text_in, mp_obj_t pixels_in)
+{
+	size_t len;
+	const char *text = mp_obj_str_get_data(text_in, &len);
+	uint32_t times[8];
+	int r = ndsbScanBenchmark(text, len, mp_obj_get_int(pixels_in), times);
+	if (r < 0)
+		return mp_const_none;
+	mp_obj_t t[9] = { mp_obj_new_bool(r) };
+	for (int i = 0; i < 8; i++)
+		t[1 + i] = mp_obj_new_int_from_uint(times[i]);
+	return mp_obj_new_tuple(9, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(nds_scan_benchmark_obj, nds_scan_benchmark);
 
 /* qr_show(text, border=2, background=255): QR code on the top screen.
  * Returns its size in modules (0 if the text does not fit). */
@@ -185,6 +208,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_poll), MP_ROM_PTR(&nds_camera_poll_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stop), MP_ROM_PTR(&nds_camera_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stats), MP_ROM_PTR(&nds_camera_stats_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_scan_benchmark), MP_ROM_PTR(&nds_scan_benchmark_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_show), MP_ROM_PTR(&nds_qr_show_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&nds_version_obj) },

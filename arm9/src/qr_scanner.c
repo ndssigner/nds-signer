@@ -9,7 +9,9 @@
 
 #include "camera.h"
 #include "qr_scanner.h"
+#include "qrcodegen.h"
 #include "quirc.h"
+#include "ui.h"
 
 #define CAP_W 640
 #define CAP_H 480
@@ -28,6 +30,30 @@ static struct quirc *s_quirc;
 static u16 s_vfColumn[VF_W];  /* viewfinder x -> capture x */
 
 static ScanStats s_stats;
+static int s_quickFails;      /* frames in a row with an undecoded QR, see decode() */
+
+#ifdef NDS_SIGNER_DEVBUILD
+/* quirc_end() stage times (lib/quirc/identify.c QUIRC_STAGE_MARK), in timer
+ * ticks of the cpuStartTiming() run that decode() has open */
+static u32 s_stageTicks[7];
+static u32 s_jiggleTicks;
+u32 g_quircStageUs[5];  /* otsu, binarize, finder, grouping, jiggle (part of grouping) */
+
+void scannerStageMark(int stage);
+void scannerStageMark(int stage)
+{
+	s_stageTicks[stage] = cpuGetTiming();
+	if (stage == 0)
+		s_jiggleTicks = 0;
+	else if (stage == 6)
+		s_jiggleTicks += s_stageTicks[6] - s_stageTicks[5];
+	else if (stage == 4) {
+		for (int i = 0; i < 4; i++)
+			g_quircStageUs[i] = timerTicks2usec(s_stageTicks[i + 1] - s_stageTicks[i]);
+		g_quircStageUs[4] = timerTicks2usec(s_jiggleTicks);
+	}
+}
+#endif
 static struct quirc_data s_data;
 
 bool scannerInit(void)
@@ -83,6 +109,8 @@ bool scannerStart(void)
 		return false;
 
 	memset(&s_stats, 0, sizeof(s_stats));
+	s_stats.startMs = uiMillis();
+	s_quickFails = 0;
 	s_dmaBuffer = 0;
 	cameraTransferStart(s_capture[s_dmaBuffer], CAPTURE_MODE_CAPTURE);
 	s_streaming = true;
@@ -118,20 +146,20 @@ static void processFrame(const u16 *yuv, u16 *viewfinder)
 	}
 }
 
-static bool decode(void)
+/* quirc is built with QUIRC_LAZY_JIGGLE: quirc_end() skips its perspective
+ * fitness search (most of its time on the DS), and quirc_refine() runs it
+ * for a grid on demand. It helps when the QR is seen at an angle, not when
+ * the frame is blurred, so it is only used after REFINE_AFTER frames in a
+ * row showed a QR code that the quick read could not decode, and kept while
+ * it is what makes frames decode. */
+#define REFINE_AFTER 2
+
+static bool decodeGrid(int index, bool refine, bool *refined)
 {
-	cpuStartTiming(0);
-	quirc_end(s_quirc);
+	struct quirc_code code;
 
-	int count = quirc_count(s_quirc);
-	bool found = false;
-	s_stats.lastGrids = count;
-	s_stats.lastError = 0;
-
-	for (int i = 0; i < count && !found; i++) {
-		struct quirc_code code;
-		quirc_extract(s_quirc, i, &code);
-
+	for (;;) {
+		quirc_extract(s_quirc, index, &code);
 		quirc_decode_error_t err = quirc_decode(&code, &s_data);
 		if (err == QUIRC_ERROR_DATA_ECC) {
 			/* The QR might be mirrored (e.g. shown on a phone front camera) */
@@ -139,12 +167,43 @@ static bool decode(void)
 			err = quirc_decode(&code, &s_data);
 		}
 		if (err == QUIRC_SUCCESS)
-			found = true;
-		else
-			s_stats.lastError = err;
+			return true;
+		s_stats.lastError = err;
+		if (!refine || !quirc_refine(s_quirc, index))
+			return false;
+		*refined = true;
+		s_stats.refines++;
 	}
+}
 
-	s_stats.lastDecodeUs = timerTicks2usec(cpuEndTiming());
+static bool decode(void)
+{
+	cpuStartTiming(0);
+	quirc_end(s_quirc);
+	u32 identifyUs = timerTicks2usec(cpuEndTiming());
+	s_stats.sumIdentifyUs += identifyUs;
+
+	cpuStartTiming(0);
+	int count = quirc_count(s_quirc);
+	bool found = false, refined = false;
+	s_stats.lastGrids = count;
+	s_stats.lastError = 0;
+
+	for (int i = 0; i < count && !found; i++)
+		found = decodeGrid(i, s_quickFails >= REFINE_AFTER, &refined);
+
+	if (found)
+		s_quickFails = refined ? REFINE_AFTER : 0;
+	else if (count > 0)
+		s_quickFails++;
+
+	u32 decodeUs = timerTicks2usec(cpuEndTiming());
+	s_stats.sumDecodeUs += decodeUs;
+	s_stats.lastDecodeUs = identifyUs + decodeUs;
+	if (count > 0)
+		s_stats.gridFrames++;
+	if (found)
+		s_stats.decoded++;
 	return found;
 }
 
@@ -163,7 +222,9 @@ ScanStatus scannerPoll(u16 *viewfinder)
 	/* The DMA wrote behind the CPU's back: drop stale cache lines */
 	DC_InvalidateRange(frame, CAP_W * CAP_H * sizeof(u16));
 
+	cpuStartTiming(0);
 	processFrame(frame, viewfinder);
+	s_stats.sumProcessUs += timerTicks2usec(cpuEndTiming());
 	s_stats.frames++;
 
 	return decode() ? SCAN_DECODED : SCAN_FRAME;
@@ -178,4 +239,51 @@ const u8 *scannerPayload(size_t *len)
 const ScanStats *scannerStats(void)
 {
 	return &s_stats;
+}
+
+bool scannerBenchmark(const char *text, size_t len, int pixels, u32 *processUs,
+                      u32 *identifyUs, u32 *decodeUs)
+{
+	static uint8_t qr[qrcodegen_BUFFER_LEN_MAX];
+	static uint8_t temp[qrcodegen_BUFFER_LEN_MAX];
+	static char str[qrcodegen_BUFFER_LEN_MAX];
+	static u16 viewfinder[VF_W * VF_H];
+
+	if (!s_quirc || s_streaming || len >= sizeof(str))
+		return false;
+	memcpy(str, text, len);
+	str[len] = 0;
+	if (!qrcodegen_encodeText(str, temp, qr, qrcodegen_Ecc_LOW,
+	                          qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX,
+	                          qrcodegen_Mask_AUTO, true))
+		return false;
+
+	/* A grey-ish frame like a camera's: dark modules 40, light 200 */
+	int size = qrcodegen_getSize(qr);
+	int scale = pixels / size < 1 ? 1 : pixels / size;
+	int x0 = (CAP_W - size * scale) / 2, y0 = (CAP_H - size * scale) / 2;
+	u16 *frame = s_capture[0];
+	for (int y = 0; y < CAP_H; y++) {
+		int my = y - y0 < 0 ? -1 : (y - y0) / scale;
+		for (int x = 0; x < CAP_W; x++) {
+			int mx = x - x0 < 0 ? -1 : (x - x0) / scale;
+			bool dark = mx >= 0 && my >= 0 && mx < size && my < size &&
+			            qrcodegen_getModule(qr, mx, my);
+			frame[y * CAP_W + x] = 0x8000 | (dark ? 40 : 200);
+		}
+	}
+	DC_FlushRange(frame, CAP_W * CAP_H * sizeof(u16));
+	DC_InvalidateRange(frame, CAP_W * CAP_H * sizeof(u16));
+
+	memset(&s_stats, 0, sizeof(s_stats));
+	s_quickFails = 0;
+	cpuStartTiming(0);
+	processFrame(frame, viewfinder);
+	*processUs = timerTicks2usec(cpuEndTiming());
+	bool ok = decode();
+	*identifyUs = s_stats.sumIdentifyUs;
+	*decodeUs = s_stats.sumDecodeUs;
+	ok = ok && s_data.payload_len == (int)len && memcmp(s_data.payload, text, len) == 0;
+	scannerClearPayload();
+	return ok;
 }
