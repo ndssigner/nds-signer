@@ -233,6 +233,52 @@ def run_address_flow(prefix, own):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+def run_backup_flow(prefix):
+    """Seeds -> Backup seed -> View seed words: the pages must show the
+    mnemonic, in order; then the backup test (Verify), answering each
+    "Verify Word #N" with the right word, must end on "Backup Verified"."""
+    from seedsigner.models.seed import Seed
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    words = read(prefix + ".mnemonic.txt").split()
+    controller.storage.set_pending_seed(Seed(words))
+    controller.storage.finalize_pending_seed()
+    shown = []
+
+    def collect_page():
+        for line in nds.sim_text(0).split("\n"):
+            parts = line.strip("|").split()
+            if len(parts) == 2 and parts[0].endswith(".") and parts[0][:-1].isdigit():
+                shown.append((int(parts[0][:-1]), parts[1]))
+
+    def answer():
+        top = nds.sim_text(0)
+        if "Verify Word #" in top:
+            n = int(top.split("Verify Word #")[1].split()[0].strip("|"))
+            nds._events[0:0] = [("tap_label", words[n - 1]), ("key", 0), ("wait", 3),
+                                 ("call", dump), ("call", answer)]
+
+    def check():
+        ok_words = shown == [(i + 1, w) for i, w in enumerate(words)]
+        ok_test = "Backup Verified" in nds.sim_text(0)
+        RESULT["backup"] = ok_words and ok_test
+        print("ok  " if ok_words and ok_test else "FAIL",
+              "backup flow: %d seed words shown in order%s, backup test %s" % (
+                  len(shown), "" if ok_words else " (WRONG)", "verified" if ok_test else "FAILED"))
+
+    events = []
+    for label in ("Seeds", "8b218e81", "Backup seed", "View seed words", "I understand"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    for page in range(3):
+        events += [("wait", 2), ("call", dump), ("call", collect_page),
+                   ("tap_label", "Next" if page < 2 else "Done"), ("key", 0)]
+    events += [("wait", 2), ("call", dump), ("tap_label", "Verify"), ("key", 0), ("wait", 2),
+               ("call", dump), ("call", answer), ("wait", 5), ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -271,6 +317,8 @@ elif MODE == "settings":
     run_settings_flow()
 elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
+elif MODE == "backup":
+    run_backup_flow("psbt_base64_singlesig")
 elif MODE in ("address", "address_foreign"):
     run_address_flow("psbt_base64_singlesig", MODE == "address")
 else:

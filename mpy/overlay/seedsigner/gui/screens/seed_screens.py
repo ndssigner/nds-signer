@@ -235,6 +235,24 @@ class SeedOptionsScreen(ButtonListScreen):
         return ["", nds_ui.center(_("Fingerprint")), "", nds_ui.center(self.fingerprint or "")]
 
 
+class SeedWordsScreen(ButtonListScreen):
+    """Like upstream: a page of numbered seed words (upstream's title already
+    says "Seed Words: page/pages")."""
+
+    def top_lines(self):
+        words = self.words or []
+        first = self.page_index * len(words) + 1
+        lines = [""]
+        for i, word in enumerate(words):
+            lines += ["      %2d.  %s" % (first + i, word), ""]
+        return lines
+
+
+class SeedWordsBackupTestPromptScreen(ButtonListScreen):
+    def top_lines(self):
+        return [""] + nds_ui.wrap(_("Optionally verify that your mnemonic backup is correct."))
+
+
 class SeedAddressVerificationScreen(ButtonListScreen):
     """Upstream shows this while BruteForceAddressVerificationThread searches
     in the background. Threads run synchronously here, so the search and its

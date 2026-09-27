@@ -11,12 +11,20 @@ class _NoLock:
         return False
 
 
+class _NoDisplayDriver:
+    """SeedSigner's display driver: settings call disp.invert() (the
+    "Invert colors" hardware setting for its LCD). Nothing to do here."""
+
+    def invert(self, enabled=True):
+        pass
+
+
 class Renderer(ConfigurableSingleton):
     canvas_width = 256
     canvas_height = 192
     canvas = None
     draw = None
-    disp = None
+    disp = _NoDisplayDriver()
     is_screenshot_generator = False
     lock = _NoLock()
 

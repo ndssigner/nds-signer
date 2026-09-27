@@ -51,6 +51,7 @@ package(
 
 # NDS-Signer shims
 module("random.py", base_path="$(PORT_DIR)/frozen")
+module("nds_ui_random.py", base_path="$(PORT_DIR)/frozen")  # backup test only
 
 # CPython stdlib compatibility modules needed by SeedSigner (see each file)
 for _name in ("dataclasses", "enum", "importlib", "threading", "traceback", "typing", "gettext",

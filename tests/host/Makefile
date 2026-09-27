@@ -90,7 +90,7 @@ seedsigner: frozen
 	@$(DOCKER_MPY_ROM) decode_qr_check.py /source/tests/vectors > $(TOPDIR)/build/decode_qr.mpy.txt
 	@diff $(TOPDIR)/build/decode_qr.cpython.txt $(TOPDIR)/build/decode_qr.mpy.txt \
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
-	@for mode in preloaded typed seedqr passphrase settings xpub address address_foreign; do \
+	@for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup; do \
 		$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors $$mode 2>/dev/null | grep -E "^(ok|FAIL)"; \
 	done
 

@@ -24,6 +24,9 @@ constructs MicroPython cannot support are rewritten:
     so without this its output bytes differ from SeedSigner's on CPython.
   * With --no-new-rewrite: skip the __new__ rewrite (for code that defines
     its own __new__, e.g. urtypes).
+  * IMPORT_REPLACEMENTS: per-module `import X` -> `import Y as X`. Used to
+    give one module something a global replacement must not provide (see
+    the table).
 
 Everything else is emitted as-is (via ast.unparse, so comments are dropped).
 
@@ -149,8 +152,32 @@ HEADER = (
 )
 
 
+# rel path -> {module imported: module used instead}
+IMPORT_REPLACEMENTS = {
+    # The backup test picks which word to ask and shuffles decoy words with
+    # `random`. NDS-Signer's global `random` refuses to work (no PRNG may
+    # ever feed key material, e.g. embit's key helpers); this view gets a
+    # non-cryptographic generator meant only for that (mpy/frozen/nds_ui_random.py).
+    "seedsigner/views/seed_views.py": {"random": "nds_ui_random"},
+}
+
+
+class ImportReplacer(ast.NodeTransformer):
+    def __init__(self, table):
+        self.table = table
+
+    def visit_Import(self, node):
+        for alias in node.names:
+            if alias.name in self.table:
+                alias.asname = alias.asname or alias.name
+                alias.name = self.table[alias.name]
+        return node
+
+
 def transform(path: pathlib.Path, rel: str, ordered_dicts=False, rewrite_new=True) -> str:
     tree = ast.parse(path.read_text(), filename=str(path))
+    if rel in IMPORT_REPLACEMENTS:
+        tree = ImportReplacer(IMPORT_REPLACEMENTS[rel]).visit(tree)
     transformer = Transformer(ordered_dicts, rewrite_new)
     tree = transformer.visit(tree)
     if transformer.used_ordered_dict:

@@ -1,7 +1,9 @@
 # Upstream SeedSigner modules frozen into the ROM (relative to
 # third_party/seedsigner/src), transformed by tools/upy_transform.py.
 # Excluded (replaced by mpy/overlay): gui/, hardware/, views/screensaver.py,
-# helpers/qr.py. Excluded (not used on NDS): main.py, resources.
+# helpers/qr.py, helpers/version.py. Excluded (not used on NDS): main.py,
+# resources. (The overlay's helpers/ur2/__init__.py extends the upstream one,
+# which is empty.)
 seedsigner/__init__.py
 seedsigner/controller.py
 seedsigner/helpers/__init__.py
@@ -22,7 +24,6 @@ seedsigner/helpers/ur2/ur_decoder.py
 seedsigner/helpers/ur2/ur_encoder.py
 seedsigner/helpers/ur2/utils.py
 seedsigner/helpers/ur2/xoshiro256.py
-seedsigner/helpers/version.py
 seedsigner/models/__init__.py
 seedsigner/models/decode_qr.py
 seedsigner/models/encode_qr.py
