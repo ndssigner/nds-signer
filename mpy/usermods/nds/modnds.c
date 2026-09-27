@@ -136,7 +136,7 @@ static mp_obj_t nds_camera_stats(void)
 	mp_obj_t t[8];
 	for (int i = 0; i < 8; i++)
 		t[i] = mp_obj_new_int_from_uint(stats[i]);
-	return mp_obj_new_tuple(9, t);
+	return mp_obj_new_tuple(8, t);
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_stats_obj, nds_camera_stats);
 
