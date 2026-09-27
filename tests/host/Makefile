@@ -85,6 +85,8 @@ seedsigner: frozen
 	$(DOCKER_MPY_ROM) seedsigner_check.py /source/tests/vectors
 	@$(DOCKER_MPY_ROM) -X heapsize=16M bytewords_check.py 2>&1 | grep -v "^WARNING\|^Set LANG"
 	@$(DOCKER_MPY_ROM) dev_scan_check.py 2>&1 | grep -E "^(ok|FAIL)|Error"
+	@test ! -f $(TOPDIR)/build/generated/gfx_fonts.c || \
+		python3 gfx_sim_check.py sim $(TOPDIR)/build/generated/gfx_fonts.c
 	@PYTHONPATH=$(TOPDIR)/third_party/seedsigner/src:$(TOPDIR)/mpy/frozen/hwstubs $(PYTHON) decode_qr_check.py $(TOPDIR)/tests/vectors \
 		> $(TOPDIR)/build/decode_qr.cpython.txt
 	@$(DOCKER_MPY_ROM) decode_qr_check.py /source/tests/vectors > $(TOPDIR)/build/decode_qr.mpy.txt

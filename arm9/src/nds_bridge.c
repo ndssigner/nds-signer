@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "nds_bridge.h"
+#include "gfx.h"
 #include "qr_display.h"
 #include "qr_scanner.h"
 #include "ui.h"
@@ -31,6 +32,8 @@ void ndsbPrint(int screen, int row, int col, const char *text, size_t len)
 
 void ndsbClear(int screen)
 {
+	/* the graphical UI's back buffer too, so a screen starts from black */
+	gfxClear(screen == NDSB_TOP ? GFX_TOP : GFX_BOTTOM, 0);
 	if (screen == NDSB_TOP)
 		uiClearTop();
 	else
@@ -138,6 +141,25 @@ int ndsbQrShow(const char *text, size_t len, int border, int background)
 		background = 255;
 	return qrDisplayShow(text, len, border, (u8)background);
 }
+
+void ndsbGfxClear(int screen, uint32_t rgb) { gfxClear(screen, rgb); }
+void ndsbGfxRect(int screen, int x, int y, int w, int h, uint32_t rgb, int radius)
+{
+	gfxRect(screen, x, y, w, h, rgb, radius);
+}
+void ndsbGfxFrame(int screen, int x, int y, int w, int h, uint32_t rgb, int radius, int thickness)
+{
+	gfxFrame(screen, x, y, w, h, rgb, radius, thickness);
+}
+int ndsbGfxText(int screen, int x, int y, const char *utf8, size_t len, int font, uint32_t rgb,
+                int maxWidth)
+{
+	return gfxText(screen, x, y, utf8, len, font, rgb, maxWidth);
+}
+int ndsbGfxTextWidth(const char *utf8, size_t len, int font) { return gfxTextWidth(utf8, len, font); }
+void ndsbGfxFontMetrics(int font, int *ascent, int *lineHeight) { gfxFontMetrics(font, ascent, lineHeight); }
+void ndsbGfxPresent(int screen) { gfxPresent(screen); }
+int ndsbGfxFontCount(void) { return GFX_FONT_COUNT; }
 
 int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
                      int zoneX, int zoneY)

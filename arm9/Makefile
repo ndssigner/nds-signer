@@ -19,7 +19,7 @@ include $(DEVKITARM)/ds_rules
 #---------------------------------------------------------------------------------
 BUILD    := build
 SOURCES  := src ../lib/quirc ../lib/qrcodegen ../build/generated
-INCLUDES := include ../shared/include ../lib/quirc ../lib/qrcodegen
+INCLUDES := include ../shared/include ../lib/quirc ../lib/qrcodegen ../build/generated
 DATA     := data
 
 #---------------------------------------------------------------------------------

@@ -35,8 +35,9 @@ include $(DEVKITARM)/ds_rules
 #---------------------------------------------------------------------------------
 all: checkarm7 checkmpy checkarm9 $(TARGET).nds
 
-# MicroPython static library (SPIKE, see docs/architecture.md)
-checkmpy:
+# MicroPython static library (SPIKE, see docs/architecture.md); the nds
+# module needs the generated font ids (gfx_fonts.h)
+checkmpy: fonts
 	$(MAKE) -C mpy TOPDIR=$(TOPDIR)
 
 checkarm7:
@@ -46,10 +47,17 @@ checkarm9: checkmpy fonts
 	$(MAKE) -C arm9
 
 # Console font generated from the vendored BDF (lib/fonts)
-fonts: build/generated/nds_font.c
+fonts: build/generated/nds_font.c build/generated/gfx_fonts.c
 build/generated/nds_font.c: lib/fonts/spleen-5x8.bdf tools/bdf_to_ndsfont.py
 	@mkdir -p build/generated
 	python3 tools/bdf_to_ndsfont.py $< $@
+
+# Graphical UI fonts: SeedSigner's own, rasterized (Pillow pinned in the image)
+build/generated/gfx_fonts.c: tools/ttf_to_ndsfont.py \
+		$(wildcard third_party/seedsigner/src/seedsigner/resources/fonts/*) \
+		third_party/seedsigner/src/seedsigner/gui/components.py
+	@mkdir -p build/generated
+	python3 tools/ttf_to_ndsfont.py third_party/seedsigner/src $@ build/generated/gfx_fonts.h
 
 $(TARGET).nds: arm7/$(TARGET).elf arm9/$(TARGET).elf
 	ndstool -c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \

@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "nds_bridge.h"
+#include "gfx_fonts.h"  /* build/generated: GFX_FONT_* ids */
 
 static mp_obj_t print_on(int screen, mp_obj_t row, mp_obj_t col, mp_obj_t text_in)
 {
@@ -171,6 +172,72 @@ static mp_obj_t nds_qr_show(size_t n_args, const mp_obj_t *args)
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_show_obj, 1, 3, nds_qr_show);
 
+/* ---- graphical UI (arm9/include/gfx.h): screen 0 top / 1 bottom, colors
+ * 0xRRGGBB, fonts FONT_*; draw, then gfx_present(screen) ---- */
+static mp_obj_t nds_gfx_clear(mp_obj_t screen, mp_obj_t rgb)
+{
+	ndsbGfxClear(mp_obj_get_int(screen), mp_obj_get_int(rgb));
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(nds_gfx_clear_obj, nds_gfx_clear);
+
+/* gfx_rect(screen, x, y, w, h, rgb, radius=0) */
+static mp_obj_t nds_gfx_rect(size_t n_args, const mp_obj_t *a)
+{
+	ndsbGfxRect(mp_obj_get_int(a[0]), mp_obj_get_int(a[1]), mp_obj_get_int(a[2]),
+	            mp_obj_get_int(a[3]), mp_obj_get_int(a[4]), mp_obj_get_int(a[5]),
+	            n_args > 6 ? mp_obj_get_int(a[6]) : 0);
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_gfx_rect_obj, 6, 7, nds_gfx_rect);
+
+/* gfx_frame(screen, x, y, w, h, rgb, radius=0, thickness=1) */
+static mp_obj_t nds_gfx_frame(size_t n_args, const mp_obj_t *a)
+{
+	ndsbGfxFrame(mp_obj_get_int(a[0]), mp_obj_get_int(a[1]), mp_obj_get_int(a[2]),
+	             mp_obj_get_int(a[3]), mp_obj_get_int(a[4]), mp_obj_get_int(a[5]),
+	             n_args > 6 ? mp_obj_get_int(a[6]) : 0, n_args > 7 ? mp_obj_get_int(a[7]) : 1);
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_gfx_frame_obj, 6, 8, nds_gfx_frame);
+
+/* gfx_text(screen, x, y, text, font, rgb, max_width=0) -> width drawn;
+ * (x, y) is the top-left corner of the line box */
+static mp_obj_t nds_gfx_text(size_t n_args, const mp_obj_t *a)
+{
+	size_t len;
+	const char *text = mp_obj_str_get_data(a[3], &len);
+	return mp_obj_new_int(ndsbGfxText(mp_obj_get_int(a[0]), mp_obj_get_int(a[1]),
+	                                  mp_obj_get_int(a[2]), text, len, mp_obj_get_int(a[4]),
+	                                  mp_obj_get_int(a[5]), n_args > 6 ? mp_obj_get_int(a[6]) : 0));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_gfx_text_obj, 6, 7, nds_gfx_text);
+
+static mp_obj_t nds_gfx_text_width(mp_obj_t text_in, mp_obj_t font)
+{
+	size_t len;
+	const char *text = mp_obj_str_get_data(text_in, &len);
+	return mp_obj_new_int(ndsbGfxTextWidth(text, len, mp_obj_get_int(font)));
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(nds_gfx_text_width_obj, nds_gfx_text_width);
+
+/* gfx_font_metrics(font) -> (ascent, line_height) */
+static mp_obj_t nds_gfx_font_metrics(mp_obj_t font)
+{
+	int ascent, line;
+	ndsbGfxFontMetrics(mp_obj_get_int(font), &ascent, &line);
+	mp_obj_t t[2] = { mp_obj_new_int(ascent), mp_obj_new_int(line) };
+	return mp_obj_new_tuple(2, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(nds_gfx_font_metrics_obj, nds_gfx_font_metrics);
+
+static mp_obj_t nds_gfx_present(mp_obj_t screen)
+{
+	ndsbGfxPresent(mp_obj_get_int(screen));
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(nds_gfx_present_obj, nds_gfx_present);
+
 /* qr_transcribe(data, zone_modules=0, zone_x=0, zone_y=0): SeedQR for hand
  * transcription on the top screen, ECC L exactly; bytes data is encoded in
  * binary mode (CompactSeedQR). zone_modules > 0 zooms into one zone.
@@ -235,6 +302,25 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_stats), MP_ROM_PTR(&nds_camera_stats_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_scan_benchmark), MP_ROM_PTR(&nds_scan_benchmark_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_show), MP_ROM_PTR(&nds_qr_show_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_gfx_clear), MP_ROM_PTR(&nds_gfx_clear_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_gfx_rect), MP_ROM_PTR(&nds_gfx_rect_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_gfx_frame), MP_ROM_PTR(&nds_gfx_frame_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_gfx_text), MP_ROM_PTR(&nds_gfx_text_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_gfx_text_width), MP_ROM_PTR(&nds_gfx_text_width_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_gfx_font_metrics), MP_ROM_PTR(&nds_gfx_font_metrics_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_gfx_present), MP_ROM_PTR(&nds_gfx_present_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_BODY), MP_ROM_INT(GFX_FONT_BODY) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_BODY_BOLD), MP_ROM_INT(GFX_FONT_BODY_BOLD) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_BUTTON), MP_ROM_INT(GFX_FONT_BUTTON) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_TITLE), MP_ROM_INT(GFX_FONT_TITLE) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_LARGE), MP_ROM_INT(GFX_FONT_LARGE) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_MONO), MP_ROM_INT(GFX_FONT_MONO) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_MONO_SMALL), MP_ROM_INT(GFX_FONT_MONO_SMALL) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_MONO_BOLD), MP_ROM_INT(GFX_FONT_MONO_BOLD) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_ICON), MP_ROM_INT(GFX_FONT_ICON) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_ICON_LARGE), MP_ROM_INT(GFX_FONT_ICON_LARGE) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_SSICON), MP_ROM_INT(GFX_FONT_SSICON) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_SSICON_LARGE), MP_ROM_INT(GFX_FONT_SSICON_LARGE) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe), MP_ROM_PTR(&nds_qr_transcribe_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&nds_version_obj) },

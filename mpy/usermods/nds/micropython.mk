@@ -7,4 +7,4 @@ SRC_USERMOD += $(NDS_MOD_DIR)/modnds.c
 
 # The module only includes arm9/include/nds_bridge.h (plain C, no libnds), so
 # the host preprocessor used for the qstr scan can read it.
-CFLAGS_USERMOD += -I$(NDS_MOD_DIR)/../../../arm9/include
+CFLAGS_USERMOD += -I$(NDS_MOD_DIR)/../../../arm9/include -I$(NDS_MOD_DIR)/../../../build/generated

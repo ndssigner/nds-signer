@@ -12,10 +12,8 @@ except ImportError:
 
 COLS = nds.COLS
 ROWS = nds.ROWS
-BUTTON_ROWS = 3           # each button is a 3-row box
-FIRST_BUTTON_ROW = 1
-BUTTONS_PER_PAGE = 5      # rows 1..15
-NAV_ROW = 20              # "< Back" and paging, rows 20..22
+GFX_W, GFX_H = 256, 192
+TOP, BOTTOM = 0, 1
 
 # Box-drawing glyphs of NDS-Signer's console font (tools/bdf_to_ndsfont.py):
 # (horizontal, vertical, top-left, top-right, bottom-left, bottom-right)
@@ -31,6 +29,60 @@ def box_rows(width, label, highlighted=False):
     left = (inner - len(text)) // 2
     body = " " * left + text + " " * (inner - len(text) - left)
     return (tl + h * inner + tr, v + body + v, bl + h * inner + br)
+
+
+# ---- graphical style (UI style A: SeedSigner's colours, dark) ----
+def _rgb(hex_color):
+    return int(hex_color[1:], 16)
+
+
+def _theme():
+    from seedsigner.gui.components import GUIConstants as GC
+    return {
+        "bg": _rgb(GC.BACKGROUND_COLOR), "accent": _rgb(GC.ACCENT_COLOR),
+        "button": _rgb(GC.BUTTON_BACKGROUND_COLOR), "button_fg": _rgb(GC.BUTTON_FONT_COLOR),
+        "body": _rgb(GC.BODY_FONT_COLOR), "label": _rgb(GC.LABEL_FONT_COLOR),
+        "inactive": _rgb(GC.INACTIVE_COLOR),
+    }
+
+
+_THEME = []
+
+
+def theme():
+    if not _THEME:
+        _THEME.append(_theme())
+    return _THEME[0]
+
+
+MARGIN = 8
+TITLE_Y = 4
+BODY_Y = 32          # first body line on the top screen
+BUTTON_H = 28        # touch buttons on the bottom screen
+BUTTON_GAP = 5
+BUTTON_RADIUS = 8
+FIRST_BUTTON_Y = 4
+BUTTONS_PER_PAGE = 5
+NAV_Y = GFX_H - 26   # "< Back" and paging
+NAV_H = 24
+
+
+def text_centered(screen, y, text, font, color, x=0, width=GFX_W):
+    w = nds.gfx_text_width(text, font)
+    return nds.gfx_text(screen, x + max(0, (width - w) // 2), y, text, font, color, width)
+
+
+def button(screen, x, y, w, h, label, selected=False, enabled=True, font=None):
+    """A rounded touch button with its label centred."""
+    t = theme()
+    font = nds.FONT_BUTTON if font is None else font
+    fill = t["accent"] if selected else (t["button"] if enabled else t["bg"])
+    nds.gfx_rect(screen, x, y, w, h, fill, BUTTON_RADIUS if h > 20 else 5)
+    if not enabled:
+        nds.gfx_frame(screen, x, y, w, h, t["inactive"], BUTTON_RADIUS if h > 20 else 5, 1)
+    color = t["bg"] if selected else (t["button_fg"] if enabled else t["inactive"])
+    line = nds.gfx_font_metrics(font)[1]
+    text_centered(screen, y + (h - line) // 2, label, font, color, x + 4, w - 8)
 
 
 BACK = "back"
@@ -73,17 +125,27 @@ def wrap(text, width=COLS):
 
 
 def top_page(title, lines):
-    """Title bar on the top screen, then the given lines (clipped)."""
+    """Title on the top screen, then the given lines (clipped). The lines are
+    laid out for 32 text columns (spaces align them), so they are drawn in a
+    fixed-width font: the larger one when they fit, else the smaller one,
+    else the console font."""
+    t = theme()
     nds.top_clear()
-    nds.top_print(0, -1, title or "")
-    nds.top_print(1, 0, BOX_SINGLE[0] * COLS)
-    for i, line in enumerate(lines[:ROWS - 3]):
-        nds.top_print(3 + i, 0, line)
-
-
-def _box(row, col, width, label, selected):
-    for i, text in enumerate(box_rows(width, label, selected)):
-        nds.bottom_print(row + i, col, text)
+    nds.gfx_clear(TOP, t["bg"])
+    if title:
+        text_centered(TOP, TITLE_Y, title, nds.FONT_TITLE, t["body"])
+    lines = list(lines)
+    for font in (nds.FONT_MONO, nds.FONT_MONO_SMALL):
+        line_h = nds.gfx_font_metrics(font)[1]
+        if len(lines) * line_h <= GFX_H - BODY_Y:
+            for i, line in enumerate(lines):
+                if line:
+                    nds.gfx_text(TOP, MARGIN, BODY_Y + i * line_h, line, font, t["body"])
+            nds.gfx_present(TOP)
+            return
+    nds.gfx_present(TOP)
+    for i, line in enumerate(lines[:ROWS - 4]):
+        nds.top_print(4 + i, 0, line)
 
 
 class TapTracker:
@@ -117,40 +179,46 @@ class ButtonPanel:
         self.show_back = show_back
         self.selected = selected if 0 <= selected < len(self.labels) else 0
         self.header = header
-        self.hits = []  # (row0, row1, col0, col1, action)
+        self.per_page = BUTTONS_PER_PAGE - 1 if header else BUTTONS_PER_PAGE
+        self.hits = []  # (x0, y0, x1, y1, action) in pixels
 
     def page(self):
-        return self.selected // BUTTONS_PER_PAGE
+        return self.selected // self.per_page
 
     def pages(self):
-        return max(1, (len(self.labels) + BUTTONS_PER_PAGE - 1) // BUTTONS_PER_PAGE)
+        return max(1, (len(self.labels) + self.per_page - 1) // self.per_page)
 
     def draw(self):
+        t = theme()
         nds.bottom_clear()
+        nds.gfx_clear(BOTTOM, t["bg"])
         self.hits = []
+        y = FIRST_BUTTON_Y
         if self.header:
-            nds.bottom_print(0, -1, self.header)
-        start = self.page() * BUTTONS_PER_PAGE
-        for i, label in enumerate(self.labels[start:start + BUTTONS_PER_PAGE]):
-            row = FIRST_BUTTON_ROW + i * BUTTON_ROWS
-            _box(row, 1, COLS - 2, label, start + i == self.selected)
-            self.hits.append((row, row + BUTTON_ROWS, 1, COLS - 1, start + i))
+            text_centered(BOTTOM, y, self.header, nds.FONT_BODY_BOLD, t["label"])
+            y += BUTTON_H
+        start = self.page() * self.per_page
+        for i, label in enumerate(self.labels[start:start + self.per_page]):
+            button(BOTTOM, MARGIN, y, GFX_W - 2 * MARGIN, BUTTON_H, label, start + i == self.selected)
+            self.hits.append((MARGIN, y, GFX_W - MARGIN, y + BUTTON_H, start + i))
+            y += BUTTON_H + BUTTON_GAP
         if self.show_back:
-            _box(NAV_ROW, 1, 10, _BACK_LABEL, False)
-            self.hits.append((NAV_ROW, NAV_ROW + BUTTON_ROWS, 1, 11, BACK))
+            button(BOTTOM, MARGIN, NAV_Y, 80, NAV_H, _BACK_LABEL, font=nds.FONT_BODY_BOLD)
+            self.hits.append((MARGIN, NAV_Y, MARGIN + 80, NAV_Y + NAV_H, BACK))
         if self.pages() > 1:
-            nds.bottom_print(NAV_ROW - 1, -1, "page %d/%d" % (self.page() + 1, self.pages()))
+            text_centered(BOTTOM, NAV_Y + 3, "%d/%d" % (self.page() + 1, self.pages()),
+                          nds.FONT_BODY, t["label"], 96, 40)
             if self.page() > 0:
-                _box(NAV_ROW, 12, 9, _PREV_LABEL, False)
-                self.hits.append((NAV_ROW, NAV_ROW + BUTTON_ROWS, 12, 21, "prev"))
+                button(BOTTOM, 140, NAV_Y, 52, NAV_H, _PREV_LABEL, font=nds.FONT_BODY_BOLD)
+                self.hits.append((140, NAV_Y, 192, NAV_Y + NAV_H, "prev"))
             if self.page() < self.pages() - 1:
-                _box(NAV_ROW, 22, 9, _NEXT_LABEL, False)
-                self.hits.append((NAV_ROW, NAV_ROW + BUTTON_ROWS, 22, 31, "next"))
+                button(BOTTOM, 196, NAV_Y, 52, NAV_H, _NEXT_LABEL, font=nds.FONT_BODY_BOLD)
+                self.hits.append((196, NAV_Y, 248, NAV_Y + NAV_H, "next"))
+        nds.gfx_present(BOTTOM)
 
     def _hit(self, x, y):
-        row, col = y // 8, x // 8
-        for r0, r1, c0, c1, action in self.hits:
-            if r0 <= row < r1 and c0 <= col < c1:
+        for x0, y0, x1, y1, action in self.hits:
+            if x0 <= x < x1 and y0 <= y < y1:
                 return action
         return None
 
@@ -160,11 +228,11 @@ class ButtonPanel:
         if tap is not None:
             action = self._hit(tap[0], tap[1])
             if action == "prev":
-                self.selected = (self.page() - 1) * BUTTONS_PER_PAGE
+                self.selected = (self.page() - 1) * self.per_page
                 self.draw()
                 return None
             if action == "next":
-                self.selected = (self.page() + 1) * BUTTONS_PER_PAGE
+                self.selected = (self.page() + 1) * self.per_page
                 self.draw()
                 return None
             return action

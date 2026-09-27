@@ -37,7 +37,7 @@ USERMOD_C := $(wildcard $(USERMODS)/*/*.c $(USERMODS)/*/crypto/*.c $(USERMODS)/*
 SECP_DEFS := -DENABLE_MODULE_ECDH=1 -DENABLE_MODULE_RECOVERY=1 -DENABLE_MODULE_EXTRAKEYS=1 \
              -DENABLE_MODULE_SCHNORRSIG=1 -DECMULT_WINDOW_SIZE=8 -DUSE_EXTERNAL_DEFAULT_CALLBACKS=1
 CFLAGS    += -I$(USERMODS)/uhashlib/crypto -I$(SECP256K1) -I$(SECP256K1)/src $(SECP_DEFS) \
-             -I$(TOPDIR)/arm9/include -I$(TOPDIR)/shared/include \
+             -I$(TOPDIR)/arm9/include -I$(TOPDIR)/shared/include -I$(TOPDIR)/build/generated \
              -I$(TOPDIR)/third_party/utf8proc -DUTF8PROC_STATIC
 
 # Upstream SeedSigner Python, transformed for MicroPython at build time

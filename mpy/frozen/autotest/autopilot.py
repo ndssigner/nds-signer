@@ -33,6 +33,22 @@ class Autopilot:
             line = self._shadow[row]
             self._shadow[row] = (line[:col] + text + line[col + len(text):])[:COLS]
 
+    def gfx_text(self, screen, x, y, text, font, rgb, max_width=0):
+        # graphical labels go to the shadow too (cell of their first pixel,
+        # like the host simulator), so taps by label keep working
+        width = self._n.gfx_text(screen, x, y, text, font, rgb, max_width)
+        if screen == 1 and font not in (self._n.FONT_ICON, self._n.FONT_ICON_LARGE,
+                                        self._n.FONT_SSICON, self._n.FONT_SSICON_LARGE):
+            line_height = self._n.gfx_font_metrics(font)[1]
+            self._shadow_put((y + line_height // 2) // 8, x // 8, str(text))
+        return width
+
+    def _shadow_put(self, row, col, text):
+        text = text[:COLS]
+        if 0 <= row < ROWS and 0 <= col < COLS:
+            line = self._shadow[row]
+            self._shadow[row] = (line[:col] + text + line[col + len(text):])[:COLS]
+
     def bottom_clear(self):
         self._n.bottom_clear()
         self._shadow = [" " * COLS for _ in range(ROWS)]

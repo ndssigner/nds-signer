@@ -1,8 +1,9 @@
 # NDS-Signer - touch keyboard for the bottom screen.
 #
-# Keys are 3x3-cell boxes ("+-+", "|q|", "+-+"). Disabled keys are drawn as
-# "." and ignore taps, which lets the mnemonic entry offer only letters that
-# continue a valid BIP-39 word (as SeedSigner does).
+# Keys are laid out on the 8x8-pixel cell grid (3 cells high) and drawn as
+# rounded buttons. Disabled keys are dimmed and ignore taps, which lets the
+# mnemonic entry offer only letters that continue a valid BIP-39 word (as
+# SeedSigner does).
 from seedsigner.gui.hw import nds
 from seedsigner.gui import nds_ui
 
@@ -36,9 +37,11 @@ def qwerty_keys(first_row):
 
 
 def draw_key(key, enabled=True, highlighted=False):
-    label = key.label if enabled else "."
-    for i, text in enumerate(nds_ui.box_rows(key.width, label, highlighted)):
-        nds.bottom_print(key.row + i, key.col, text)
+    """A rounded key over its 3-row cell area (drawn to the back buffer;
+    set_active() shows the keyboard)."""
+    font = nds.FONT_BUTTON if len(key.label) <= 2 else nds.FONT_BODY_BOLD
+    nds_ui.button(nds_ui.BOTTOM, key.col * CELL + 1, key.row * CELL + 1, key.width * CELL - 2,
+                  3 * CELL - 2, key.label, selected=highlighted, enabled=enabled, font=font)
 
 
 # Keys currently on screen, set by the screen that drew them last; lets tests
@@ -47,8 +50,10 @@ ACTIVE_KEYS = []
 
 
 def set_active(keys):
+    """Keys now on screen; also shows the keys drawn since the last clear."""
     global ACTIVE_KEYS
     ACTIVE_KEYS = list(keys)
+    nds.gfx_present(nds_ui.BOTTOM)
 
 
 def key_at(keys, x, y):

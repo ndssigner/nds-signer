@@ -13,6 +13,7 @@ PrintConsole g_uiTop;
 PrintConsole g_uiBottom;
 
 static u16 *s_topBitmap;
+static u16 *s_bottomBitmap;
 
 /* Spleen 5x8 (BSD-2), generated from lib/fonts by tools/bdf_to_ndsfont.py:
  * thin 1-pixel strokes, far more legible than libnds' default bold font. */
@@ -72,10 +73,19 @@ void uiInit(void)
 	int bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 2, 0);
 	s_topBitmap = bgGetGfxPtr(bg);
 
-	/* Bottom: text console */
-	videoSetModeSub(MODE_0_2D);
+	/* Bottom: VRAM C (128 KB) of sub BG memory, laid out like the top. The
+	 * sub engine can only place text maps in its first 64 KB, so the
+	 * console goes first and the bitmap after it (its hidden rows 192-255
+	 * fall past the bank and are never read):
+	 *   0 KB .. 2 KB   text map   (map base 0)
+	 *  16 KB .. 24 KB  font tiles (tile base 1)
+	 *  32 KB .. 128 KB 256x192x16bpp visible bitmap (bitmap base 2) */
+	videoSetModeSub(MODE_5_2D);
 	vramSetBankC(VRAM_C_SUB_BG);
-	consoleInit(&g_uiBottom, 0, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+	consoleInit(&g_uiBottom, 0, BgType_Text4bpp, BgSize_T_256x256, 0, 1, false, true);
+	int subBg = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 2, 0);
+	s_bottomBitmap = bgGetGfxPtr(subBg);
+	dmaFillHalfWords(RGB15(0, 0, 0) | BIT(15), s_bottomBitmap, 256 * 192 * 2);
 	setFont(&g_uiTop);
 	setFont(&g_uiBottom);
 
@@ -91,6 +101,11 @@ u16 *uiTopBitmap(void)
 	return s_topBitmap;
 }
 
+u16 *uiBottomBitmap(void)
+{
+	return s_bottomBitmap;
+}
+
 void uiClearTop(void)
 {
 	dmaFillHalfWords(RGB15(0, 0, 0) | BIT(15), s_topBitmap, 256 * 192 * 2);
@@ -100,6 +115,7 @@ void uiClearTop(void)
 
 void uiClearBottom(void)
 {
+	dmaFillHalfWords(RGB15(0, 0, 0) | BIT(15), s_bottomBitmap, 256 * 192 * 2);
 	consoleSelect(&g_uiBottom);
 	consoleClear();
 	s_pressed = -1;

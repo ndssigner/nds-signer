@@ -66,6 +66,17 @@ int ndsbScanBenchmark(const char *text, size_t len, int pixels, uint32_t times[8
 /* Draws a QR code of `text` on the top screen (see qr_display.h).
  * Returns the QR size in modules, 0 if the text does not fit. */
 int ndsbQrShow(const char *text, size_t len, int border, int background);
+
+/* Graphical UI (arm9/include/gfx.h); screen: NDSB_TOP / NDSB_BOTTOM */
+void ndsbGfxClear(int screen, uint32_t rgb);
+void ndsbGfxRect(int screen, int x, int y, int w, int h, uint32_t rgb, int radius);
+void ndsbGfxFrame(int screen, int x, int y, int w, int h, uint32_t rgb, int radius, int thickness);
+int ndsbGfxText(int screen, int x, int y, const char *utf8, size_t len, int font, uint32_t rgb,
+                int maxWidth);
+int ndsbGfxTextWidth(const char *utf8, size_t len, int font);
+void ndsbGfxFontMetrics(int font, int *ascent, int *lineHeight);
+void ndsbGfxPresent(int screen);
+int ndsbGfxFontCount(void);
 /* see qrTranscribeShow() in qr_display.h */
 int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
                      int zoneX, int zoneY);

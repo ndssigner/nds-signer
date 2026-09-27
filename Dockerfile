@@ -9,6 +9,12 @@ ENV SOURCE_DATE_EPOCH=0 \
     LC_ALL=C.UTF-8 \
     TZ=UTC
 
+# Pillow (and the FreeType it renders with), pinned: tools/ttf_to_ndsfont.py
+# rasterizes SeedSigner's fonts into the ROM at build time.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-pil=9.4.0-1.1+deb12u1 libfreetype6=2.12.1+dfsg-5+deb12u4 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /source
 
 CMD ["make"]

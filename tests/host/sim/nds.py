@@ -194,6 +194,57 @@ def qr_transcribe(data, zone_modules=0, zone_x=0, zone_y=0):
     return 0
 
 
+# ---- graphical UI (arm9/include/gfx.h) ----
+# Font ids, (ascent, line height) and an average advance per character, in
+# the order of build/generated/gfx_fonts.h (tools/ttf_to_ndsfont.py FONTS);
+# tests/host/gfx_sim_check.py compares the metrics with the generated file.
+(FONT_BODY, FONT_BODY_BOLD, FONT_BUTTON, FONT_TITLE, FONT_LARGE, FONT_MONO, FONT_MONO_SMALL,
+ FONT_MONO_BOLD, FONT_ICON, FONT_ICON_LARGE, FONT_SSICON, FONT_SSICON_LARGE) = range(12)
+FONT_METRICS = [(14, 18), (14, 18), (17, 22), (19, 24), (26, 34), (13, 16), (11, 14), (14, 18),
+                (14, 16), (23, 27), (15, 16), (25, 27)]
+_FONT_ADVANCE = [7, 7, 8, 9, 13, 7, 6, 8, 16, 26, 16, 26]
+
+
+def gfx_clear(screen, rgb):
+    if screen == 0:
+        top_clear()
+    else:
+        bottom_clear()
+
+
+def gfx_rect(screen, x, y, w, h, rgb, radius=0):
+    pass
+
+
+def gfx_frame(screen, x, y, w, h, rgb, radius=0, thickness=1):
+    pass
+
+
+def gfx_text(screen, x, y, text, font, rgb, max_width=0):
+    """Text also goes to the text grid (cell of its first pixel), so tests
+    can find labels and tap them as on the text UI."""
+    width = gfx_text_width(text, font)
+    if max_width and width > max_width:
+        text = text[:max(0, max_width // _FONT_ADVANCE[font])]
+        width = gfx_text_width(text, font)
+    if font not in (FONT_ICON, FONT_ICON_LARGE, FONT_SSICON, FONT_SSICON_LARGE):
+        line_height = FONT_METRICS[font][1]
+        _print(screen, (y + line_height // 2) // 8, x // 8, text)
+    return width
+
+
+def gfx_text_width(text, font):
+    return len(text) * _FONT_ADVANCE[font]
+
+
+def gfx_font_metrics(font):
+    return FONT_METRICS[font]
+
+
+def gfx_present(screen):
+    pass
+
+
 def info():
     return (True, True, 0, _ticks // 1000)
 

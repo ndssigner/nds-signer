@@ -19,10 +19,11 @@ typedef struct {
 extern PrintConsole g_uiTop;
 extern PrintConsole g_uiBottom;
 
-/* Top: 16-bit bitmap (camera / QR) with a text layer on top of it.
- * Bottom: text console for touch buttons. */
+/* Both screens: a 16-bit bitmap (graphical UI, camera, QR codes) with a
+ * text console layer on top of it. */
 void uiInit(void);
 u16 *uiTopBitmap(void);
+u16 *uiBottomBitmap(void);
 
 void uiClearTop(void);    /* clears both the bitmap and the text layer */
 void uiClearBottom(void);
