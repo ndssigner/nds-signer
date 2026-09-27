@@ -214,6 +214,16 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
         return lines
 
 
+class SeedExportXpubDetailsScreen(ButtonListScreen):
+    """Like upstream: fingerprint, derivation path and the xpub itself, so the
+    user can compare them with what the coordinator shows."""
+
+    def top_lines(self):
+        return ([_("Fingerprint") + ": " + (self.fingerprint or ""),
+                 _("Derivation") + ": " + (self.derivation_path or ""), "", _("Xpub") + ":"]
+                + nds_ui.wrap(self.xpub or ""))
+
+
 class SeedFinalizeScreen(ButtonListScreen):
     def top_lines(self):
         return ["", nds_ui.center(_("Fingerprint")), "", nds_ui.center(self.fingerprint or "")]

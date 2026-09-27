@@ -44,13 +44,15 @@ frozen:
 		make -s -C mpy TOPDIR=/source /source/build/frozen_py/.stamp
 
 seedsigner: frozen
+	@python3 gui_imports_gen.py $(TOPDIR)/third_party/seedsigner/src > $(TOPDIR)/build/gui_imports.json
+	@$(DOCKER_MPY_ROM) gui_imports_check.py /source/build/gui_imports.json 2>&1 | grep -v "^WARNING\|^Set LANG"
 	$(DOCKER_MPY_ROM) seedsigner_check.py /source/tests/vectors
 	@PYTHONPATH=$(TOPDIR)/third_party/seedsigner/src:$(TOPDIR)/mpy/frozen/hwstubs $(PYTHON) decode_qr_check.py $(TOPDIR)/tests/vectors \
 		> $(TOPDIR)/build/decode_qr.cpython.txt
 	@$(DOCKER_MPY_ROM) decode_qr_check.py /source/tests/vectors > $(TOPDIR)/build/decode_qr.mpy.txt
 	@diff $(TOPDIR)/build/decode_qr.cpython.txt $(TOPDIR)/build/decode_qr.mpy.txt \
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
-	@for mode in preloaded typed seedqr passphrase settings; do \
+	@for mode in preloaded typed seedqr passphrase settings xpub; do \
 		$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors $$mode 2>/dev/null | grep -E "^(ok|FAIL)"; \
 	done
 

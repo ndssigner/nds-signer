@@ -144,6 +144,41 @@ def run_settings_flow():
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_xpub_flow(prefix):
+    """Seeds -> seed -> Export xpub -> single sig native segwit -> animated
+    QR: the parts shown must be exactly those SeedSigner's UrXpubQrEncoder
+    produces on CPython (tests/vectors/<prefix>.xpub_ur.txt)."""
+    from seedsigner.views.view import Destination, MainMenuView
+    from seedsigner.models.seed import Seed
+
+    def check_xpub():
+        expected = read(prefix + ".xpub_ur.txt").split("\n")
+        shown = list(nds.qr_shown)[:len(expected)]
+        ok = shown == expected
+        if not ok and VERBOSE:
+            for a, b in zip(shown, expected):
+                print("shown   ", a[:70]); print("expected", b[:70])
+            print("shown count", len(nds.qr_shown))
+        RESULT["xpub"] = ok
+        print("ok  " if ok else "FAIL", "xpub flow: %d animated UR parts identical to SeedSigner on CPython"
+              % len(expected))
+
+    from seedsigner.models.settings import Settings, SettingsConstants
+
+    controller = Controller.get_instance()
+    Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
+    controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
+    controller.storage.finalize_pending_seed()
+    events = []
+    for label in ("Seeds", "8b218e81", "Export xpub", "Single Sig", "Native Segwit",
+                  "Animated (default)", "I understand"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    events += [("call", dump), ("tap_label", "Export xpub"), ("key", 0), ("wait", 300),
+               ("call", dump), ("call", check_xpub), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
 def run_seedqr_flow():
     """Home -> Seeds -> Scan a SeedQR (camera) -> Finalize: the fingerprint
     shown must be the one SeedSigner computes on CPython."""
@@ -195,6 +230,8 @@ if MODE == "typed":
     run_typed_seed_flow("psbt_base64_singlesig")
 elif MODE == "seedqr":
     run_seedqr_flow()
+elif MODE == "xpub":
+    run_xpub_flow("psbt_base64_singlesig")
 elif MODE == "settings":
     run_settings_flow()
 elif MODE == "passphrase":

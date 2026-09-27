@@ -46,13 +46,18 @@ SS_MODULES := $(shell grep -v '^\#' seedsigner_modules.txt)
 
 OVERLAY := $(shell find overlay -name '*.py')
 
-$(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py $(wildcard $(TOPDIR)/tests/vectors/*.txt) \
+$(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py \
+		$(shell find $(TOPDIR)/third_party/urtypes/src -name '*.py') $(wildcard $(TOPDIR)/tests/vectors/*.txt) \
 		$(TOPDIR)/tools/gen_gui_api.py $(TOPDIR)/tools/screen_api.py $(OVERLAY) \
 		$(addprefix $(TOPDIR)/third_party/seedsigner/src/,$(SS_MODULES))
 	@echo transforming SeedSigner modules
 	@rm -rf $(FROZEN_PY)
 	@python3 $(TOPDIR)/tools/upy_transform.py --src $(TOPDIR)/third_party/seedsigner/src \
 		--out $(FROZEN_PY) $(SS_MODULES)
+	@# urtypes: insertion-ordered dicts so its CBOR output matches CPython's
+	@python3 $(TOPDIR)/tools/upy_transform.py --ordered-dicts --no-new-rewrite \
+		--src $(TOPDIR)/third_party/urtypes/src --out $(FROZEN_PY) \
+		$$(cd $(TOPDIR)/third_party/urtypes/src && find urtypes -name '*.py' | sort)
 	@cp -R overlay/seedsigner $(FROZEN_PY)/
 	@rm -f $(FROZEN_PY)/seedsigner/README.md
 	@python3 $(TOPDIR)/tools/gen_gui_api.py $(TOPDIR)/third_party/seedsigner/src \

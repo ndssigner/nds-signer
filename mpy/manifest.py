@@ -71,8 +71,9 @@ module("base64.py", base_path="$(MPY_LIB_DIR)/python-stdlib/base64")
 module("zlib.py", base_path="$(MPY_LIB_DIR)/python-stdlib/zlib")
 module("datetime.py", base_path="$(MPY_LIB_DIR)/python-stdlib/datetime")
 
-# urtypes (Krux project, the commit SeedSigner pins)
-package("urtypes", base_path="$(PORT_DIR)/../third_party/urtypes/src")
+# urtypes (Krux project, the commit SeedSigner pins), transformed for
+# insertion-ordered dicts (mpy/Makefile, tools/upy_transform.py)
+package("urtypes", base_path="$(PORT_DIR)/../build/frozen_py")
 
 # Upstream SeedSigner, transformed by tools/upy_transform.py (mpy/Makefile)
 package("seedsigner", base_path="$(PORT_DIR)/../build/frozen_py")

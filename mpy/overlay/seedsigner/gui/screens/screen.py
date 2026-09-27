@@ -284,6 +284,8 @@ def define_generic_screens(namespace, module):
             return None
         base = None
         for base_name in info[1]:
+            if base_name.endswith("Mixin"):
+                continue  # drawing-only mixins (e.g. WarningEdgesMixin)
             base = resolve(base_name)
             if base is not None:
                 break

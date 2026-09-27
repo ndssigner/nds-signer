@@ -18,6 +18,12 @@ constructs MicroPython cannot support are rewritten:
     equivalent when no class defines its own `__new__`, which is checked.
   * f-strings become the equivalent "...".format(...) calls: MicroPython's
     f-string support is limited (e.g. no nested quotes, PEP 701).
+  * With --ordered-dicts (used for urtypes): dict displays and comprehensions
+    become collections.OrderedDict. CPython dicts keep insertion order,
+    MicroPython's do not; urtypes' CBOR encoder writes maps in iteration order,
+    so without this its output bytes differ from SeedSigner's on CPython.
+  * With --no-new-rewrite: skip the __new__ rewrite (for code that defines
+    its own __new__, e.g. urtypes).
 
 Everything else is emitted as-is (via ast.unparse, so comments are dropped).
 
@@ -38,9 +44,37 @@ def is_dataclass_decorator(node):
     )
 
 
+ORDERED_DICT = "_nds_OrderedDict"
+
+
 class Transformer(ast.NodeTransformer):
+    def __init__(self, ordered_dicts=False, rewrite_new=True):
+        self.ordered_dicts = ordered_dicts
+        self.rewrite_new = rewrite_new
+        self.used_ordered_dict = False
+
+    def visit_Dict(self, node):
+        self.generic_visit(node)
+        if not self.ordered_dicts or any(k is None for k in node.keys):  # {**x}: keep
+            return node
+        self.used_ordered_dict = True
+        pairs = ast.List(elts=[ast.Tuple(elts=[k, v], ctx=ast.Load())
+                               for k, v in zip(node.keys, node.values)], ctx=ast.Load())
+        return ast.copy_location(ast.Call(func=ast.Name(id=ORDERED_DICT, ctx=ast.Load()),
+                                          args=[pairs], keywords=[]), node)
+
+    def visit_DictComp(self, node):
+        self.generic_visit(node)
+        if not self.ordered_dicts:
+            return node
+        self.used_ordered_dict = True
+        gen = ast.GeneratorExp(elt=ast.Tuple(elts=[node.key, node.value], ctx=ast.Load()),
+                               generators=node.generators)
+        return ast.copy_location(ast.Call(func=ast.Name(id=ORDERED_DICT, ctx=ast.Load()),
+                                          args=[gen], keywords=[]), node)
+
     def visit_FunctionDef(self, node):
-        if node.name == "__new__":
+        if node.name == "__new__" and self.rewrite_new:
             raise SystemExit("upy_transform: custom __new__ found; the __new__ rewrite "
                              "would be wrong for it (line %d)" % node.lineno)
         self.generic_visit(node)
@@ -49,7 +83,7 @@ class Transformer(ast.NodeTransformer):
     def visit_Call(self, node):
         self.generic_visit(node)
         func = node.func
-        if isinstance(func, ast.Attribute) and func.attr == "__new__" and not (
+        if self.rewrite_new and isinstance(func, ast.Attribute) and func.attr == "__new__" and not (
                 isinstance(func.value, ast.Name) and func.value.id == "object"):
             node.func = ast.Attribute(value=ast.Name(id="object", ctx=ast.Load()),
                                       attr="__new__", ctx=ast.Load())
@@ -115,9 +149,20 @@ HEADER = (
 )
 
 
-def transform(path: pathlib.Path, rel: str) -> str:
+def transform(path: pathlib.Path, rel: str, ordered_dicts=False, rewrite_new=True) -> str:
     tree = ast.parse(path.read_text(), filename=str(path))
-    tree = Transformer().visit(tree)
+    transformer = Transformer(ordered_dicts, rewrite_new)
+    tree = transformer.visit(tree)
+    if transformer.used_ordered_dict:
+        # after a module docstring / __future__ imports, before any other code
+        index = 0
+        while index < len(tree.body) and (
+                (isinstance(tree.body[index], ast.Expr) and isinstance(getattr(tree.body[index], "value", None), ast.Constant))
+                or (isinstance(tree.body[index], ast.ImportFrom) and tree.body[index].module == "__future__")):
+            index += 1
+        tree.body.insert(index, ast.ImportFrom(module="collections",
+                                               names=[ast.alias(name="OrderedDict", asname=ORDERED_DICT)],
+                                               level=0))
     ast.fix_missing_locations(tree)
     return HEADER.format(src=rel) + ast.unparse(tree) + "\n"
 
@@ -126,14 +171,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, type=pathlib.Path)
     ap.add_argument("--out", required=True, type=pathlib.Path)
+    ap.add_argument("--ordered-dicts", action="store_true")
+    ap.add_argument("--no-new-rewrite", action="store_true")
     ap.add_argument("files", nargs="+")
     args = ap.parse_args()
+    opts = dict(ordered_dicts=args.ordered_dicts, rewrite_new=not args.no_new_rewrite)
 
     for rel in args.files:
         src = args.src / rel
         dst = args.out / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(transform(src, rel))
+        dst.write_text(transform(src, rel, **opts))
         # make every directory a package, as upstream relies on implicit ones
         for parent in dst.parents:
             if parent == args.out or args.out not in parent.parents and parent != args.out:
@@ -142,7 +190,7 @@ def main():
             if not init.exists():
                 upstream_init = args.src / parent.relative_to(args.out) / "__init__.py"
                 init.write_text(
-                    transform(upstream_init, str(parent.relative_to(args.out) / "__init__.py"))
+                    transform(upstream_init, str(parent.relative_to(args.out) / "__init__.py"), **opts)
                     if upstream_init.exists() else "")
     return 0
 
