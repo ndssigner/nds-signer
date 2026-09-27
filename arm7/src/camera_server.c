@@ -19,9 +19,9 @@ static u32 reply(bool ok)
 	return ok ? CAM_REPLY_OK : CAM_REPLY_ERROR;
 }
 
-static u32 handleCommand(u32 word)
+static u32 handleCommand(u32 cmd)
 {
-	switch (CAM_CMD(word)) {
+	switch (cmd) {
 	case CAM_CMD_INIT:
 		/* Not a DSi (or cameras disabled): nothing to talk to */
 		if (!isDSiMode())
@@ -35,8 +35,6 @@ static u32 handleCommand(u32 word)
 	case CAM_CMD_OUTER_DEACTIVATE: return reply(aptDeactivate(I2C_CAM_OUTER));
 	case CAM_CMD_MODE_PREVIEW:     return reply(aptSetMode(CAPTURE_MODE_PREVIEW));
 	case CAM_CMD_MODE_CAPTURE:     return reply(aptSetMode(CAPTURE_MODE_CAPTURE));
-	case CAM_CMD_SET_EXPOSURE:
-		return reply(aptSetExposure(CAM_EXPOSURE_TARGET(word), CAM_EXPOSURE_CENTER(word)));
 	default:                       return CAM_REPLY_ERROR;
 	}
 }

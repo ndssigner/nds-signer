@@ -19,12 +19,12 @@ native_len = [int(line.split()[2]) for line in open("/source/arm9/include/nds_br
 assert len(nds.camera_stats()) == native_len, "sim camera_stats() differs from the native API"
 
 parts = DATA["psbt_base64_singlesig.ur.txt"].split()
-events = [("key", nds.KEY_R), ("key", nds.KEY_R), ("key", nds.KEY_L)]
+events = []
 for p in parts:
     events += [("camera", p.encode()), ("wait", 2)]
 nds.sim_script(events)
 decoder = DecodeQR()
 ScanScreen(decoder=decoder).display()
 lines = nds_dev.report_lines()
-ok = decoder.is_complete and any(l.startswith("last scan") and "AE 2/" in l for l in lines)
+ok = decoder.is_complete and any(l.startswith("last scan") for l in lines)
 print("ok  " if ok else "FAIL", "dev build scan hooks: %s" % [l for l in lines if l.startswith("last scan")])

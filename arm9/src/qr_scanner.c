@@ -33,8 +33,6 @@ static ScanStats s_stats;
 static int s_quickFails;      /* frames in a row with an undecoded QR, see decode() */
 static int s_refineWait;      /* frames left before refining again, see decode() */
 static u32 s_lastFrameMs;     /* uiMillis() of the last frame (or start) */
-static u8 s_aeTarget = SCANNER_AE_TARGET_DEFAULT;
-static bool s_aeCenter = SCANNER_AE_CENTER_DEFAULT;
 
 #ifdef NDS_SIGNER_DEVBUILD
 /* quirc_end() stage times (lib/quirc/identify.c QUIRC_STAGE_MARK), in timer
@@ -107,42 +105,10 @@ void scannerClearPayload(void)
 		p[i] = 0;
 }
 
-/* The sensors start with the default exposure (arm7/src/aptina.c): only a
- * different one is ever sent, so the default path is the proven one. */
-static bool exposureIsDefault(void)
-{
-	return s_aeTarget == SCANNER_AE_TARGET_DEFAULT && s_aeCenter == SCANNER_AE_CENTER_DEFAULT;
-}
-
-static bool s_aeSent;  /* the sensor has a non-default exposure */
-
-static bool applyExposure(void)
-{
-	if (exposureIsDefault() && !s_aeSent)
-		return true;
-	s_aeSent = !exposureIsDefault();
-	return cameraSetExposure(s_aeTarget, s_aeCenter);
-}
-
-bool scannerSetExposure(u8 target, bool center)
-{
-	s_aeTarget = target;
-	s_aeCenter = center;
-	if (!s_streaming)
-		return true;
-	/* restart the frame in progress with the capture mode set again */
-	cameraTransferStop();
-	bool ok = applyExposure();
-	cameraTransferStart(s_capture[s_dmaBuffer], CAPTURE_MODE_CAPTURE);
-	s_lastFrameMs = uiMillis();
-	return ok;
-}
-
 bool scannerStart(void)
 {
 	if (!s_quirc || !cameraActivate(CAM_OUTER))
 		return false;
-	applyExposure();
 
 	memset(&s_stats, 0, sizeof(s_stats));
 	s_stats.startMs = uiMillis();

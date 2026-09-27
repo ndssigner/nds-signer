@@ -196,16 +196,3 @@ bool aptSetMode(CaptureMode mode)
 	aptWaitMcuClr(s_currentDevice, 0xA103, 0xFFFF);
 	return s_ok;
 }
-
-bool aptSetExposure(u8 target, bool center)
-{
-	/* AE window in 1/16ths of the frame: start (y << 4 | x) and size - 1.
-	 * 0x44/0x77 = rows and columns 4..11, the central half. */
-	s_ok = true;
-	aptWriteMcu(s_currentDevice, 0xA24F, target);                 // AE_BASETARGET
-	aptWriteMcu(s_currentDevice, 0xA202, center ? 0x0044 : 0x0000); // AE_WINDOW_POS
-	aptWriteMcu(s_currentDevice, 0xA203, center ? 0x0077 : 0x00FF); // AE_WINDOW_SIZE
-	aptWriteMcu(s_currentDevice, 0xA103, 0x0005);   // SEQ_CMD (05h=Refresh)
-	aptWaitMcuClr(s_currentDevice, 0xA103, 0x000F); // SEQ_CMD (wait above to become ZERO)
-	return s_ok;
-}

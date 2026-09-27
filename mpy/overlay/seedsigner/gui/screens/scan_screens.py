@@ -30,8 +30,6 @@ class ScanScreen(BaseScreen):
             return RET_CODE__BACK_BUTTON
         dev = nds_ui.nds_dev
         py_ms = parts = 0
-        if dev is not None:
-            dev.scan_start()
         try:
             while True:
                 nds.frame()

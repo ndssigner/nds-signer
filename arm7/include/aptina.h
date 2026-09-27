@@ -14,8 +14,5 @@ bool aptInit(u8 device);
 bool aptActivate(u8 device);
 bool aptDeactivate(u8 device);
 bool aptSetMode(CaptureMode mode);
-/* Auto-exposure of the active sensor: target luma and metering window
- * (whole frame, or its central half). */
-bool aptSetExposure(u8 target, bool center);
 
 #endif /* NDS_SIGNER_APTINA_H */

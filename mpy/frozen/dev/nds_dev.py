@@ -10,11 +10,6 @@ from seedsigner.gui import nds_ui
 _benchmark = []
 _last_scan = []
 
-# Camera auto-exposure presets to compare on real hardware: L/R while
-# scanning. (AE target luma, meter only the central half of the frame)
-AE_PRESETS = [(0x70, False), (0x70, True), (0x50, True), (0x38, True), (0x50, False)]
-_ae = [0]
-
 
 def report_lines():
     dsi, camera, cheap, uptime = nds.info()
@@ -45,23 +40,8 @@ def _scan_summary(parts, py_ms):
     ]
 
 
-def _ae_label():
-    target, center = AE_PRESETS[_ae[0]]
-    return "AE %d/%d t%02X %s" % (_ae[0] + 1, len(AE_PRESETS), target, "center" if center else "full")
-
-
-def scan_start():
-    """Called by ScanScreen once the camera runs: applies the AE preset."""
-    nds.camera_exposure(*AE_PRESETS[_ae[0]])
-    nds.bottom_print(11, 1, nds_ui.pad(_ae_label() + "  (L/R)", nds_ui.COLS - 2))
-
-
 def scan_frame(parts, py_ms, show_stats):
-    """Called by ScanScreen every frame: L/R change the AE preset."""
-    down = nds.keys_down()
-    if down & (nds.KEY_L | nds.KEY_R):
-        _ae[0] = (_ae[0] + (1 if down & nds.KEY_R else -1)) % len(AE_PRESETS)
-        scan_start()
+    """Called by ScanScreen every frame: live statistics."""
     if show_stats:
         for i, line in enumerate(_scan_summary(parts, py_ms)):
             nds.bottom_print(8 + i, 1, nds_ui.pad(line, nds_ui.COLS - 2))
@@ -69,8 +49,7 @@ def scan_frame(parts, py_ms, show_stats):
 
 def record_scan(parts, py_ms):
     frames, elapsed = nds.camera_stats()[0], nds.camera_stats()[7]
-    _last_scan[:] = ["last scan %d.%ds, %d parts, %s" % (elapsed // 1000, elapsed % 1000 // 100,
-                                                        parts, _ae_label())]
+    _last_scan[:] = ["last scan %d.%ds, %d parts" % (elapsed // 1000, elapsed % 1000 // 100, parts)]
     _last_scan.extend(_scan_summary(parts, py_ms))
 
 

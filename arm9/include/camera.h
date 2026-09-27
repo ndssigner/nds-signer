@@ -34,11 +34,6 @@ bool cameraDeactivate(void);
 
 Camera cameraActive(void);
 
-/* Auto-exposure of the active camera: target luma (AE_BASETARGET) and
- * metering on the whole frame or its central half. Stop any transfer
- * first; the next cameraTransferStart() sets the capture mode again. */
-bool cameraSetExposure(u8 target, bool center);
-
 /* Makes the next cameraTransferStart() send the capture mode to the sensor
  * even if it was already set. */
 void cameraForgetMode(void);

@@ -97,13 +97,6 @@ void ndsbCameraStop(void)
 	scannerStop();
 }
 
-bool ndsbCameraExposure(int target, bool center)
-{
-	if (target < 1 || target > 255)
-		return false;
-	return s_haveCamera && scannerSetExposure((u8)target, center);
-}
-
 void ndsbCameraStats(uint32_t stats[NDSB_CAMERA_STATS])
 {
 	const ScanStats *s = scannerStats();

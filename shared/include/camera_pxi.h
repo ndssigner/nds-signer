@@ -32,17 +32,7 @@ typedef enum {
 	CAM_CMD_OUTER_DEACTIVATE,
 	CAM_CMD_MODE_PREVIEW,
 	CAM_CMD_MODE_CAPTURE,
-	CAM_CMD_SET_EXPOSURE,  /* active sensor, see CAM_EXPOSURE() */
 } CameraPxiCommand;
-
-/* CAM_CMD_SET_EXPOSURE with its arguments in one PXI word (26 bits):
- * auto-exposure target luma (AE_BASETARGET) and metering window
- * (0 = whole frame, 1 = central half, where the QR code is aimed). */
-#define CAM_EXPOSURE(target, center) \
-	(CAM_CMD_SET_EXPOSURE | ((u32)(target) & 0xFF) << 8 | ((center) ? 1U : 0U) << 16)
-#define CAM_CMD(word)             ((word) & 0xFF)
-#define CAM_EXPOSURE_TARGET(word) (((word) >> 8) & 0xFF)
-#define CAM_EXPOSURE_CENTER(word) (((word) >> 16) & 1)
 
 /* Every command is answered with CAM_REPLY_OK, CAM_REPLY_ERROR, or (for
  * CAM_CMD_INIT) the chip id read back from the sensor. */

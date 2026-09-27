@@ -92,18 +92,6 @@ Camera cameraActive(void)
 	return s_activeCamera;
 }
 
-bool cameraSetExposure(u8 target, bool center)
-{
-	if (s_activeCamera == CAM_NONE)
-		return false;
-	bool ok = command(CAM_EXPOSURE(target, center));
-	/* The sensor's refresh can leave the capture mode (on real hardware the
-	 * frames then never matched the 640x480 transfer: black viewfinder), so
-	 * the next cameraTransferStart() sends the mode again. */
-	cameraForgetMode();
-	return ok;
-}
-
 void cameraForgetMode(void)
 {
 	s_activeMode = 0;
