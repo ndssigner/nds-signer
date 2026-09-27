@@ -30,6 +30,9 @@ VERBOSE = "-v" in sys.argv
 ONLY_PATH = [a[7:].split(">") for a in sys.argv if a.startswith("--path=")]
 # --gallery=DIR: a snapshot of every distinct screen (tools/dev/render_gallery.py)
 GALLERY = ([a[10:] for a in sys.argv if a.startswith("--gallery=")] or [None])[0]
+# --seed=<tests/vectors mnemonic file>: the seed loaded (default: the test seed)
+SEED_FILE = ([a[7:] for a in sys.argv if a.startswith("--seed=")]
+             or ["psbt_base64_singlesig.mnemonic.txt"])[0]
 _snapped = set()
 
 
@@ -234,7 +237,7 @@ def main():
 
     controller = Controller.get_instance()
     Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
-    controller.storage.set_pending_seed(Seed(read_vector("psbt_base64_singlesig.mnemonic.txt").split()))
+    controller.storage.set_pending_seed(Seed(read_vector(SEED_FILE).split()))
     controller.storage.finalize_pending_seed()
     _settings0.update(_copy(Settings.get_instance()._data))
     _seeds0.extend(controller.storage.seeds)

@@ -139,11 +139,14 @@ class BaseScreen(_UpstreamFields):
     def top_blocks(self):
         return None
 
+    # the network badge on mainnet too (see nds_ui.network_badge)
+    SHOW_MAINNET = False
+
     def _render(self):
         title = _(getattr(self, "title", "") or "")
         blocks = self.top_blocks()
         if blocks is not None:
-            nds_ui.top_blocks(title, blocks)
+            nds_ui.top_blocks(title, blocks, self.SHOW_MAINNET)
         else:
             nds_ui.top_page(title, self.top_lines())
 
@@ -205,21 +208,14 @@ class LargeButtonScreen(ButtonListScreen):
 
 
 class MainMenuScreen(LargeButtonScreen):
-    """NDS-Signer's name and version, and the network when it is not
-    mainnet (as a coloured badge, like SeedSigner's top nav)."""
+    """NDS-Signer's name and version (the network badge off mainnet is drawn
+    on every screen, see nds_ui.network_badge)."""
 
     def top_blocks(self):
-        from seedsigner.gui.components import GUIConstants as GC
         from seedsigner.gui.components import SeedSignerIconConstants as Icons
-        from seedsigner.models.settings import Settings, SettingsConstants
         blocks = [("icon", Icons.BITCOIN_ALT), ("large", "NDS-Signer"),
-                  ("label", _("Air-gapped Bitcoin signer")), ("space", 10)]
-        network = Settings.get_instance().get_value(SettingsConstants.SETTING__NETWORK)
-        if network == SettingsConstants.TESTNET:
-            blocks.append(("value", "Testnet", GC.TESTNET_COLOR))
-        elif network == SettingsConstants.REGTEST:
-            blocks.append(("value", "Regtest", GC.REGTEST_COLOR))
-        blocks += [("space", 6), ("label", nds.version())]
+                  ("label", _("Air-gapped Bitcoin signer")), ("space", 10),
+                  ("label", nds.version())]
         if nds_ui.nds_dev is not None:
             blocks.append(("label", "DEV build - SELECT: diagnostics"))
         return blocks

@@ -3,6 +3,8 @@
 # Top screen: information (title, status, body text, live camera, QR codes).
 # Bottom screen: touch buttons; the D-pad + A also work, B goes back.
 # Everything is drawn with the `nds` module (native) or its host simulator.
+from gettext import gettext as _
+
 from seedsigner.gui.hw import nds
 
 try:
@@ -53,6 +55,12 @@ def theme():
     if not _THEME:
         _THEME.append(_theme())
     return _THEME[0]
+
+
+def theme_color(name):
+    """0xRRGGBB of an upstream GUIConstants colour, e.g. "WARNING_COLOR"."""
+    from seedsigner.gui.components import GUIConstants
+    return _rgb(getattr(GUIConstants, name))
 
 
 MARGIN = 8
@@ -186,61 +194,256 @@ def color_value(color, default):
 #   ("label", text)              body text in the label colour, centred
 #   ("value", text[, color])     fixed-width bold, centred (fingerprints...)
 #   ("mono", text)               fixed-width, left-aligned, wrapped
+#   ("mono_small", text)         smaller fixed-width, left-aligned, wrapped
 #   ("large", text[, color])     large text, centred (amounts, words)
+#   ("amount", sats)             bitcoin amount: network-coloured icon, digits, unit
+#   ("kv", label, value[, color]) label on the left, value on the right
+#   ("rule",)                    thin horizontal line
+#   ("address", text)            fixed-width address, ends highlighted
+#   ("status", kind, text)       small icon + text; kind: success/warning/error
 #   ("space", pixels)
-def _layout(blocks, width):
+def _text_rows(rows, text, font, color, centred, width):
+    line_h = nds.gfx_font_metrics(font)[1]
+    fits = "\n" not in text and nds.gfx_text_width(text, font) <= width
+    for line in [text] if fits else wrap_px(text, font, width):
+        def draw(y, line=line):
+            if centred:
+                text_centered(TOP, y, line, font, color, MARGIN, width)
+            else:
+                nds.gfx_text(TOP, MARGIN, y, line, font, color, width)
+        rows.append((line_h, draw))
+
+
+def _amount_row(rows, sats):
     t = theme()
-    rows = []  # (font, text, color, centred, height) or ("space", h)
+    text, unit, color = format_btc(sats)
+    icon = _icons().BITCOIN_ALT
+    icon_font, digits_font, unit_font = nds.FONT_SSICON_LARGE, nds.FONT_LARGE, nds.FONT_BODY_BOLD
+    height = nds.gfx_font_metrics(digits_font)[1]
+
+    def draw(y):
+        widths = [nds.gfx_text_width(icon, icon_font) + 6, nds.gfx_text_width(text, digits_font) + 5,
+                  nds.gfx_text_width(unit, unit_font)]
+        x = (GFX_W - sum(widths)) // 2
+        icon_h = nds.gfx_font_metrics(icon_font)[1]
+        nds.gfx_text(TOP, x, y + (height - icon_h) // 2 + 1, icon, icon_font, color)
+        x += widths[0]
+        nds.gfx_text(TOP, x, y, text, digits_font, t["body"])
+        x += widths[1]
+        a_digits = nds.gfx_font_metrics(digits_font)[0]
+        a_unit = nds.gfx_font_metrics(unit_font)[0]
+        nds.gfx_text(TOP, x, y + a_digits - a_unit, unit, unit_font, t["label"])
+    rows.append((height + 2, draw))
+
+
+def _kv_row(rows, label, value, color, width):
+    t = theme()
+    font = nds.FONT_BODY
+    height = nds.gfx_font_metrics(font)[1] + 2
+
+    def draw(y):
+        nds.gfx_text(TOP, MARGIN + 8, y, label, font, t["label"], width // 2)
+        w = nds.gfx_text_width(value, nds.FONT_BODY_BOLD)
+        nds.gfx_text(TOP, GFX_W - MARGIN - 8 - w, y, value, nds.FONT_BODY_BOLD, color_value(color, t["body"]))
+    rows.append((height, draw))
+
+
+def _address_rows(rows, address, width):
+    """Fixed-width address, its first and last 7 characters in the accent
+    colour (like upstream's FormattedAddress), centred."""
+    t = theme()
+    font = nds.FONT_MONO_BOLD
+    char_w = nds.gfx_text_width("0", font)
+    per_line = width // char_w
+    # balanced lines (e.g. 21 + 21, not 30 + 12): easier to compare in chunks
+    count = max(1, (len(address) + per_line - 1) // per_line)
+    per_line = (len(address) + count - 1) // count or 1
+    lines = [address[i:i + per_line] for i in range(0, len(address), per_line)] or [""]
+    line_h = nds.gfx_font_metrics(font)[1]
+    for n, line in enumerate(lines):
+        start = n * per_line
+
+        def draw(y, line=line, start=start):
+            x = (GFX_W - len(line) * char_w) // 2
+            for i, ch in enumerate(line):
+                pos = start + i
+                accent = pos < 7 or pos >= len(address) - 7
+                nds.gfx_text(TOP, x + i * char_w, y, ch, font, t["accent"] if accent else t["body"])
+        rows.append((line_h, draw))
+
+
+def _status_row(rows, kind, text, width):
+    from seedsigner.gui.components import GUIConstants as GC
+    icons = _icons()
+    icon, color = {"success": (icons.SUCCESS, GC.SUCCESS_COLOR),
+                   "warning": (icons.WARNING, GC.WARNING_COLOR),
+                   "error": (icons.ERROR, GC.ERROR_COLOR)}[kind]
+    color = _rgb(color)
+    font = nds.FONT_BODY_BOLD
+    height = nds.gfx_font_metrics(font)[1] + 2
+
+    def draw(y):
+        w = nds.gfx_text_width(icon, nds.FONT_SSICON) + 6 + nds.gfx_text_width(text, font)
+        x = (GFX_W - w) // 2
+        nds.gfx_text(TOP, x, y + 1, icon, nds.FONT_SSICON, color)
+        nds.gfx_text(TOP, x + nds.gfx_text_width(icon, nds.FONT_SSICON) + 6, y, text, font, color)
+    rows.append((height, draw))
+
+
+def _icons():
+    from seedsigner.gui.components import SeedSignerIconConstants
+    return SeedSignerIconConstants
+
+
+def _layout(blocks, width):
+    """(height, draw(y)) rows for the blocks (see above)."""
+    t = theme()
+    rows = []
     for block in blocks:
         kind = block[0]
         if kind == "space":
-            rows.append((None, "", 0, False, block[1]))
-            continue
-        text = block[1]
-        if text is None or text == "":
-            continue
-        color = block[2] if len(block) > 2 else None
-        if kind == "icon":
-            font = icon_font(text)
-            rows.append((font, text, color_value(color, t["accent"]), True,
-                         nds.gfx_font_metrics(font)[1] + 4))
-            continue
-        font, centred, default = {
-            "headline": (nds.FONT_TITLE, True, t["body"]),
-            "text": (nds.FONT_BODY, True, t["body"]),
-            "text_left": (nds.FONT_BODY, False, t["body"]),
-            "label": (nds.FONT_BODY, True, t["label"]),
-            "value": (nds.FONT_MONO_BOLD, True, t["body"]),
-            "mono": (nds.FONT_MONO, False, t["body"]),
-            "mono_small": (nds.FONT_MONO_SMALL, False, t["body"]),
-            "large": (nds.FONT_LARGE, True, t["body"]),
-        }[kind]
-        line_h = nds.gfx_font_metrics(font)[1]
-        fits = "\n" not in text and nds.gfx_text_width(text, font) <= width
-        for line in [text] if fits else wrap_px(text, font, width):
-            rows.append((font, line, color_value(color, default), centred, line_h))
+            rows.append((block[1], None))
+        elif kind == "rule":
+            rows.append((7, lambda y: nds.gfx_rect(TOP, MARGIN + 8, y + 3, GFX_W - 2 * MARGIN - 16, 1,
+                                                   t["inactive"])))
+        elif kind == "amount":
+            _amount_row(rows, block[1])
+        elif kind == "kv":
+            _kv_row(rows, block[1], block[2], block[3] if len(block) > 3 else None, width)
+        elif kind == "address":
+            if block[1]:
+                _address_rows(rows, block[1], width)
+        elif kind == "status":
+            _status_row(rows, block[1], block[2], width)
+        elif kind == "icon":
+            if block[1]:
+                font = icon_font(block[1])
+                color = color_value(block[2] if len(block) > 2 else None, t["accent"])
+
+                def draw(y, glyph=block[1], font=font, color=color):
+                    text_centered(TOP, y, glyph, font, color)
+                rows.append((nds.gfx_font_metrics(font)[1] + 4, draw))
+        else:
+            text = block[1]
+            if text is None or text == "":
+                continue
+            font, centred, default = {
+                "headline": (nds.FONT_TITLE, True, t["body"]),
+                "text": (nds.FONT_BODY, True, t["body"]),
+                "text_left": (nds.FONT_BODY, False, t["body"]),
+                "label": (nds.FONT_BODY, True, t["label"]),
+                "value": (nds.FONT_MONO_BOLD, True, t["body"]),
+                "mono": (nds.FONT_MONO, False, t["body"]),
+                "mono_small": (nds.FONT_MONO_SMALL, False, t["body"]),
+                "large": (nds.FONT_LARGE, True, t["body"]),
+            }[kind]
+            color = color_value(block[2] if len(block) > 2 else None, default)
+            _text_rows(rows, text, font, color, centred, width)
     return rows
 
 
-def top_blocks(title, blocks):
+def network_badge(always=False, draw=True):
+    """Which network the signer is set to, on the top screen: on testnet and
+    regtest always (a thin band along the top edge in the network's colour
+    and its name in the top-right corner, beside the title); on mainnet only
+    when `always` (transaction screens: signing moves real money). Returns
+    the badge's width (0 if none), so the title can make room for it."""
+    from seedsigner.gui.components import GUIConstants as GC
+    from seedsigner.models.settings import Settings, SettingsConstants as SC
+    network = Settings.get_instance().get_value(SC.SETTING__NETWORK)
+    if network == SC.MAINNET:
+        if not always:
+            return 0
+        name, color = "Mainnet", _rgb(GC.ACCENT_COLOR)
+    elif network == SC.TESTNET:
+        name, color = "Testnet", _rgb(GC.TESTNET_COLOR)
+    else:
+        name, color = "Regtest", _rgb(GC.REGTEST_COLOR)
+    font = nds.FONT_BODY_BOLD
+    w = nds.gfx_text_width(name, font) + 12
+    if not draw:
+        return w
+    if network != SC.MAINNET:
+        nds.gfx_rect(TOP, 0, 0, GFX_W, 2, color)
+    h = nds.gfx_font_metrics(font)[1]
+    nds.gfx_rect(TOP, GFX_W - w - 4, 6, w, h, color, 6)
+    nds.gfx_text(TOP, GFX_W - w + 2, 6, name, font, theme()["bg"])
+    return w
+
+
+def _title(title, network_always=False):
+    """The title, centred, or left of the network badge when there is one."""
+    t = theme()
+    badge = network_badge(network_always, draw=False)
+    if title:
+        room = GFX_W - (badge + 12 if badge else 0)
+        w = nds.gfx_text_width(title, nds.FONT_TITLE)
+        x = (GFX_W - w) // 2
+        if badge and x + w > room:
+            x = max(4, room - w)
+        nds.gfx_text(TOP, x, TITLE_Y, title, nds.FONT_TITLE, t["body"], room - x)
+    network_badge(network_always)
+
+
+def top_blocks(title, blocks, network_always=False):
     """Title, then `blocks` (see above) centred vertically below it."""
     t = theme()
     nds.top_clear()
     nds.gfx_clear(TOP, t["bg"])
-    if title:
-        text_centered(TOP, TITLE_Y, title, nds.FONT_TITLE, t["body"])
-    width = GFX_W - 2 * MARGIN
-    rows = _layout(blocks, width)
-    total = sum(r[4] for r in rows)
+    _title(title, network_always)
+    rows = _layout(blocks, GFX_W - 2 * MARGIN)
+    total = sum(r[0] for r in rows)
     y = BODY_Y + max(0, (GFX_H - BODY_Y - total) // 2 - 6)
-    for font, text, color, centred, height in rows:
-        if font is not None:
-            if centred:
-                text_centered(TOP, y, text, font, color, MARGIN, width)
-            else:
-                nds.gfx_text(TOP, MARGIN, y, text, font, color, width)
+    for height, draw in rows:
+        if draw is not None:
+            draw(y)
         y += height
     nds.gfx_present(TOP)
+
+
+def group_thousands(n):
+    s = str(int(n))
+    out = ""
+    while len(s) > 3:
+        out = "," + s[-3:] + out
+        s = s[:-3]
+    return s + out
+
+
+def format_btc(total_sats):
+    """(digits, unit, icon colour) like upstream's BtcAmount: the Settings'
+    denomination (sats, btc, threshold at 0.01 btc, btc|sats hybrid) and
+    the network (testnet/regtest units and colours)."""
+    from seedsigner.gui.components import GUIConstants as GC
+    from seedsigner.models.settings import Settings, SettingsConstants as SC
+    settings = Settings.get_instance()
+    denomination = settings.get_value(SC.SETTING__BTC_DENOMINATION)
+    network = settings.get_value(SC.SETTING__NETWORK)
+    btc_unit, sats_unit = _("tBtc"), _("tSats")
+    color = GC.TESTNET_COLOR if network == SC.TESTNET else GC.REGTEST_COLOR
+    if network == SC.MAINNET:
+        btc_unit, sats_unit, color = _("btc"), _("sats"), GC.ACCENT_COLOR
+    total = int(total_sats)
+    as_btc = (denomination == SC.BTC_DENOMINATION__BTC
+              or (denomination == SC.BTC_DENOMINATION__THRESHOLD and total >= 10 ** 6)
+              or (denomination == SC.BTC_DENOMINATION__BTCSATSHYBRID and total >= 10 ** 6
+                  and total % 10 ** 6 == 0)
+              or total > 10 ** 10)
+    if as_btc:
+        whole, frac = divmod(total, 10 ** 8)
+        frac = "%08d" % frac
+        if total % 10 ** 8 == 0:
+            frac = frac[:1]
+        elif total % 10 ** 6 == 0:
+            frac = frac[:2]
+        text = group_thousands(whole) + "." + frac
+        if len(text) >= 12:
+            text = text.split(".")[0] + "." + frac[:2] + "..."
+        return text, btc_unit, _rgb(color)
+    if denomination == SC.BTC_DENOMINATION__BTCSATSHYBRID:
+        return "%d.%02d | %s" % (total // 10 ** 8, total % 10 ** 8 // 10 ** 6,
+                                  group_thousands(total % 10 ** 6)), sats_unit, _rgb(color)
+    return group_thousands(total), sats_unit, _rgb(color)
 
 
 def top_note(y, text, color=None, font=None):
@@ -272,8 +475,7 @@ def top_page(title, lines):
     t = theme()
     nds.top_clear()
     nds.gfx_clear(TOP, t["bg"])
-    if title:
-        text_centered(TOP, TITLE_Y, title, nds.FONT_TITLE, t["body"])
+    _title(title)
     lines = list(lines)
     for font in (nds.FONT_MONO, nds.FONT_MONO_SMALL):
         line_h = nds.gfx_font_metrics(font)[1]
