@@ -355,6 +355,72 @@ def run_explorer_flow(prefix):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+def run_dice_flow():
+    """Tools -> New seed (dice) -> 12 words: the 50 rolls typed on the touch
+    keyboard must give the mnemonic of SeedSigner's own test vector
+    (tests/test_mnemonic_generation.py, same as iancoleman.io/bip39), shown
+    word by word."""
+    from seedsigner.views.view import Destination, MainMenuView
+
+    rolls = "12345612345612345612345612345612345612345612345612"
+    expected = "unveil nice picture region tragic fault cream strike tourist control recipe tourist".split()
+    shown = []
+
+    def collect_page():
+        for line in nds.sim_text(0).split("\n"):
+            parts = line.strip("|").split()
+            if len(parts) == 2 and parts[0].endswith(".") and parts[0][:-1].isdigit():
+                shown.append(parts[1])
+
+    def check():
+        ok = shown == expected
+        RESULT["dice"] = ok
+        print("ok  " if ok else "FAIL", "dice flow: 50 rolls ->", " ".join(shown[:3]), "... (%d words)" % len(shown))
+
+    events = []
+    for label in ("Tools", "New seed (dice)", "12 words (50 rolls)"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    for roll in rolls:
+        events += [("tap_key", roll), ("key", 0)]
+    events += [("wait", 5), ("call", dump), ("tap_label", "I understand"), ("key", 0)]
+    for page in range(3):
+        events += [("wait", 2), ("call", dump), ("call", collect_page),
+                   ("tap_label", "Next"), ("key", 0)]
+    events += [("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
+def run_final_word_flow(prefix):
+    """Tools -> Calc 12th/24th word -> 12 words: the test seed's first 11
+    words, then the 7 entropy bits of its real 12th word as coin flips, must
+    give back that word ("enroll") and the seed's fingerprint."""
+    from embit import bip39
+    from seedsigner.views.view import Destination, MainMenuView
+
+    words = read(prefix + ".mnemonic.txt").split()
+    bits = "{:011b}".format(bip39.WORDLIST.index(words[-1]))[:7]
+    name = "final word flow: 11 words + coin flips %s" % bits
+
+    def check():
+        top = nds.sim_text(0)
+        ok = '"%s"' % words[-1] in top and "8b218e81" in top
+        RESULT["final_word"] = ok
+        print("ok  " if ok else "FAIL", name, "->", words[-1] if ok else "WRONG")
+
+    events = []
+    for label in ("Tools", "Calc 12th/24th word", "12 words"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    events += type_mnemonic(words[:11])
+    events += [("call", dump), ("tap_label", "Coin flip entropy"), ("key", 0)]
+    for bit in bits:
+        events += [("tap_key", bit), ("key", 0)]
+    events += [("wait", 3), ("call", dump), ("tap_label", "Next"), ("key", 0), ("wait", 3),
+               ("call", dump), ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -395,6 +461,10 @@ elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
 elif MODE in ("transcribe", "transcribe_compact"):
     run_transcribe_flow("psbt_base64_singlesig", MODE == "transcribe_compact")
+elif MODE == "final_word":
+    run_final_word_flow("psbt_base64_singlesig")
+elif MODE == "dice":
+    run_dice_flow()
 elif MODE == "explorer":
     run_explorer_flow("psbt_base64_singlesig")
 elif MODE == "backup":

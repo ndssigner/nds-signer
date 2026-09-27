@@ -28,7 +28,7 @@ PAYLOAD = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") e
 VERBOSE = "-v" in sys.argv
 # --path=Seeds>8b218e81>Export xpub: run only this path, tracing each view
 ONLY_PATH = [a[7:].split(">") for a in sys.argv if a.startswith("--path=")]
-MAX_DECISIONS = 20000
+MAX_DECISIONS = 60000
 
 current_view = ["?"]
 trail = []           # views run since Home

@@ -27,6 +27,8 @@ constructs MicroPython cannot support are rewritten:
   * str methods MicroPython lacks become calls to equivalents in
     mpy/frozen/compat/nds_strcompat.py (STR_METHODS), e.g. s.zfill(8) ->
     _nds_zfill(s, 8).
+  * The format() builtin (missing in MicroPython) becomes str.format:
+    format(x, "011b") -> "{:011b}".format(x).
   * Builtin names MicroPython lacks are replaced (NAME_REPLACEMENTS), e.g.
     UnicodeDecodeError -> UnicodeError (what MicroPython's bytes.decode()
     raises on invalid UTF-8).
@@ -190,6 +192,18 @@ class StrMethodRewriter(ast.NodeTransformer):
     def visit_Call(self, node):
         self.generic_visit(node)
         func = node.func
+        if isinstance(func, ast.Name) and func.id == "format" and 1 <= len(node.args) <= 2 \
+                and not node.keywords:
+            # format(value[, spec]) -> ("{:" + spec + "}").format(value)
+            spec = node.args[1] if len(node.args) == 2 else ast.Constant("")
+            if isinstance(spec, ast.Constant):
+                template = ast.Constant("{:" + spec.value + "}")
+            else:
+                template = ast.BinOp(ast.BinOp(ast.Constant("{:"), ast.Add(), spec), ast.Add(),
+                                     ast.Constant("}"))
+            return ast.copy_location(ast.Call(func=ast.Attribute(value=template, attr="format",
+                                                                 ctx=ast.Load()),
+                                              args=[node.args[0]], keywords=[]), node)
         if isinstance(func, ast.Attribute) and func.attr in STR_METHODS and not node.keywords:
             name = STR_METHODS[func.attr]
             self.used.add(func.attr)

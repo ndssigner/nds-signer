@@ -9,6 +9,7 @@ from seedsigner.gui.screens.screen import (
     RET_CODE__BACK_BUTTON,
     BaseTopNavScreen,
     ButtonListScreen,
+    KeyboardScreen,
     LargeIconStatusScreen,
     define_generic_screens,
 )
@@ -331,6 +332,33 @@ class SeedTranscribeSeedQRConfirmQRPromptScreen(ButtonListScreen):
     def top_lines(self):
         return [""] + nds_ui.wrap(_("Optionally scan your transcribed SeedQR to confirm "
                                     "that it reads back correctly."))
+
+
+class SeedSelectSeedScreen(ButtonListScreen):
+    """Like upstream: a text above the list of seeds (e.g. which seed to
+    verify an address with)."""
+
+    def top_lines(self):
+        return [""] + nds_ui.wrap(_(self.text or "")) if self.text else []
+
+
+class SeedBIP85SelectChildIndexScreen(KeyboardScreen):
+    KEYS = "0123456789"
+    COLS = 5
+
+    def __post_init__(self):
+        self.show_save_button = True
+        super().__post_init__()
+
+
+class SeedExportXpubCustomDerivationScreen(KeyboardScreen):
+    KEYS = "/'0123456789"
+    COLS = 6
+
+    def __post_init__(self):
+        self.show_save_button = True
+        super().__post_init__()
+        self.user_input = self.user_input or "m/"
 
 
 class SeedAddressVerificationScreen(ButtonListScreen):

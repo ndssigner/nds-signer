@@ -85,6 +85,28 @@ class ButtonOptionWithoutTranslation(ButtonOption):
     pass
 
 
+def _icon_hints():
+    """Words for the icons that tell otherwise identical upstream buttons
+    apart (Tools: "New seed" with a camera or a dice icon)."""
+    from seedsigner.gui.components import FontAwesomeIconConstants as FA
+    return {FA.CAMERA: _("camera"), FA.DICE: _("dice")}
+
+
+def button_labels(buttons):
+    """Labels of a button list. Buttons that upstream distinguishes only by
+    their icon get the icon's meaning appended, e.g. "New seed (dice)"."""
+    original = [button_label(b) for b in buttons]
+    labels = list(original)
+    hints = None
+    for i, label in enumerate(original):
+        if original.count(label) > 1:
+            hints = hints or _icon_hints()
+            icon = getattr(buttons[i], "icon_name", None)
+            if icon in hints:
+                labels[i] = "%s (%s)" % (label, hints[icon])
+    return labels
+
+
 def button_label(button):
     if isinstance(button, ButtonOption):
         label = button.button_label
@@ -142,8 +164,8 @@ class ButtonListScreen(BaseTopNavScreen):
 
     def _run(self):
         checked = getattr(self, "checked_buttons", None) or []
-        labels = [("* " if i in checked else "") + button_label(b)
-                  for i, b in enumerate(self.button_data or [])]
+        labels = [("* " if i in checked else "") + label
+                  for i, label in enumerate(button_labels(self.button_data or []))]
         panel = nds_ui.ButtonPanel(labels, show_back=self.show_back_button,
                                    selected=self.selected_button or 0, redraw=self._render)
         return self._back_or(panel.run())
@@ -201,8 +223,91 @@ class PowerOffNotRequiredScreen(BaseTopNavScreen):
 
 
 class KeyboardScreen(BaseTopNavScreen):
+    """Upstream's generic keyboard for short inputs (dice rolls, coin flips,
+    BIP-85 index, derivation path): the keys of `keys_charset` on the bottom
+    screen, Del, Back and optionally Save. Like upstream it returns the input
+    once `return_after_n_chars` characters are entered, the stripped input
+    on Save, or RET_CODE__BACK_BUTTON. Upstream subclasses set their keys in
+    __post_init__ code that is not replicated here: native subclasses set
+    KEYS and COLS instead."""
+
+    KEYS = None     # used when keys_charset is not given
+    COLS = None
+    FIRST_ROW = 3
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.user_input = getattr(self, "user_input", None) or self.initial_value or ""
+
+    def update_title(self):
+        return False
+
+    def extra_lines(self):
+        return []
+
+    def top_lines(self):
+        return ["", _("Input:"), ""] + nds_ui.wrap(self.user_input or " ") + [""] + self.extra_lines()
+
+    def _render(self):
+        self.update_title()
+        nds_ui.top_page(_(getattr(self, "title", "") or ""), self.top_lines())
+
+    def _keys(self):
+        from seedsigner.gui import nds_keyboard
+        charset = self.keys_charset or self.KEYS or ""
+        cols = self.cols or self.COLS or len(charset)
+        width = min(9, (nds_ui.COLS - 2) // cols)
+        keys = []
+        for i, ch in enumerate(charset):
+            row, col = divmod(i, cols)
+            left = (nds_ui.COLS - cols * width) // 2
+            keys.append(nds_keyboard.Key(ch, self.FIRST_ROW + row * 3, left + col * width, width=width))
+        last_row = self.FIRST_ROW + ((len(charset) + cols - 1) // cols) * 3
+        keys.append(nds_keyboard.Key(_("Del"), last_row + 1, (nds_ui.COLS - 10) // 2, width=10,
+                                     action="del"))
+        if self.show_back_button:
+            keys.append(nds_keyboard.Key(_("< Back"), 20, 1, width=10, action="back"))
+        if self.show_save_button:
+            keys.append(nds_keyboard.Key(_("Save"), 20, 21, width=10, action="save"))
+        return keys
+
+    def _draw(self):
+        from seedsigner.gui import nds_keyboard
+        self._render()
+        nds.bottom_clear()
+        keys = self._keys()
+        for key in keys:
+            nds_keyboard.draw_key(key)
+        nds_keyboard.set_active(keys)
+
     def _run(self):
-        raise NotImplementedError("touch keyboard not implemented yet")
+        from seedsigner.gui import nds_keyboard
+        self._draw()
+        taps = nds_ui.TapTracker()
+        while True:
+            nds.frame()
+            if nds.keys_down() & nds.KEY_B and self.show_back_button:
+                return RET_CODE__BACK_BUTTON
+            tap = taps.update()
+            if tap is None:
+                continue
+            key = nds_keyboard.key_at(nds_keyboard.ACTIVE_KEYS, tap[0], tap[1])
+            if key is None:
+                continue
+            if key.action == "back":
+                return RET_CODE__BACK_BUTTON
+            if key.action == "save":
+                if self.user_input:
+                    return self.user_input.strip()
+                continue
+            if key.action == "del":
+                self.user_input = self.user_input[:-1]
+            else:
+                values = self.keys_to_values or {}
+                self.user_input += values.get(key.action, key.action)
+                if self.return_after_n_chars and len(self.user_input) >= self.return_after_n_chars:
+                    return self.user_input
+            self._draw()
 
 
 class QRDisplayScreen(BaseScreen):
