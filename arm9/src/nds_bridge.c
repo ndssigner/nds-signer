@@ -116,6 +116,7 @@ void ndsbCameraStats(uint32_t stats[NDSB_CAMERA_STATS])
 	stats[6] = s->sumDecodeUs;
 	stats[7] = uiMillis() - s->startMs;
 	stats[8] = s->refines;
+	stats[9] = s->restarts;
 }
 
 #ifdef NDS_SIGNER_DEVBUILD

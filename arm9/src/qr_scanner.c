@@ -32,6 +32,7 @@ static u16 s_vfColumn[VF_W];  /* viewfinder x -> capture x */
 static ScanStats s_stats;
 static int s_quickFails;      /* frames in a row with an undecoded QR, see decode() */
 static int s_refineWait;      /* frames left before refining again, see decode() */
+static u32 s_lastFrameMs;     /* uiMillis() of the last frame (or start) */
 static u8 s_aeTarget = SCANNER_AE_TARGET_DEFAULT;
 static bool s_aeCenter = SCANNER_AE_CENTER_DEFAULT;
 
@@ -106,23 +107,48 @@ void scannerClearPayload(void)
 		p[i] = 0;
 }
 
+/* The sensors start with the default exposure (arm7/src/aptina.c): only a
+ * different one is ever sent, so the default path is the proven one. */
+static bool exposureIsDefault(void)
+{
+	return s_aeTarget == SCANNER_AE_TARGET_DEFAULT && s_aeCenter == SCANNER_AE_CENTER_DEFAULT;
+}
+
+static bool s_aeSent;  /* the sensor has a non-default exposure */
+
+static bool applyExposure(void)
+{
+	if (exposureIsDefault() && !s_aeSent)
+		return true;
+	s_aeSent = !exposureIsDefault();
+	return cameraSetExposure(s_aeTarget, s_aeCenter);
+}
+
 bool scannerSetExposure(u8 target, bool center)
 {
 	s_aeTarget = target;
 	s_aeCenter = center;
-	return !s_streaming || cameraSetExposure(target, center);
+	if (!s_streaming)
+		return true;
+	/* restart the frame in progress with the capture mode set again */
+	cameraTransferStop();
+	bool ok = applyExposure();
+	cameraTransferStart(s_capture[s_dmaBuffer], CAPTURE_MODE_CAPTURE);
+	s_lastFrameMs = uiMillis();
+	return ok;
 }
 
 bool scannerStart(void)
 {
 	if (!s_quirc || !cameraActivate(CAM_OUTER))
 		return false;
-	cameraSetExposure(s_aeTarget, s_aeCenter);
+	applyExposure();
 
 	memset(&s_stats, 0, sizeof(s_stats));
 	s_stats.startMs = uiMillis();
 	s_quickFails = 0;
 	s_refineWait = 0;
+	s_lastFrameMs = uiMillis();
 	s_dmaBuffer = 0;
 	cameraTransferStart(s_capture[s_dmaBuffer], CAPTURE_MODE_CAPTURE);
 	s_streaming = true;
@@ -172,6 +198,8 @@ static void processFrame(const u16 *yuv, u16 *viewfinder)
  * row showed a QR code that the quick read could not decode, and kept while
  * it is what makes frames decode. */
 #define REFINE_AFTER 2
+/* no frame for this long while streaming: restart the transfer */
+#define FRAME_TIMEOUT_MS 1000
 /* frames without refining after a refinement that did not decode: a QR code
  * cut by the frame edge or blurred keeps failing, at ~1 s per attempt */
 #define REFINE_COOLDOWN 4
@@ -239,8 +267,19 @@ ScanStatus scannerPoll(u16 *viewfinder)
 {
 	if (!s_streaming)
 		return SCAN_ERROR;
-	if (cameraTransferActive())
+	if (cameraTransferActive()) {
+		/* Watchdog: frames stopped arriving (the sensor left the capture
+		 * mode?). Restart the transfer with the mode sent again. */
+		if (uiMillis() - s_lastFrameMs > FRAME_TIMEOUT_MS) {
+			cameraTransferStop();
+			cameraForgetMode();
+			cameraTransferStart(s_capture[s_dmaBuffer], CAPTURE_MODE_CAPTURE);
+			s_lastFrameMs = uiMillis();
+			s_stats.restarts++;
+		}
 		return SCAN_IDLE;
+	}
+	s_lastFrameMs = uiMillis();
 
 	/* Frame complete: hand the other buffer to the DMA straight away */
 	u16 *frame = s_capture[s_dmaBuffer];

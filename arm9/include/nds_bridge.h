@@ -51,8 +51,9 @@ void ndsbCameraStop(void);
 bool ndsbCameraExposure(int target, bool center);
 /* stats[NDSB_CAMERA_STATS]: frames, last decode ms, frames with a QR
  * candidate, frames decoded, total us in luma copy / quirc identify / quirc
- * decode, elapsed ms, grids refined (quirc_refine) */
-#define NDSB_CAMERA_STATS 9
+ * decode, elapsed ms, grids refined (quirc_refine), transfers restarted by
+ * the no-frame watchdog */
+#define NDSB_CAMERA_STATS 10
 void ndsbCameraStats(uint32_t stats[NDSB_CAMERA_STATS]);
 /* Developer benchmark (scannerBenchmark): returns -1 if unavailable, 0 if the
  * QR was not decoded back, 1 if it was; times[7] in us: luma copy, quirc

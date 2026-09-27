@@ -138,7 +138,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(nds_camera_exposure_obj, nds_camera_exposure);
 
 /* camera_stats(): (frames processed, last decode ms, frames with a QR
  * candidate, frames decoded, total us in luma copy / quirc identify / quirc
- * decode, ms since camera_start(), grids refined) */
+ * decode, ms since camera_start(), grids refined, transfer restarts) */
 static mp_obj_t nds_camera_stats(void)
 {
 	uint32_t stats[NDSB_CAMERA_STATS];

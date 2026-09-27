@@ -32,6 +32,7 @@ typedef struct {
 	u32 sumIdentifyUs;   /* quirc_end: thresholding and finder patterns */
 	u32 sumDecodeUs;     /* quirc_extract + quirc_decode (+ quirc_refine) */
 	u32 refines;         /* grids that needed quirc_refine() */
+	u32 restarts;        /* transfers restarted by the no-frame watchdog */
 	u32 startMs;         /* uiMillis() at scannerStart() */
 } ScanStats;
 

@@ -33,11 +33,13 @@ def report_lines():
 
 def _scan_summary(parts, py_ms):
     """Two lines: camera/quirc rates and averages, Python per decoded part."""
-    frames, _last, grids, decoded, copy_us, ident_us, dec_us, elapsed, refines = nds.camera_stats()
+    (frames, _last, grids, decoded, copy_us, ident_us, dec_us, elapsed, refines,
+     restarts) = nds.camera_stats()
     n = max(frames, 1)
     fps10 = frames * 10000 // max(elapsed, 1)
     return [
-        "fps %d.%d qr %d/%d ok %d rf %d" % (fps10 // 10, fps10 % 10, grids, frames, decoded, refines),
+        "fps %d.%d qr %d/%d ok %d rf %d rs %d" % (fps10 // 10, fps10 % 10, grids, frames,
+                                                decoded, refines, restarts),
         "ms cp%d id%d dc%d py%d" % (copy_us // n // 1000, ident_us // n // 1000,
                                    dec_us // n // 1000, py_ms // max(parts, 1)),
     ]
