@@ -8,9 +8,17 @@ en **Signet**, una red de pruebas: las monedas no valen nada.
 
 ## 1 · Instalar Sparrow
 
-Descárgalo **solo** desde su web oficial, **https://sparrowwallet.com**
-(sección *Download*, versión para Mac con Apple Silicon) e instálalo como
-cualquier aplicación.
+Lo más cómodo es con Homebrew, desde la terminal:
+
+```
+brew install --cask sparrow
+```
+
+O descárgalo **solo** desde su web oficial, **https://sparrowwallet.com**
+(sección *Download*, versión para Mac con Apple Silicon).
+
+*(Para esta prueba con monedas sin valor basta. Para usar Sparrow con fondos
+reales, verifica la firma de la descarga como explica su web.)*
 
 ## 2 · Poner Sparrow en Signet
 
