@@ -3,6 +3,8 @@
 #   make -C tests/host re-compat  MicroPython `re` compat vs CPython (Docker)
 #   make -C tests/host seedsigner SeedSigner/embit on MicroPython vs CPython refs,
 #                                 incl. the full Scan -> review -> sign UI flow
+#   make -C tests/host crawl      menu crawler: every reachable menu option, with
+#                                 each kind of QR code in the fake camera
 #   make -C tests/host quirc      quirc as built for the ROM (fixed-point grid)
 #                                 vs unmodified quirc on synthetic camera frames
 CC     ?= cc
@@ -22,7 +24,7 @@ MPY_ROM_PATH = /source/tests/host/sim:/source/mpy/frozen/compat:/source/mpy/froz
 DOCKER_MPY_ROM = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
              -e MICROPYPATH=$(MPY_ROM_PATH) nds-signer-builder /source/build/mpy-unix/micropython
 
-.PHONY: all clean re-compat seedsigner qrdecode unicode frozen quirc
+.PHONY: all clean re-compat seedsigner qrdecode unicode frozen quirc crawl
 all: test_qr_type
 	./test_qr_type
 
@@ -50,6 +52,16 @@ quirc: $(TOPDIR)/build/quirc_scan_upstream $(TOPDIR)/build/quirc_scan_rom
 	@$(TOPDIR)/build/quirc_scan_rom $(TOPDIR)/build/quirc_images/*.pgm > $(TOPDIR)/build/quirc.rom.txt
 	@$(PYTHON) quirc_compare.py $(TOPDIR)/build/quirc_images $(TOPDIR)/build/quirc.upstream.txt \
 		$(TOPDIR)/build/quirc.rom.txt
+
+# Menu crawler (menu_crawl.py): errors, generic stand-in screens and views
+# reached, for each scan payload. Report in build/crawl.txt.
+CRAWL_PAYLOADS ?= none psbt_base64_singlesig.txt own_address signmessage settingsqr \
+                  seedqr_12words.txt plain_text.txt address_testnet.txt
+crawl: frozen
+	@for p in $(CRAWL_PAYLOADS); do \
+		$(DOCKER_MPY_ROM) -X heapsize=32M menu_crawl.py $$p 2>/dev/null \
+			| grep -E "^(crawl|ERROR|GENERIC|   )" || echo "FAIL crawl $$p: no report (hang?)"; \
+	done | tee $(TOPDIR)/build/crawl.txt
 
 # Requires the MicroPython unix port: make -C ../.. mpy-unix
 re-compat:

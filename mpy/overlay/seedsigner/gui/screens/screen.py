@@ -268,6 +268,11 @@ class LoadingScreenThread:
         return False
 
 
+# Names of the upstream screen classes created by define_generic_screens()
+# (no native implementation yet): tests/host/menu_crawl.py reports them.
+GENERIC_SCREENS = set()
+
+
 def define_generic_screens(namespace, module):
     """Creates stand-ins for upstream screen classes of `module` that have no
     native implementation yet (generic title/text/buttons rendering), so every
@@ -292,6 +297,7 @@ def define_generic_screens(namespace, module):
         if base is None:
             base = BaseScreen
         cls = type(name, (base,), {})
+        GENERIC_SCREENS.add(name)
         if info[0] == module:
             namespace[name] = cls
         return cls
