@@ -15,6 +15,7 @@
 
 #include "nds_bridge.h"
 #include "gfx_fonts.h"  /* build/generated: GFX_FONT_* ids */
+#include "sfx.h"        /* SFX_* ids (plain C) */
 
 static mp_obj_t print_on(int screen, mp_obj_t row, mp_obj_t col, mp_obj_t text_in)
 {
@@ -231,6 +232,14 @@ static mp_obj_t nds_gfx_font_metrics(mp_obj_t font)
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(nds_gfx_font_metrics_obj, nds_gfx_font_metrics);
 
+/* sound(effect): a UI feedback sound, SFX_* */
+static mp_obj_t nds_sound(mp_obj_t effect)
+{
+	ndsbSound(mp_obj_get_int(effect));
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(nds_sound_obj, nds_sound);
+
 static mp_obj_t nds_gfx_present(mp_obj_t screen)
 {
 	ndsbGfxPresent(mp_obj_get_int(screen));
@@ -309,6 +318,14 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_gfx_text_width), MP_ROM_PTR(&nds_gfx_text_width_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_gfx_font_metrics), MP_ROM_PTR(&nds_gfx_font_metrics_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_gfx_present), MP_ROM_PTR(&nds_gfx_present_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_sound), MP_ROM_PTR(&nds_sound_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_SFX_CLICK), MP_ROM_INT(SFX_CLICK) },
+	{ MP_ROM_QSTR(MP_QSTR_SFX_KEY), MP_ROM_INT(SFX_KEY) },
+	{ MP_ROM_QSTR(MP_QSTR_SFX_BACK), MP_ROM_INT(SFX_BACK) },
+	{ MP_ROM_QSTR(MP_QSTR_SFX_SUCCESS), MP_ROM_INT(SFX_SUCCESS) },
+	{ MP_ROM_QSTR(MP_QSTR_SFX_WARNING), MP_ROM_INT(SFX_WARNING) },
+	{ MP_ROM_QSTR(MP_QSTR_SFX_ERROR), MP_ROM_INT(SFX_ERROR) },
+	{ MP_ROM_QSTR(MP_QSTR_SFX_SCAN), MP_ROM_INT(SFX_SCAN) },
 	{ MP_ROM_QSTR(MP_QSTR_FONT_BODY), MP_ROM_INT(GFX_FONT_BODY) },
 	{ MP_ROM_QSTR(MP_QSTR_FONT_BODY_BOLD), MP_ROM_INT(GFX_FONT_BODY_BOLD) },
 	{ MP_ROM_QSTR(MP_QSTR_FONT_BUTTON), MP_ROM_INT(GFX_FONT_BUTTON) },

@@ -33,9 +33,10 @@
  *
  * Security: compared with the default calico core, this ARM7 deliberately does
  * NOT start the wireless manager (wlmgr), the block-device driver for the
- * SD card / NAND (blk), sound, microphone or maxmod. Their code is not even
- * linked, so the ARM9 has no way to ask for network or storage access.
- * The RTC is not needed either.
+ * SD card / NAND (blk), the microphone or maxmod. Their code is not even
+ * linked, so the ARM9 has no way to ask for network or storage access, or to
+ * listen. The RTC is not needed either. The sound driver is started (output
+ * only): optional UI feedback sounds, see arm9/src/sfx.c.
  */
 #include <nds.h>
 
@@ -59,6 +60,9 @@ int main(void)
 	// Set up touch screen driver
 	touchInit();
 	touchStartServer(80, MAIN_THREAD_PRIO);
+
+	// Sound driver (output only; handles the DSi audio codec)
+	soundStartServer(MAIN_THREAD_PRIO - 0x10);
 
 	// DSi camera (I2C) server
 	cameraServerStart(MAIN_THREAD_PRIO);

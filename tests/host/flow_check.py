@@ -442,6 +442,36 @@ def run_final_word_flow(prefix):
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_sound_flow():
+    """Settings > Sound effects: taps make sounds; once disabled, none."""
+    from seedsigner.views.view import Destination, MainMenuView
+    state = {}
+
+    def mark():
+        state["before"] = len(nds.sounds)
+
+    def check():
+        played_on = state["before"] > 0
+        silent_after = len(nds.sounds) == state["after_off"]
+        ok = played_on and silent_after
+        RESULT["sound"] = ok
+        print("ok  " if ok else "FAIL", "sound flow: %d sounds while enabled, %s after disabling" % (
+            state["before"], "none" if silent_after else "SOME"))
+
+    def after_off():
+        state["after_off"] = len(nds.sounds)
+
+    events = []
+    for label in ("Settings", "Sound effects"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    events += [("call", mark), ("call", dump), ("tap_label", "Disabled"), ("key", 0), ("wait", 2),
+               ("call", after_off), ("call", dump), ("tap_label", "Disabled"), ("key", 0),
+               ("wait", 2), ("key", nds.KEY_B), ("wait", 2), ("call", dump),
+               ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -482,6 +512,8 @@ elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
 elif MODE in ("transcribe", "transcribe_compact"):
     run_transcribe_flow("psbt_base64_singlesig", MODE == "transcribe_compact")
+elif MODE == "sound":
+    run_sound_flow()
 elif MODE == "final_word":
     run_final_word_flow("psbt_base64_singlesig")
 elif MODE == "dice":

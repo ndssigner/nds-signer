@@ -43,8 +43,13 @@ class ScanScreen(BaseScreen):
                 status = self.decoder.add_data(payload)
                 py_ms += nds.ticks_ms() - t0
                 parts += 1
-                if status in (DecodeQRStatus.COMPLETE, DecodeQRStatus.INVALID):
+                if status == DecodeQRStatus.COMPLETE:
+                    nds_ui.sound("success")
                     return None
+                if status == DecodeQRStatus.INVALID:
+                    nds_ui.sound("error")
+                    return None
+                nds_ui.sound("scan")
                 percent = self.decoder.get_percent_complete()
                 if percent:
                     self._progress("%s %d%%" % (_("Progress:"), percent))

@@ -57,6 +57,19 @@ def theme():
     return _THEME[0]
 
 
+def sound(kind):
+    """A UI feedback sound (click, key, back, success, warning, error,
+    scan) unless the "Sound effects" setting is disabled."""
+    from seedsigner.gui import SETTING__NDS_SOUND
+    from seedsigner.models.settings import Settings, SettingsConstants
+    try:
+        enabled = Settings.get_instance().get_value(SETTING__NDS_SOUND) == SettingsConstants.OPTION__ENABLED
+    except Exception:
+        enabled = True
+    if enabled:
+        nds.sound(getattr(nds, "SFX_" + kind.upper()))
+
+
 def theme_color(name):
     """0xRRGGBB of an upstream GUIConstants colour, e.g. "WARNING_COLOR"."""
     from seedsigner.gui.components import GUIConstants
@@ -573,6 +586,8 @@ class ButtonPanel:
         tap = self.taps.update()
         if tap is not None:
             action = self._hit(tap[0], tap[1])
+            if action is not None:
+                sound("back" if action == BACK else ("key" if action in ("prev", "next") else "click"))
             if action == "prev":
                 self.selected = (self.page() - 1) * self.per_page
                 self.draw()
@@ -590,10 +605,13 @@ class ButtonPanel:
         if not down:
             return None
         if down & nds.KEY_A and self.labels:
+            sound("click")
             return self.selected
         if down & nds.KEY_B and self.show_back:
+            sound("back")
             return BACK
         if down & (nds.KEY_UP | nds.KEY_DOWN) and self.labels:
+            sound("key")
             step = -1 if down & nds.KEY_UP else 1
             page = self.page()
             self.selected = (self.selected + step) % len(self.labels)

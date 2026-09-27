@@ -77,6 +77,9 @@ int ndsbGfxTextWidth(const char *utf8, size_t len, int font);
 void ndsbGfxFontMetrics(int font, int *ascent, int *lineHeight);
 void ndsbGfxPresent(int screen);
 int ndsbGfxFontCount(void);
+
+/* UI feedback sound (arm9/include/sfx.h ids) */
+void ndsbSound(int sfx);
 /* see qrTranscribeShow() in qr_display.h */
 int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
                      int zoneX, int zoneY);

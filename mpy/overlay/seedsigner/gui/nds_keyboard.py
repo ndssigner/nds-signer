@@ -57,9 +57,11 @@ def set_active(keys):
 
 
 def key_at(keys, x, y):
+    """The key tapped at (x, y), if any (with its click sound)."""
     row, col = y // CELL, x // CELL
     for key in keys:
         if key.contains(row, col):
+            nds_ui.sound("back" if key.action == "back" else "key")
             return key
     return None
 

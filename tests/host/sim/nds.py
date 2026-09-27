@@ -272,6 +272,14 @@ def gfx_present(screen):
     pass
 
 
+SFX_CLICK, SFX_KEY, SFX_BACK, SFX_SUCCESS, SFX_WARNING, SFX_ERROR, SFX_SCAN = range(7)
+sounds = []  # effects played, for tests
+
+
+def sound(effect):
+    sounds.append(effect)
+
+
 def info():
     return (True, True, 0, _ticks // 1000)
 

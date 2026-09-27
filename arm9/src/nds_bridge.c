@@ -10,6 +10,7 @@
 
 #include "nds_bridge.h"
 #include "gfx.h"
+#include "sfx.h"
 #include "qr_display.h"
 #include "qr_scanner.h"
 #include "ui.h"
@@ -160,6 +161,7 @@ int ndsbGfxTextWidth(const char *utf8, size_t len, int font) { return gfxTextWid
 void ndsbGfxFontMetrics(int font, int *ascent, int *lineHeight) { gfxFontMetrics(font, ascent, lineHeight); }
 void ndsbGfxPresent(int screen) { gfxPresent(screen); }
 int ndsbGfxFontCount(void) { return GFX_FONT_COUNT; }
+void ndsbSound(int sfx) { sfxPlay(sfx); }
 
 int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
                      int zoneX, int zoneY)

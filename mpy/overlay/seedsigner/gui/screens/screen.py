@@ -234,6 +234,12 @@ class LargeIconStatusScreen(ButtonListScreen):
         GC, Icons = _gc()
         return Icons.SUCCESS, GC.SUCCESS_COLOR
 
+    SOUND = "success"
+
+    def _run(self):
+        nds_ui.sound(self.SOUND)
+        return super()._run()
+
     def top_blocks(self):
         icon, color = self.default_status()
         icon = getattr(self, "status_icon_name", None) or icon
@@ -245,6 +251,8 @@ class LargeIconStatusScreen(ButtonListScreen):
 
 
 class WarningScreen(LargeIconStatusScreen):
+    SOUND = "warning"
+
     def default_status(self):
         GC, Icons = _gc()
         return Icons.WARNING, GC.WARNING_COLOR
@@ -257,6 +265,8 @@ class DireWarningScreen(WarningScreen):
 
 
 class ErrorScreen(WarningScreen):
+    SOUND = "error"
+
     def default_status(self):
         GC, Icons = _gc()
         return Icons.ERROR, GC.ERROR_COLOR
