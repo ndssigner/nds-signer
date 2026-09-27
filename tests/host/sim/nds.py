@@ -53,20 +53,39 @@ def _print(screen, row, col, text):
     _screens[screen][row] = line[:col] + text + line[col + len(text):]
 
 
+# Display lists: what each screen shows since its last clear, as drawing
+# operations; sim_snapshot() saves them for tools/dev/render_gallery.py.
+_dl = [[], []]
+snapshot_dir = None
+
+
 def top_print(row, col, text):
+    _dl[0].append(("console", row, col, str(text)))
     _print(0, row, col, text)
 
 
 def bottom_print(row, col, text):
+    _dl[1].append(("console", row, col, str(text)))
     _print(1, row, col, text)
 
 
 def top_clear():
     _screens[0] = [" " * COLS for _ in range(ROWS)]
+    _dl[0] = []
 
 
 def bottom_clear():
     _screens[1] = [" " * COLS for _ in range(ROWS)]
+    _dl[1] = []
+
+
+def sim_snapshot(name):
+    """Saves both screens' display lists as <snapshot_dir>/<name>.json."""
+    if snapshot_dir is None:
+        return
+    import json
+    with open("%s/%s.json" % (snapshot_dir, name), "w") as f:
+        f.write(json.dumps({"top": _dl[0], "bottom": _dl[1]}))
 
 
 def _find_label(label):
@@ -144,6 +163,7 @@ def camera_init():
 def camera_start():
     global _camera_on
     _camera_on = True
+    _dl[0].append(("camera",))
     return True
 
 
@@ -173,6 +193,7 @@ qr_shown = []  # texts passed to qr_show, for tests
 
 def qr_show(text, border=2, background=255):
     qr_shown.append(text)
+    _dl[0] = [op for op in _dl[0] if op[0] != "qr"] + [("qr", text, border, background)]
     return 1
 
 
@@ -184,6 +205,8 @@ _CAPACITY_L = {"numeric": (41, 77, 127, 187), "byte": (17, 32, 53, 78)}
 
 def qr_transcribe(data, zone_modules=0, zone_x=0, zone_y=0):
     qr_transcribed.append((data, zone_modules, zone_x, zone_y))
+    shown = data if isinstance(data, str) else "hex:" + "".join("%02x" % b for b in data)
+    _dl[0].append(("transcribe", shown, zone_modules, zone_x, zone_y))
     if isinstance(data, str) and data.isdigit():
         caps, n = _CAPACITY_L["numeric"], len(data)
     else:
@@ -199,10 +222,12 @@ def qr_transcribe(data, zone_modules=0, zone_x=0, zone_y=0):
 # the order of build/generated/gfx_fonts.h (tools/ttf_to_ndsfont.py FONTS);
 # tests/host/gfx_sim_check.py compares the metrics with the generated file.
 (FONT_BODY, FONT_BODY_BOLD, FONT_BUTTON, FONT_TITLE, FONT_LARGE, FONT_MONO, FONT_MONO_SMALL,
- FONT_MONO_BOLD, FONT_ICON, FONT_ICON_LARGE, FONT_SSICON, FONT_SSICON_LARGE) = range(12)
+ FONT_MONO_BOLD, FONT_ICON, FONT_ICON_LARGE, FONT_SSICON, FONT_SSICON_LARGE,
+ FONT_SSICON_HUGE) = range(13)
 FONT_METRICS = [(14, 18), (14, 18), (17, 22), (19, 24), (26, 34), (13, 16), (11, 14), (14, 18),
-                (14, 16), (23, 27), (15, 16), (25, 27)]
-_FONT_ADVANCE = [7, 7, 8, 9, 13, 7, 6, 8, 16, 26, 16, 26]
+                (14, 16), (23, 27), (15, 16), (25, 27), (42, 45)]
+_FONT_ADVANCE = [7, 7, 8, 9, 13, 7, 6, 8, 16, 26, 16, 26, 44]
+_ICON_FONTS = (FONT_ICON, FONT_ICON_LARGE, FONT_SSICON, FONT_SSICON_LARGE, FONT_SSICON_HUGE)
 
 
 def gfx_clear(screen, rgb):
@@ -210,24 +235,26 @@ def gfx_clear(screen, rgb):
         top_clear()
     else:
         bottom_clear()
+    _dl[screen].append(("clear", rgb))
 
 
 def gfx_rect(screen, x, y, w, h, rgb, radius=0):
-    pass
+    _dl[screen].append(("rect", x, y, w, h, rgb, radius))
 
 
 def gfx_frame(screen, x, y, w, h, rgb, radius=0, thickness=1):
-    pass
+    _dl[screen].append(("frame", x, y, w, h, rgb, radius, thickness))
 
 
 def gfx_text(screen, x, y, text, font, rgb, max_width=0):
     """Text also goes to the text grid (cell of its first pixel), so tests
     can find labels and tap them as on the text UI."""
+    _dl[screen].append(("text", x, y, str(text), font, rgb, max_width))
     width = gfx_text_width(text, font)
     if max_width and width > max_width:
         text = text[:max(0, max_width // _FONT_ADVANCE[font])]
         width = gfx_text_width(text, font)
-    if font not in (FONT_ICON, FONT_ICON_LARGE, FONT_SSICON, FONT_SSICON_LARGE):
+    if font not in _ICON_FONTS:
         line_height = FONT_METRICS[font][1]
         _print(screen, (y + line_height // 2) // 8, x // 8, text)
     return width

@@ -28,6 +28,18 @@ PAYLOAD = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") e
 VERBOSE = "-v" in sys.argv
 # --path=Seeds>8b218e81>Export xpub: run only this path, tracing each view
 ONLY_PATH = [a[7:].split(">") for a in sys.argv if a.startswith("--path=")]
+# --gallery=DIR: a snapshot of every distinct screen (tools/dev/render_gallery.py)
+GALLERY = ([a[10:] for a in sys.argv if a.startswith("--gallery=")] or [None])[0]
+_snapped = set()
+
+
+def snapshot(view, labels):
+    key = (view, tuple(labels))
+    if GALLERY is None or key in _snapped:
+        return
+    _snapped.add(key)
+    tag = PAYLOAD.split(".")[0][:12]
+    nds.sim_snapshot("%s_%03d_%s" % (tag, len(_snapped), view))
 MAX_DECISIONS = 60000
 
 current_view = ["?"]
@@ -117,6 +129,7 @@ def _panel_run(self):
     # for xpub export and for the address explorer): tell them apart by the
     # views that led to it
     key = (tuple(trail[-4:]), tuple(self.labels))
+    snapshot(current_view[0], self.labels)
     if ONLY_PATH:
         print("end of path at", key)
         raise StopFlowBasedTest()
@@ -138,6 +151,8 @@ _idle = [0]
 def _frame():
     if not nds._events and not nds._touch_queue:
         _idle[0] += 1
+        if _idle[0] == 20:
+            snapshot(current_view[0], ["<idle>"])
         if _idle[0] % 40 == 0:
             step = (_idle[0] // 40) % 3
             if step == 1:
@@ -211,6 +226,8 @@ Controller.handle_exception = _handle_exception
 
 
 def main():
+    if GALLERY:
+        nds.snapshot_dir = GALLERY
     from seedsigner.models.seed import Seed
     from seedsigner.models.settings import Settings, SettingsConstants
     from seedsigner.views.view import Destination, MainMenuView

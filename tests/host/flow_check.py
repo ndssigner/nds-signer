@@ -43,9 +43,30 @@ def stop():
     raise StopFlowBasedTest()
 
 
+# --gallery=DIR: snapshot of the screen at every dump() point, named after the
+# screen class shown last (tools/dev/render_gallery.py)
+GALLERY = ([a[10:] for a in sys.argv if a.startswith("--gallery=")] or [None])[0]
+_last_screen = ["?"]
+_snaps = [0]
+if GALLERY:
+    nds.snapshot_dir = GALLERY
+    from seedsigner.gui.screens import screen as _screen_mod
+
+    _orig_display = _screen_mod.BaseScreen.display
+
+    def _display(self):
+        _last_screen[0] = type(self).__name__
+        return _orig_display(self)
+
+    _screen_mod.BaseScreen.display = _display
+
+
 def dump():
     if VERBOSE:
         nds.sim_dump()
+    if GALLERY:
+        _snaps[0] += 1
+        nds.sim_snapshot("flow-%s_%02d_%s" % (MODE, _snaps[0], _last_screen[0]))
 
 
 def type_mnemonic(words):
@@ -341,8 +362,8 @@ def run_explorer_flow(prefix):
     expected = ["tb1qw2as76rh4jhykn9zvevdt5tawmqx7hhy7ydvvu", "tb1qdxl0syr9zqwxentq7mzvf7taglscyrmmnpfss6"]
 
     def check():
-        top = "".join(line.strip("|").strip() for line in nds.sim_text(0).split("\n"))
-        top = top.replace("0:", "").replace("1:", "")
+        # the drawn text itself (the simulator's text grid is only 32 columns)
+        top = "".join(op[3] for op in nds._dl[0] if op[0] == "text").replace(" ", "")
         ok = all(a in top for a in expected)
         RESULT["explorer"] = ok
         print("ok  " if ok else "FAIL", "address explorer flow: first receive addresses listed")

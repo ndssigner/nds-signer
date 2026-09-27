@@ -34,6 +34,7 @@ FONTS = [
     ("ICON_LARGE", "Font_Awesome_6_Free-Solid-900.otf", 26, "fa"),
     ("SSICON", "seedsigner-icons.otf", 16, "ss"),
     ("SSICON_LARGE", "seedsigner-icons.otf", 26, "ss"),
+    ("SSICON_HUGE", "seedsigner-icons.otf", 44, "ss"),
 ]
 
 

@@ -33,5 +33,8 @@ int gfxTextWidth(const char *utf8, size_t len, int font);
 void gfxFontMetrics(int font, int *ascent, int *lineHeight);
 /* Copies the back buffer to the screen. */
 void gfxPresent(int screen);
+/* The back buffer itself (GFX_W x GFX_H RGB555), for native drawing such as
+ * QR codes; call gfxPresent() afterwards. */
+u16 *gfxBackBuffer(int screen);
 
 #endif /* NDS_SIGNER_GFX_H */

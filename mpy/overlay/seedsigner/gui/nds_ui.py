@@ -72,8 +72,9 @@ def text_centered(screen, y, text, font, color, x=0, width=GFX_W):
     return nds.gfx_text(screen, x + max(0, (width - w) // 2), y, text, font, color, width)
 
 
-def button(screen, x, y, w, h, label, selected=False, enabled=True, font=None):
-    """A rounded touch button with its label centred."""
+def button(screen, x, y, w, h, label, selected=False, enabled=True, font=None, checked=False):
+    """A rounded touch button with its label centred (and a check mark on
+    the left for the chosen option of a selection list)."""
     t = theme()
     font = nds.FONT_BUTTON if font is None else font
     fill = t["accent"] if selected else (t["button"] if enabled else t["bg"])
@@ -83,6 +84,10 @@ def button(screen, x, y, w, h, label, selected=False, enabled=True, font=None):
     color = t["bg"] if selected else (t["button_fg"] if enabled else t["inactive"])
     line = nds.gfx_font_metrics(font)[1]
     text_centered(screen, y + (h - line) // 2, label, font, color, x + 4, w - 8)
+    if checked:
+        from seedsigner.gui.components import SeedSignerIconConstants as Icons
+        icon_h = nds.gfx_font_metrics(nds.FONT_SSICON)[1]
+        nds.gfx_text(screen, x + 10, y + (h - icon_h) // 2, Icons.CHECK, nds.FONT_SSICON, color)
 
 
 BACK = "back"
@@ -122,6 +127,141 @@ def wrap(text, width=COLS):
                 line = word
         lines.append(line)
     return lines
+
+
+def wrap_px(text, font, width):
+    """Word-wraps text to `width` pixels in `font` (keeps explicit newlines;
+    words longer than a line are split)."""
+    lines = []
+    space = nds.gfx_text_width(" ", font)
+    for paragraph in str(text).split("\n"):
+        line, line_w = "", 0
+        for word in paragraph.split(" "):
+            w = nds.gfx_text_width(word, font)
+            while w > width:  # hard-split (addresses, xpubs)
+                cut = len(word)
+                while cut > 1 and nds.gfx_text_width(word[:cut], font) > width:
+                    cut -= 1
+                if line:
+                    lines.append(line)
+                    line, line_w = "", 0
+                lines.append(word[:cut])
+                word = word[cut:]
+                w = nds.gfx_text_width(word, font)
+            if not line:
+                line, line_w = word, w
+            elif line_w + space + w <= width:
+                line, line_w = line + " " + word, line_w + space + w
+            else:
+                lines.append(line)
+                line, line_w = word, w
+        lines.append(line)
+    return lines
+
+
+def icon_font(glyph, size="huge"):
+    """Font for an icon code point: SeedSigner's icons or Font Awesome."""
+    seedsigner = glyph and 0xE900 <= ord(glyph[0]) <= 0xE9FF
+    if size == "huge":
+        return nds.FONT_SSICON_HUGE if seedsigner else nds.FONT_ICON_LARGE
+    if size == "large":
+        return nds.FONT_SSICON_LARGE if seedsigner else nds.FONT_ICON_LARGE
+    return nds.FONT_SSICON if seedsigner else nds.FONT_ICON
+
+
+def color_value(color, default):
+    """0xRRGGBB from upstream's "#RRGGBB" (or an int), else `default`."""
+    if isinstance(color, int):
+        return color
+    if isinstance(color, str) and color.startswith("#") and len(color) == 7:
+        return _rgb(color)
+    return default
+
+
+# Top screen content as blocks, laid out with proportional text:
+#   ("icon", glyph[, color])     large icon, centred
+#   ("headline", text[, color])  title font, centred
+#   ("text", text)               body text, centred paragraph
+#   ("text_left", text)          body text, left-aligned paragraph
+#   ("label", text)              body text in the label colour, centred
+#   ("value", text[, color])     fixed-width bold, centred (fingerprints...)
+#   ("mono", text)               fixed-width, left-aligned, wrapped
+#   ("large", text[, color])     large text, centred (amounts, words)
+#   ("space", pixels)
+def _layout(blocks, width):
+    t = theme()
+    rows = []  # (font, text, color, centred, height) or ("space", h)
+    for block in blocks:
+        kind = block[0]
+        if kind == "space":
+            rows.append((None, "", 0, False, block[1]))
+            continue
+        text = block[1]
+        if text is None or text == "":
+            continue
+        color = block[2] if len(block) > 2 else None
+        if kind == "icon":
+            font = icon_font(text)
+            rows.append((font, text, color_value(color, t["accent"]), True,
+                         nds.gfx_font_metrics(font)[1] + 4))
+            continue
+        font, centred, default = {
+            "headline": (nds.FONT_TITLE, True, t["body"]),
+            "text": (nds.FONT_BODY, True, t["body"]),
+            "text_left": (nds.FONT_BODY, False, t["body"]),
+            "label": (nds.FONT_BODY, True, t["label"]),
+            "value": (nds.FONT_MONO_BOLD, True, t["body"]),
+            "mono": (nds.FONT_MONO, False, t["body"]),
+            "mono_small": (nds.FONT_MONO_SMALL, False, t["body"]),
+            "large": (nds.FONT_LARGE, True, t["body"]),
+        }[kind]
+        line_h = nds.gfx_font_metrics(font)[1]
+        fits = "\n" not in text and nds.gfx_text_width(text, font) <= width
+        for line in [text] if fits else wrap_px(text, font, width):
+            rows.append((font, line, color_value(color, default), centred, line_h))
+    return rows
+
+
+def top_blocks(title, blocks):
+    """Title, then `blocks` (see above) centred vertically below it."""
+    t = theme()
+    nds.top_clear()
+    nds.gfx_clear(TOP, t["bg"])
+    if title:
+        text_centered(TOP, TITLE_Y, title, nds.FONT_TITLE, t["body"])
+    width = GFX_W - 2 * MARGIN
+    rows = _layout(blocks, width)
+    total = sum(r[4] for r in rows)
+    y = BODY_Y + max(0, (GFX_H - BODY_Y - total) // 2 - 6)
+    for font, text, color, centred, height in rows:
+        if font is not None:
+            if centred:
+                text_centered(TOP, y, text, font, color, MARGIN, width)
+            else:
+                nds.gfx_text(TOP, MARGIN, y, text, font, color, width)
+        y += height
+    nds.gfx_present(TOP)
+
+
+def top_note(y, text, color=None, font=None):
+    """Replaces one centred line of text on the top screen (e.g. progress)."""
+    t = theme()
+    font = nds.FONT_BODY if font is None else font
+    line_h = nds.gfx_font_metrics(font)[1]
+    nds.gfx_rect(TOP, 0, y, GFX_W, line_h, t["bg"])
+    text_centered(TOP, y, text, font, t["body"] if color is None else color)
+    nds.gfx_present(TOP)
+
+
+def bottom_note(y, text, color=None, font=None):
+    """A line of text on the bottom screen (erases its area first); for
+    status lines drawn over a button panel, e.g. scan progress."""
+    t = theme()
+    font = nds.FONT_BODY if font is None else font
+    line_h = nds.gfx_font_metrics(font)[1]
+    nds.gfx_rect(BOTTOM, 0, y, GFX_W, line_h, t["bg"])
+    text_centered(BOTTOM, y, text, font, t["label"] if color is None else color)
+    nds.gfx_present(BOTTOM)
 
 
 def top_page(title, lines):
@@ -172,13 +312,16 @@ class TapTracker:
 class ButtonPanel:
     """A pageable list of full-width touch buttons on the bottom screen."""
 
-    def __init__(self, labels, show_back=True, selected=0, header=None, redraw=None):
+    def __init__(self, labels, show_back=True, selected=0, header=None, redraw=None, checked=(),
+                 on_page=None):
         self.redraw = redraw  # redraws the top screen after the dev overlay
         self.taps = TapTracker()
         self.labels = list(labels)
         self.show_back = show_back
         self.selected = selected if 0 <= selected < len(self.labels) else 0
         self.header = header
+        self.checked = set(checked)
+        self.on_page = on_page  # called after the page changes (top screen follows)
         self.per_page = BUTTONS_PER_PAGE - 1 if header else BUTTONS_PER_PAGE
         self.hits = []  # (x0, y0, x1, y1, action) in pixels
 
@@ -199,7 +342,8 @@ class ButtonPanel:
             y += BUTTON_H
         start = self.page() * self.per_page
         for i, label in enumerate(self.labels[start:start + self.per_page]):
-            button(BOTTOM, MARGIN, y, GFX_W - 2 * MARGIN, BUTTON_H, label, start + i == self.selected)
+            button(BOTTOM, MARGIN, y, GFX_W - 2 * MARGIN, BUTTON_H, label, start + i == self.selected,
+                   checked=start + i in self.checked)
             self.hits.append((MARGIN, y, GFX_W - MARGIN, y + BUTTON_H, start + i))
             y += BUTTON_H + BUTTON_GAP
         if self.show_back:
@@ -230,10 +374,14 @@ class ButtonPanel:
             if action == "prev":
                 self.selected = (self.page() - 1) * self.per_page
                 self.draw()
+                if self.on_page is not None:
+                    self.on_page()
                 return None
             if action == "next":
                 self.selected = (self.page() + 1) * self.per_page
                 self.draw()
+                if self.on_page is not None:
+                    self.on_page()
                 return None
             return action
         down = nds.keys_down()
@@ -245,8 +393,11 @@ class ButtonPanel:
             return BACK
         if down & (nds.KEY_UP | nds.KEY_DOWN) and self.labels:
             step = -1 if down & nds.KEY_UP else 1
+            page = self.page()
             self.selected = (self.selected + step) % len(self.labels)
             self.draw()
+            if self.page() != page and self.on_page is not None:
+                self.on_page()
         return None
 
     def run(self):

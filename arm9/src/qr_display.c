@@ -5,6 +5,7 @@
 #include <nds.h>
 #include <string.h>
 
+#include "gfx.h"
 #include "qr_display.h"
 #include "qrcodegen.h"
 #include "ui.h"
@@ -17,9 +18,9 @@ static uint8_t s_qr[qrcodegen_BUFFER_LEN_MAX];
 static uint8_t s_temp[qrcodegen_BUFFER_LEN_MAX];
 static char s_text[qrcodegen_BUFFER_LEN_MAX];
 
-/* The frame is composed off-screen and copied to VRAM in one DMA burst right
- * after VBlank, so a half-drawn QR is never visible (no tearing/flicker). */
-static u16 s_frame[SCREEN_W * SCREEN_H] __attribute__((aligned(32)));
+/* The frame is composed in the graphical UI's top back buffer and copied to
+ * VRAM in one DMA burst right after VBlank, so a half-drawn QR is never
+ * visible (no tearing/flicker); the UI can draw over it before showing it. */
 
 int qrDisplayShow(const char *text, size_t len, int border, u8 background)
 {
@@ -43,7 +44,7 @@ int qrDisplayShow(const char *text, size_t len, int border, u8 background)
 
 	u16 light = RGB15(background >> 3, background >> 3, background >> 3) | BIT(15);
 	u16 dark = RGB15(0, 0, 0) | BIT(15);
-	u16 *fb = s_frame;
+	u16 *fb = gfxBackBuffer(GFX_TOP);
 
 	/* Build each module row once, then copy it `scale` times */
 	static u16 line[SCREEN_W];
@@ -62,9 +63,8 @@ int qrDisplayShow(const char *text, size_t len, int border, u8 background)
 			memcpy(fb + (y0 + my * scale + k) * 256 + x0, line + x0, size * scale * sizeof(u16));
 	}
 
-	DC_FlushRange(s_frame, sizeof(s_frame));
 	swiWaitForVBlank();
-	dmaCopyWords(3, s_frame, uiTopBitmap(), sizeof(s_frame));
+	gfxPresent(GFX_TOP);
 	return size;
 }
 
@@ -111,8 +111,9 @@ int qrTranscribeShow(const u8 *data, size_t len, bool binary, int zoneModules,
 		y0 = (SCREEN_H - zoneModules * scale) / 2 - zoneY * zoneModules * scale;
 	}
 
+	u16 *frame = gfxBackBuffer(GFX_TOP);
 	for (int py = 0; py < SCREEN_H; py++) {
-		u16 *row = s_frame + py * SCREEN_W;
+		u16 *row = frame + py * SCREEN_W;
 		int my = py - y0 < 0 ? -1 : (py - y0) / scale;
 		for (int px = 0; px < SCREEN_W; px++) {
 			int mx = px - x0 < 0 ? -1 : (px - x0) / scale;
@@ -132,8 +133,7 @@ int qrTranscribeShow(const u8 *data, size_t len, bool binary, int zoneModules,
 		}
 	}
 
-	DC_FlushRange(s_frame, sizeof(s_frame));
 	swiWaitForVBlank();
-	dmaCopyWords(3, s_frame, uiTopBitmap(), sizeof(s_frame));
+	gfxPresent(GFX_TOP);
 	return size;
 }

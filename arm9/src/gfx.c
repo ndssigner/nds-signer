@@ -216,6 +216,11 @@ int gfxText(int screen, int x, int y, const char *utf8, size_t len, int font, u3
 	return pen - x;
 }
 
+u16 *gfxBackBuffer(int screen)
+{
+	return s_back[screen & 1];
+}
+
 void gfxPresent(int screen)
 {
 	u16 *dst = screen == GFX_TOP ? uiTopBitmap() : uiBottomBitmap();

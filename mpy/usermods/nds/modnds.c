@@ -321,6 +321,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_FONT_ICON_LARGE), MP_ROM_INT(GFX_FONT_ICON_LARGE) },
 	{ MP_ROM_QSTR(MP_QSTR_FONT_SSICON), MP_ROM_INT(GFX_FONT_SSICON) },
 	{ MP_ROM_QSTR(MP_QSTR_FONT_SSICON_LARGE), MP_ROM_INT(GFX_FONT_SSICON_LARGE) },
+	{ MP_ROM_QSTR(MP_QSTR_FONT_SSICON_HUGE), MP_ROM_INT(GFX_FONT_SSICON_HUGE) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe), MP_ROM_PTR(&nds_qr_transcribe_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&nds_version_obj) },

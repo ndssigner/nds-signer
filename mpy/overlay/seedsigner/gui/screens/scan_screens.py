@@ -13,12 +13,11 @@ class ScanScreen(BaseScreen):
         nds.top_clear()
         nds.top_print(22, -1, _(self.instructions_text or "Scan a QR code"))
 
-    # below the Cancel button (rows 1-3)
-    PROGRESS_ROW = 5
+    # below the Cancel button
+    PROGRESS_Y = 44
 
     def _progress(self, status_text):
-        nds.bottom_print(0, -1, _("Scanning..."))
-        nds.bottom_print(self.PROGRESS_ROW, 1, nds_ui.pad(status_text, nds_ui.COLS - 2))
+        nds_ui.bottom_note(self.PROGRESS_Y, status_text or _("Scanning..."))
 
     def _run(self):
         from seedsigner.models.decode_qr import DecodeQRStatus

@@ -4,6 +4,7 @@
 from gettext import gettext as _
 
 from seedsigner.gui import nds_ui
+from seedsigner.gui.hw import nds
 from seedsigner.gui.screens.screen import ButtonListScreen, KeyboardScreen, define_generic_screens
 from seedsigner.models.settings_definition import SettingsConstants, SettingsDefinition
 
@@ -11,17 +12,18 @@ from seedsigner.models.settings_definition import SettingsConstants, SettingsDef
 class ToolsAddressExplorerAddressTypeScreen(ButtonListScreen):
     """Like upstream: fingerprint and derivation, or the wallet descriptor."""
 
-    def top_lines(self):
+    def top_blocks(self):
         if not self.fingerprint:
-            return ["", _("Wallet descriptor") + ":"] + nds_ui.wrap(str(self.wallet_descriptor_display_name or ""))
+            return [("label", _("Wallet descriptor")),
+                    ("text", str(self.wallet_descriptor_display_name or ""))]
         if self.script_type != SettingsConstants.CUSTOM_DERIVATION:
             derivation = SettingsDefinition.get_settings_entry(
                 attr_name=SettingsConstants.SETTING__SCRIPT_TYPES
             ).get_selection_option_display_name_by_value(value=self.script_type)
         else:
             derivation = self.custom_derivation_path
-        return ["", _("Fingerprint") + ": " + self.fingerprint, "",
-                _("Derivation") + ": " + str(derivation or "")]
+        return [("label", _("Fingerprint")), ("value", self.fingerprint), ("space", 8),
+                ("label", _("Derivation")), ("value", str(derivation or ""))]
 
 
 class ToolsAddressExplorerAddressListScreen(ButtonListScreen):
@@ -39,14 +41,22 @@ class ToolsAddressExplorerAddressListScreen(ButtonListScreen):
         self.button_data.append(_("Next {}").format(len(addresses)))
         super().__post_init__()
 
-    def top_lines(self):
-        lines = []
-        for i, address in enumerate(self.addresses or []):
-            label = "%d:" % (self.start_index + i)
-            wrapped = nds_ui.wrap(address, nds_ui.COLS - 4)
-            lines.append(nds_ui.pad(label, 4) + wrapped[0])
-            lines += ["    " + part for part in wrapped[1:]]
-        return lines
+    def top_blocks(self):
+        """The full addresses of the button page shown below."""
+        panel = getattr(self, "_panel", None)
+        first = panel.page() * panel.per_page if panel is not None else 0
+        blocks = []
+        per_line = (nds_ui.GFX_W - 2 * nds_ui.MARGIN) // nds.gfx_text_width("0", nds.FONT_MONO_SMALL)
+        for i, address in enumerate((self.addresses or [])[first:first + nds_ui.BUTTONS_PER_PAGE]):
+            prefix = "%d:" % (self.start_index + first + i)
+            prefix += " " * (4 - len(prefix)) if len(prefix) < 4 else " "
+            head = per_line - len(prefix)
+            blocks.append(("mono_small", prefix + address[:head]))
+            rest = address[head:]
+            while rest:  # continuation lines, indented under the address
+                blocks.append(("mono_small", " " * len(prefix) + rest[:head]))
+                rest = rest[head:]
+        return blocks
 
 
 class ToolsDiceEntropyEntryScreen(KeyboardScreen):
@@ -82,10 +92,10 @@ class ToolsCoinFlipEntryScreen(KeyboardScreen):
 
 
 class ToolsCalcFinalWordFinalizePromptScreen(ButtonListScreen):
-    def top_lines(self):
-        return [""] + nds_ui.wrap(_("The {mnemonic_length}th word is built from {num_bits} more "
-                                    "entropy bits plus auto-calculated checksum.").format(
-            mnemonic_length=self.mnemonic_length, num_bits=self.num_entropy_bits))
+    def top_blocks(self):
+        return [("text", _("The {mnemonic_length}th word is built from {num_bits} more "
+                           "entropy bits plus auto-calculated checksum.").format(
+            mnemonic_length=self.mnemonic_length, num_bits=self.num_entropy_bits))]
 
 
 class ToolsCalcFinalWordScreen(ButtonListScreen):
@@ -112,9 +122,17 @@ class ToolsCalcFinalWordScreen(ButtonListScreen):
 
 
 class ToolsCalcFinalWordDoneScreen(ButtonListScreen):
-    def top_lines(self):
-        return ["", nds_ui.center('"%s"' % self.final_word), "",
-                nds_ui.center("%s: %s" % (_("fingerprint"), self.fingerprint))]
+    """Like upstream: the final word and the seed's fingerprint; the title
+    depends on the mnemonic length (set in upstream's __post_init__)."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.title = _("12th Word") if self.mnemonic_word_length == 12 else _("24th Word")
+
+    def top_blocks(self):
+        from seedsigner.gui.components import GUIConstants as GC
+        return [("large", '"%s"' % self.final_word, GC.ACCENT_COLOR), ("space", 8),
+                ("label", _("fingerprint")), ("value", self.fingerprint or "")]
 
 
 define_generic_screens(globals(), "tools_screens")

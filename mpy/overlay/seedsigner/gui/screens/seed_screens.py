@@ -209,11 +209,10 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
 class SeedReviewPassphraseScreen(ButtonListScreen):
     """Like upstream: the passphrase and how it changes the fingerprint."""
 
-    def top_lines(self):
-        lines = [_("Passphrase:")] + nds_ui.wrap(self.passphrase or "") + [""]
-        lines.append("%s -> %s" % (self.fingerprint_without or "", self.fingerprint_with or ""))
-        lines += ["", _("Without -> with passphrase")]
-        return lines
+    def top_blocks(self):
+        return [("label", _("Passphrase")), ("value", self.passphrase or ""), ("space", 10),
+                ("label", _("Without -> with passphrase")),
+                ("value", "%s \u2192 %s" % (self.fingerprint_without or "", self.fingerprint_with or ""))]
 
 
 class SeedExportXpubDetailsScreen(ButtonListScreen):
@@ -226,38 +225,42 @@ class SeedExportXpubDetailsScreen(ButtonListScreen):
                 + nds_ui.wrap(self.xpub or ""))
 
 
+def _fingerprint_blocks(fingerprint):
+    from seedsigner.gui.components import GUIConstants as GC
+    from seedsigner.gui.components import SeedSignerIconConstants as Icons
+    return [("icon", Icons.FINGERPRINT, GC.INFO_COLOR), ("label", _("Fingerprint")),
+            ("large", fingerprint or "")]
+
+
 class SeedFinalizeScreen(ButtonListScreen):
-    def top_lines(self):
-        return ["", nds_ui.center(_("Fingerprint")), "", nds_ui.center(self.fingerprint or "")]
+    def top_blocks(self):
+        return _fingerprint_blocks(self.fingerprint)
 
 
 class SeedOptionsScreen(ButtonListScreen):
-    def top_lines(self):
-        return ["", nds_ui.center(_("Fingerprint")), "", nds_ui.center(self.fingerprint or "")]
+    def top_blocks(self):
+        return _fingerprint_blocks(self.fingerprint)
 
 
 class SeedWordsScreen(ButtonListScreen):
     """Like upstream: a page of numbered seed words (upstream's title already
     says "Seed Words: page/pages")."""
 
-    def top_lines(self):
+    def top_blocks(self):
         words = self.words or []
         first = self.page_index * len(words) + 1
-        lines = [""]
-        for i, word in enumerate(words):
-            lines += ["      %2d.  %s" % (first + i, word), ""]
-        return lines
+        return [("large", "%d. %s" % (first + i, word)) for i, word in enumerate(words)]
 
 
 class SeedWordsBackupTestPromptScreen(ButtonListScreen):
-    def top_lines(self):
-        return [""] + nds_ui.wrap(_("Optionally verify that your mnemonic backup is correct."))
+    def top_blocks(self):
+        return [("text", _("Optionally verify that your mnemonic backup is correct."))]
 
 
 class SeedTranscribeSeedQRFormatScreen(ButtonListScreen):
-    def top_lines(self):
-        return ["", _("Standard"), "  " + _("BIP-39 wordlist indices"), "",
-                _("Compact"), "  " + _("Raw entropy bits")]
+    def top_blocks(self):
+        return [("headline", _("Standard")), ("label", _("BIP-39 wordlist indices")), ("space", 12),
+                ("headline", _("Compact")), ("label", _("Raw entropy bits"))]
 
 
 class SeedTranscribeSeedQRWholeQRScreen(ButtonListScreen):
@@ -279,9 +282,14 @@ class SeedTranscribeSeedQRWholeQRScreen(ButtonListScreen):
 class SeedTranscribeSeedQRZoomedInScreen(BaseTopNavScreen):
     """One zone of the SeedQR at a time, 24 px per module, like upstream:
     7x7-module zones for 21x21, 5x5 otherwise; columns 1-6, rows A-F as on
-    the SeedQR templates. D-pad or the touch arrows move; Done (or A/B) ends."""
+    the SeedQR templates (shown as labels over the code). D-pad or the
+    touch arrows move; Done (or A/B) ends."""
 
     ZONE_ROWS = "ABCDEF"
+    # touch arrows (x, y, w, h, label, dx, dy) around the centre of the screen
+    ARROW_W, ARROW_H = 60, 40
+    ARROWS = ((98, 44, "^", 0, -1), (98, 136, "v", 0, 1), (30, 90, "<", -1, 0),
+              (166, 90, ">", 1, 0))
 
     def __post_init__(self):
         super().__post_init__()
@@ -291,55 +299,76 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseTopNavScreen):
         self.zy = self.initial_zone_y or 0
 
     def _render(self):
+        t = nds_ui.theme()
         nds.top_clear()
         nds.qr_transcribe(self.qr_data, self.zone, self.zx, self.zy)
-        nds.top_print(0, -1, str(self.zx + 1))
-        nds.top_print(nds_ui.ROWS // 2, 0, self.ZONE_ROWS[self.zy])
+        # zone labels on accent tabs, like upstream's rulers
+        nds.gfx_rect(nds_ui.TOP, 108, 0, 40, 22, t["accent"], 6)
+        nds_ui.text_centered(nds_ui.TOP, 0, str(self.zx + 1), nds.FONT_TITLE, t["bg"], 108, 40)
+        nds.gfx_rect(nds_ui.TOP, 0, 76, 26, 40, t["accent"], 6)
+        nds_ui.text_centered(nds_ui.TOP, 84, self.ZONE_ROWS[self.zy], nds.FONT_TITLE, t["bg"], 0, 26)
+        nds.gfx_present(nds_ui.TOP)
 
-    def _draw_panel(self, panel):
-        panel.draw()
-        nds.bottom_print(18, -1, "%s %s-%d   (%d x %d)" % (
-            _("Zone"), self.ZONE_ROWS[self.zy], self.zx + 1, self.zones, self.zones))
+    def _draw_panel(self):
+        t = nds_ui.theme()
+        nds.bottom_clear()
+        nds.gfx_clear(nds_ui.BOTTOM, t["bg"])
+        nds_ui.button(nds_ui.BOTTOM, 8, 4, 240, 28, _("Done"), selected=True)
+        for x, y, label, _dx, _dy in self.ARROWS:
+            nds_ui.button(nds_ui.BOTTOM, x, y, self.ARROW_W, self.ARROW_H, label)
+        nds_ui.text_centered(nds_ui.BOTTOM, 100, "%s-%d" % (self.ZONE_ROWS[self.zy], self.zx + 1),
+                             nds.FONT_TITLE, t["accent"], 98, self.ARROW_W)
+        nds_ui.text_centered(nds_ui.BOTTOM, 172, "%s %d x %d" % (_("Zones"), self.zones, self.zones),
+                             nds.FONT_BODY, t["label"])
+        nds.gfx_present(nds_ui.BOTTOM)
+
+    def _tap(self, x, y):
+        if 8 <= x < 248 and 4 <= y < 32:
+            return "done"
+        for ax, ay, _label, dx, dy in self.ARROWS:
+            if ax <= x < ax + self.ARROW_W and ay <= y < ay + self.ARROW_H:
+                return (dx, dy)
+        return None
 
     def _run(self):
-        moves = [("^", 0, -1), ("v", 0, 1), ("<", -1, 0), (">", 1, 0)]
-        panel = nds_ui.ButtonPanel([_("Done")] + [m[0] for m in moves], show_back=False)
-        self._draw_panel(panel)
+        self._draw_panel()
+        taps = nds_ui.TapTracker()
+        keys = ((nds.KEY_UP, (0, -1)), (nds.KEY_DOWN, (0, 1)), (nds.KEY_LEFT, (-1, 0)),
+                (nds.KEY_RIGHT, (1, 0)))
         while True:
             nds.frame()
             down = nds.keys_down()
+            if down & (nds.KEY_A | nds.KEY_B):
+                return None
             step = None
-            for key, move in ((nds.KEY_UP, 1), (nds.KEY_DOWN, 2), (nds.KEY_LEFT, 3),
-                              (nds.KEY_RIGHT, 4)):
+            for key, move in keys:
                 if down & key:
-                    step = moves[move - 1]
-            if step is None:
-                if down & (nds.KEY_A | nds.KEY_B):
+                    step = move
+            tap = taps.update()
+            if tap is not None:
+                hit = self._tap(tap[0], tap[1])
+                if hit == "done":
                     return None
-                choice = panel.handle_frame()
-                if choice == 0:
-                    return None
-                if choice is not None and choice != nds_ui.BACK:
-                    step = moves[choice - 1]
+                step = hit or step
             if step is not None:
-                self.zx = min(max(self.zx + step[1], 0), self.zones - 1)
-                self.zy = min(max(self.zy + step[2], 0), self.zones - 1)
+                self.zx = min(max(self.zx + step[0], 0), self.zones - 1)
+                self.zy = min(max(self.zy + step[1], 0), self.zones - 1)
                 self._render()
-                self._draw_panel(panel)
+                self._draw_panel()
 
 
 class SeedTranscribeSeedQRConfirmQRPromptScreen(ButtonListScreen):
-    def top_lines(self):
-        return [""] + nds_ui.wrap(_("Optionally scan your transcribed SeedQR to confirm "
-                                    "that it reads back correctly."))
+    def top_blocks(self):
+        return [("text", _("Optionally scan your transcribed SeedQR to confirm "
+                           "that it reads back correctly."))]
 
 
 class SeedSelectSeedScreen(ButtonListScreen):
     """Like upstream: a text above the list of seeds (e.g. which seed to
     verify an address with)."""
 
-    def top_lines(self):
-        return [""] + nds_ui.wrap(_(self.text or "")) if self.text else []
+    def top_blocks(self):
+        return [("text", _(self.text))] if self.text else None
 
 
 class SeedBIP85SelectChildIndexScreen(KeyboardScreen):
@@ -381,11 +410,11 @@ def _address_search_poll(thread):
     ui = getattr(thread, "_nds_panel", None)
     if ui is None:
         ui = thread._nds_panel = nds_ui.ButtonPanel([_("Skip 10"), _("Cancel")], show_back=False)
-        nds_ui.top_page(_("Verify Address"),
-                        nds_ui.wrap(thread.address or "") + ["", thread.derivation_path or ""])
+        nds_ui.top_blocks(_("Verify Address"), [("value", thread.address or ""), ("space", 4),
+                                                 ("label", thread.derivation_path or "")])
         ui.draw()
-    nds.top_print(12, 0, nds_ui.pad(_("Checking address {}").format(
-        thread.threadsafe_counter.cur_count)))
+    nds_ui.top_note(150, _("Checking address {}").format(thread.threadsafe_counter.cur_count),
+                    nds_ui.theme()["accent"])
     nds.frame()
     choice = ui.handle_frame()
     if choice == 0:
@@ -403,11 +432,11 @@ _threading.set_poll_hook("BruteForceAddressVerificationThread", _address_search_
 class SeedAddressVerificationSuccessScreen(LargeIconStatusScreen):
     """Like upstream: the address, receive or change, and its index."""
 
-    def top_lines(self):
-        lines = super().top_lines()
+    def top_blocks(self):
         address_type = _("change address") if self.verified_index_is_change else _("receive address")
-        return lines + nds_ui.wrap(self.address or "") + [
-            "", nds_ui.center(address_type), nds_ui.center(_("index {}").format(self.verified_index))]
+        return super().top_blocks() + [("space", 6), ("value", self.address or ""), ("space", 4),
+                                       ("label", "%s \u00b7 %s" % (address_type,
+                                                                   _("index {}").format(self.verified_index)))]
 
 
 define_generic_screens(globals(), "seed_screens")

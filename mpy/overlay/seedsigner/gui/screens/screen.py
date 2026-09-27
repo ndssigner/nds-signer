@@ -131,11 +131,21 @@ class BaseScreen(_UpstreamFields):
         return self._run()
 
     # --- NDS rendering ---
+    # A screen describes its top screen either as top_blocks() (graphical
+    # layout, see nds_ui.top_blocks) or as top_lines() (32-column text).
     def top_lines(self):
         return []
 
+    def top_blocks(self):
+        return None
+
     def _render(self):
-        nds_ui.top_page(_(getattr(self, "title", "") or ""), self.top_lines())
+        title = _(getattr(self, "title", "") or "")
+        blocks = self.top_blocks()
+        if blocks is not None:
+            nds_ui.top_blocks(title, blocks)
+        else:
+            nds_ui.top_page(title, self.top_lines())
 
     def _run(self):
         return None
@@ -164,11 +174,30 @@ class ButtonListScreen(BaseTopNavScreen):
 
     def _run(self):
         checked = getattr(self, "checked_buttons", None) or []
-        labels = [("* " if i in checked else "") + label
-                  for i, label in enumerate(button_labels(self.button_data or []))]
+        labels = button_labels(self.button_data or [])
         panel = nds_ui.ButtonPanel(labels, show_back=self.show_back_button,
-                                   selected=self.selected_button or 0, redraw=self._render)
+                                   selected=self.selected_button or 0, redraw=self._render,
+                                   checked=checked, on_page=self._render)
+        self._panel = panel  # lets top_blocks() follow the page shown
         return self._back_or(panel.run())
+
+
+    # Menus with nothing else on the top screen show their section's icon
+    SECTION_ICONS = (("seed", "SEEDS"), ("passphrase", "PASSPHRASE"), ("xpub", "QRCODE"),
+                     ("setting", "SETTINGS"), ("tool", "TOOLS"), ("explorer", "TOOLS"),
+                     ("address", "TOOLS"), ("sign", "SIGN"), ("scan", "SCAN"),
+                     ("transaction", "SIGN"), ("language", "SETTINGS"), ("qr", "QRCODE"),
+                     ("word", "SEEDS"))
+
+    def top_blocks(self):
+        if type(self).top_lines is not ButtonListScreen.top_lines:
+            return None  # the screen shows its own content
+        from seedsigner.gui.components import SeedSignerIconConstants as Icons
+        title = (getattr(self, "title", "") or "").lower()
+        for keyword, icon in self.SECTION_ICONS:
+            if keyword in title:
+                return [("icon", getattr(Icons, icon))]
+        return None
 
 
 class LargeButtonScreen(ButtonListScreen):
@@ -176,37 +205,65 @@ class LargeButtonScreen(ButtonListScreen):
 
 
 class MainMenuScreen(LargeButtonScreen):
-    def top_lines(self):
-        lines = ["", "", "", "      NDS-Signer", "", "  Air-gapped Bitcoin signer"]
-        lines += [""] * 12 + [nds_ui.center(nds.version())]
+    """NDS-Signer's name and version, and the network when it is not
+    mainnet (as a coloured badge, like SeedSigner's top nav)."""
+
+    def top_blocks(self):
+        from seedsigner.gui.components import GUIConstants as GC
+        from seedsigner.gui.components import SeedSignerIconConstants as Icons
+        from seedsigner.models.settings import Settings, SettingsConstants
+        blocks = [("icon", Icons.BITCOIN_ALT), ("large", "NDS-Signer"),
+                  ("label", _("Air-gapped Bitcoin signer")), ("space", 10)]
+        network = Settings.get_instance().get_value(SettingsConstants.SETTING__NETWORK)
+        if network == SettingsConstants.TESTNET:
+            blocks.append(("value", "Testnet", GC.TESTNET_COLOR))
+        elif network == SettingsConstants.REGTEST:
+            blocks.append(("value", "Regtest", GC.REGTEST_COLOR))
+        blocks += [("space", 6), ("label", nds.version())]
         if nds_ui.nds_dev is not None:
-            lines.append(nds_ui.center("DEV build - SELECT: diagnostics"))
-        return lines
+            blocks.append(("label", "DEV build - SELECT: diagnostics"))
+        return blocks
+
+
+def _gc():
+    from seedsigner.gui.components import GUIConstants, SeedSignerIconConstants
+    return GUIConstants, SeedSignerIconConstants
 
 
 class LargeIconStatusScreen(ButtonListScreen):
-    ICON = "[OK]"
+    """Like upstream: a large coloured status icon, a headline in that
+    colour and the text (success by default)."""
 
-    def top_lines(self):
-        lines = ["", nds_ui.center(self.ICON), ""]
-        if self.status_headline:
-            lines += [nds_ui.center(line) for line in nds_ui.wrap(_(self.status_headline))]
-            lines.append("")
-        if self.text:
-            lines += nds_ui.wrap(_(self.text))
-        return lines
+    def default_status(self):
+        GC, Icons = _gc()
+        return Icons.SUCCESS, GC.SUCCESS_COLOR
+
+    def top_blocks(self):
+        icon, color = self.default_status()
+        icon = getattr(self, "status_icon_name", None) or icon
+        color = getattr(self, "status_color", None) or color
+        return [("icon", icon, color),
+                ("headline", _(self.status_headline) if self.status_headline else "", color),
+                ("space", 6),
+                ("text", _(self.text) if self.text else "")]
 
 
 class WarningScreen(LargeIconStatusScreen):
-    ICON = "/!\\"
+    def default_status(self):
+        GC, Icons = _gc()
+        return Icons.WARNING, GC.WARNING_COLOR
 
 
 class DireWarningScreen(WarningScreen):
-    ICON = "/!!!\\"
+    def default_status(self):
+        GC, Icons = _gc()
+        return Icons.WARNING, GC.DIRE_WARNING_COLOR
 
 
 class ErrorScreen(WarningScreen):
-    ICON = "[X]"
+    def default_status(self):
+        GC, Icons = _gc()
+        return Icons.ERROR, GC.ERROR_COLOR
 
 
 class ResetScreen(BaseTopNavScreen):
@@ -327,13 +384,13 @@ class QRDisplayScreen(BaseScreen):
         brightness = int(settings.get_value(SettingsConstants.SETTING__QR_BRIGHTNESS))
         panel = nds_ui.ButtonPanel([_("Done")], show_back=False)
         panel.draw()
-        nds.bottom_print(17, -1, _("Up/Down: QR brightness"))
+        nds_ui.bottom_note(120, _("Up/Down: QR brightness"))
         psbt = getattr(self.qr_encoder, "psbt", None)
         if nds_ui.nds_dev is not None and psbt is not None:
             import hashlib
             from binascii import hexlify
             digest = hexlify(hashlib.sha256(psbt.serialize()).digest()).decode()[:8]
-            nds.bottom_print(19, -1, "check: " + digest)
+            nds_ui.bottom_note(140, "check: " + digest, font=nds.FONT_MONO)
         next_part_at = 0
         try:
             while True:

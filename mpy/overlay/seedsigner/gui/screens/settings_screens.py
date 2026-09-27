@@ -22,50 +22,44 @@ class SettingsEntryUpdateSelectionScreen(ButtonListScreen):
     """Like upstream: the setting's name and help text; its options with the
     current one(s) checked."""
 
-    def top_lines(self):
-        lines = [""] + [nds_ui.center(l) for l in nds_ui.wrap(_(self.display_name or ""))]
-        if self.help_text:
-            lines += [""] + nds_ui.wrap(_(self.help_text))
-        return lines
+    def top_blocks(self):
+        return [("headline", _(self.display_name or "")), ("space", 6),
+                ("label", _(self.help_text) if self.help_text else "")]
 
 
 class SettingsQRConfirmationScreen(ButtonListScreen):
-    def top_lines(self):
-        lines = [""]
-        if self.config_name:
-            # user-supplied string (from the SettingsQR): not translated
-            lines += [nds_ui.center(l) for l in nds_ui.wrap('"%s"' % self.config_name)] + [""]
-        return lines + [nds_ui.center(l) for l in nds_ui.wrap(_(self.status_message or ""))]
+    def top_blocks(self):
+        # config_name is user-supplied (from the SettingsQR): not translated
+        return [("value", '"%s"' % self.config_name if self.config_name else ""), ("space", 8),
+                ("text", _(self.status_message or ""))]
 
 
 class VersionScreen(_InfoScreen):
-    def top_lines(self):
-        lines = ["", nds_ui.center("NDS-Signer")] + [
-            nds_ui.center(l) for l in nds_ui.wrap(self.version_name or "")]
-        if self.version_fork:
-            lines += ["", nds_ui.center(_("Based on")), nds_ui.center(self.version_fork)]
-        if self.short_commit_hash:
-            lines.append(nds_ui.center(self.short_commit_hash))
-        return lines
+    def top_blocks(self):
+        from seedsigner.gui.components import SeedSignerIconConstants as Icons
+        return [("icon", Icons.BITCOIN_ALT), ("large", "NDS-Signer"),
+                ("value", self.version_name or ""), ("space", 10),
+                ("label", _("Based on") if self.version_fork else ""),
+                ("text", self.version_fork or ""), ("label", self.short_commit_hash or "")]
 
 
 class DonateScreen(_InfoScreen):
     """Upstream's text for now. TODO (before publishing): NDS-Signer's own
     donation details, keeping a credit to SeedSigner."""
 
-    def top_lines(self):
+    def top_blocks(self):
         text = _("SeedSigner is 100%% free & open source, funded solely by the Bitcoin "
                  "community.\n\nDonate onchain or LN at:").replace("%%", "%")
-        return [""] + nds_ui.wrap(text) + ["", nds_ui.center("seedsigner.com")]
+        return [("text", text), ("space", 6), ("large", "seedsigner.com")]
 
 
 class IOTestScreen(_InfoScreen):
     """Upstream tests SeedSigner's joystick, keys and camera. On the DSi the
     diagnostics of the developer build do that (SELECT: touch test)."""
 
-    def top_lines(self):
-        return [""] + nds_ui.wrap(_("The I/O test is for SeedSigner's joystick and keys. "
-                                    "The DSi's buttons and touch screen need no test."))
+    def top_blocks(self):
+        return [("text", _("The I/O test is for SeedSigner's joystick and keys. "
+                           "The DSi's buttons and touch screen need no test."))]
 
 
 define_generic_screens(globals(), "settings_screens")

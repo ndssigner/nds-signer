@@ -38,7 +38,8 @@ class Autopilot:
         # like the host simulator), so taps by label keep working
         width = self._n.gfx_text(screen, x, y, text, font, rgb, max_width)
         if screen == 1 and font not in (self._n.FONT_ICON, self._n.FONT_ICON_LARGE,
-                                        self._n.FONT_SSICON, self._n.FONT_SSICON_LARGE):
+                                        self._n.FONT_SSICON, self._n.FONT_SSICON_LARGE,
+                                        self._n.FONT_SSICON_HUGE):
             line_height = self._n.gfx_font_metrics(font)[1]
             self._shadow_put((y + line_height // 2) // 8, x // 8, str(text))
         return width
