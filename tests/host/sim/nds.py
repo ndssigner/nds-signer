@@ -176,6 +176,24 @@ def qr_show(text, border=2, background=255):
     return 1
 
 
+qr_transcribed = []  # (data, zone_modules, zone_x, zone_y) per qr_transcribe call
+
+# QR capacities at ECC level L, versions 1-4 (SeedQRs are 21x21 to 29x29)
+_CAPACITY_L = {"numeric": (41, 77, 127, 187), "byte": (17, 32, 53, 78)}
+
+
+def qr_transcribe(data, zone_modules=0, zone_x=0, zone_y=0):
+    qr_transcribed.append((data, zone_modules, zone_x, zone_y))
+    if isinstance(data, str) and data.isdigit():
+        caps, n = _CAPACITY_L["numeric"], len(data)
+    else:
+        caps, n = _CAPACITY_L["byte"], len(data)
+    for version, cap in enumerate(caps, 1):
+        if n <= cap:
+            return 17 + 4 * version
+    return 0
+
+
 def info():
     return (True, True, 0, _ticks // 1000)
 

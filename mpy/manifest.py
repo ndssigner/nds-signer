@@ -56,7 +56,7 @@ module("nds_ui_random.py", base_path="$(PORT_DIR)/frozen")  # backup test only
 # CPython stdlib compatibility modules needed by SeedSigner (see each file)
 for _name in ("dataclasses", "enum", "importlib", "threading", "traceback", "typing", "gettext",
               "platform", "os", "pathlib", "re",
-              "_pyre", "time"):
+              "_pyre", "time", "nds_strcompat"):
     module(_name + ".py", base_path="$(PORT_DIR)/frozen/compat")
 
 # Stand-ins for Raspberry Pi hardware libraries (QR decoding is native here)

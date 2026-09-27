@@ -279,6 +279,53 @@ def run_backup_flow(prefix):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+def run_transcribe_flow(prefix, compact):
+    """Backup seed -> Export as SeedQR: the whole QR (ECC L) must have the
+    template's size, the zoomed zones must follow the D-pad, and scanning back
+    exactly what was shown must confirm the SeedQR."""
+    from seedsigner.models.seed import Seed
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
+    controller.storage.finalize_pending_seed()
+    size = 21 if compact else 25
+    fmt = "Compact: 21x21" if compact else "Standard: 25x25"
+    name = "transcribe flow (%s)" % fmt
+    state = {}
+
+    def check_whole():
+        data, zone, _x, _y = nds.qr_transcribed[-1]
+        state["data"] = data
+        state["whole"] = zone == 0 and nds.qr_transcribe(data) == size and (
+            len(data) == 16 if compact else data == read(prefix + ".seedqr.txt"))
+        del nds.qr_transcribed[-1]
+
+    def check_zone():
+        _d, zone, x, y = nds.qr_transcribed[-1]
+        state["zone"] = (zone, x, y) == ((7 if compact else 5), 2, 1)
+
+    def scan_back():
+        nds.sim_camera([state["data"] if compact else state["data"].encode()])
+
+    def check():
+        ok = state.get("whole") and state.get("zone") and "Success" in nds.sim_text(0)
+        RESULT["transcribe"] = ok
+        print("ok  " if ok else "FAIL", name, state.get("whole"), state.get("zone"))
+
+    events = []
+    for label in ("Seeds", "8b218e81", "Backup seed", "Export as SeedQR", fmt, "I understand"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    events += [("wait", 2), ("call", check_whole), ("tap_label", "Begin %dx%d" % (size, size)),
+               ("key", 0), ("wait", 2), ("key", nds.KEY_RIGHT), ("key", nds.KEY_RIGHT),
+               ("key", nds.KEY_DOWN), ("wait", 2), ("call", dump),
+               ("call", check_zone), ("tap_label", "Done"), ("key", 0), ("wait", 2),
+               ("call", dump), ("call", scan_back), ("tap_label", "Confirm SeedQR"), ("key", 0),
+               ("wait", 10), ("call", dump), ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -317,6 +364,8 @@ elif MODE == "settings":
     run_settings_flow()
 elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
+elif MODE in ("transcribe", "transcribe_compact"):
+    run_transcribe_flow("psbt_base64_singlesig", MODE == "transcribe_compact")
 elif MODE == "backup":
     run_backup_flow("psbt_base64_singlesig")
 elif MODE in ("address", "address_foreign"):

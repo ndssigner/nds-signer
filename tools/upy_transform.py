@@ -24,6 +24,12 @@ constructs MicroPython cannot support are rewritten:
     so without this its output bytes differ from SeedSigner's on CPython.
   * With --no-new-rewrite: skip the __new__ rewrite (for code that defines
     its own __new__, e.g. urtypes).
+  * str methods MicroPython lacks become calls to equivalents in
+    mpy/frozen/compat/nds_strcompat.py (STR_METHODS), e.g. s.zfill(8) ->
+    _nds_zfill(s, 8).
+  * Builtin names MicroPython lacks are replaced (NAME_REPLACEMENTS), e.g.
+    UnicodeDecodeError -> UnicodeError (what MicroPython's bytes.decode()
+    raises on invalid UTF-8).
   * IMPORT_REPLACEMENTS: per-module `import X` -> `import Y as X`. Used to
     give one module something a global replacement must not provide (see
     the table).
@@ -162,6 +168,36 @@ IMPORT_REPLACEMENTS = {
 }
 
 
+# str methods missing in MicroPython -> function in nds_strcompat
+STR_METHODS = {"zfill": "_nds_zfill"}
+
+
+# builtins missing in MicroPython -> the one it provides instead
+NAME_REPLACEMENTS = {"UnicodeDecodeError": "UnicodeError", "UnicodeEncodeError": "UnicodeError"}
+
+
+class NameReplacer(ast.NodeTransformer):
+    def visit_Name(self, node):
+        if node.id in NAME_REPLACEMENTS:
+            node.id = NAME_REPLACEMENTS[node.id]
+        return node
+
+
+class StrMethodRewriter(ast.NodeTransformer):
+    def __init__(self):
+        self.used = set()
+
+    def visit_Call(self, node):
+        self.generic_visit(node)
+        func = node.func
+        if isinstance(func, ast.Attribute) and func.attr in STR_METHODS and not node.keywords:
+            name = STR_METHODS[func.attr]
+            self.used.add(func.attr)
+            return ast.copy_location(ast.Call(func=ast.Name(id=name, ctx=ast.Load()),
+                                              args=[func.value] + node.args, keywords=[]), node)
+        return node
+
+
 class ImportReplacer(ast.NodeTransformer):
     def __init__(self, table):
         self.table = table
@@ -178,8 +214,15 @@ def transform(path: pathlib.Path, rel: str, ordered_dicts=False, rewrite_new=Tru
     tree = ast.parse(path.read_text(), filename=str(path))
     if rel in IMPORT_REPLACEMENTS:
         tree = ImportReplacer(IMPORT_REPLACEMENTS[rel]).visit(tree)
+    tree = NameReplacer().visit(tree)
+    str_methods = StrMethodRewriter()
+    tree = str_methods.visit(tree)
     transformer = Transformer(ordered_dicts, rewrite_new)
     tree = transformer.visit(tree)
+    for method in sorted(str_methods.used):
+        tree.body.insert(0, ast.ImportFrom(module="nds_strcompat",
+                                           names=[ast.alias(name=method, asname=STR_METHODS[method])],
+                                           level=0))
     if transformer.used_ordered_dict:
         # after a module docstring / __future__ imports, before any other code
         index = 0

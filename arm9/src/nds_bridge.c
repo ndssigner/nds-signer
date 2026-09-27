@@ -139,6 +139,12 @@ int ndsbQrShow(const char *text, size_t len, int border, int background)
 	return qrDisplayShow(text, len, border, (u8)background);
 }
 
+int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
+                     int zoneX, int zoneY)
+{
+	return qrTranscribeShow(data, len, binary, zoneModules, zoneX, zoneY);
+}
+
 #ifndef NDS_SIGNER_VERSION
 #define NDS_SIGNER_VERSION "unknown"
 #endif

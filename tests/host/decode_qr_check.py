@@ -46,4 +46,8 @@ report("psbt-ur-10in", read("psbt_base64_10in.ur.txt").split("\n"))
 report("address", [read("address_testnet.txt")])
 report("address-uri", ["bitcoin:" + read("address_testnet.txt") + "?amount=0.001"])
 report("seedqr", [read("seedqr_12words.txt")])
+# CompactSeedQR: the raw entropy bytes (decoding uses str.zfill, missing in
+# MicroPython: rewritten by tools/upy_transform.py)
+from embit import bip39
+report("compact-seedqr", [bip39.mnemonic_to_bytes(read("psbt_base64_singlesig.mnemonic.txt"))])
 report("plain", [read("plain_text.txt")])

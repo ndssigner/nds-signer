@@ -66,6 +66,9 @@ int ndsbScanBenchmark(const char *text, size_t len, int pixels, uint32_t times[8
 /* Draws a QR code of `text` on the top screen (see qr_display.h).
  * Returns the QR size in modules, 0 if the text does not fit. */
 int ndsbQrShow(const char *text, size_t len, int border, int background);
+/* see qrTranscribeShow() in qr_display.h */
+int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
+                     int zoneX, int zoneY);
 
 /* Diagnostics for the developer build / crash reports */
 typedef struct {

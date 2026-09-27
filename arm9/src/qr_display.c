@@ -67,3 +67,73 @@ int qrDisplayShow(const char *text, size_t len, int border, u8 background)
 	dmaCopyWords(3, s_frame, uiTopBitmap(), sizeof(s_frame));
 	return size;
 }
+
+#define ZOOM_PX 24  /* pixels per module when zoomed, as upstream */
+
+int qrTranscribeShow(const u8 *data, size_t len, bool binary, int zoneModules,
+                     int zoneX, int zoneY)
+{
+	if (len >= sizeof(s_text))
+		return 0;
+	bool ok;
+	if (binary) {
+		memcpy(s_temp, data, len);
+		ok = qrcodegen_encodeBinary(s_temp, len, s_qr, qrcodegen_Ecc_LOW,
+		                            qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX,
+		                            qrcodegen_Mask_AUTO, false);
+	} else {
+		memcpy(s_text, data, len);
+		s_text[len] = '\0';
+		ok = qrcodegen_encodeText(s_text, s_temp, s_qr, qrcodegen_Ecc_LOW,
+		                          qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX,
+		                          qrcodegen_Mask_AUTO, false);
+	}
+	if (!ok)
+		return 0;
+
+	const int size = qrcodegen_getSize(s_qr);
+	const u16 white = RGB15(31, 31, 31) | BIT(15);
+	const u16 black = RGB15(0, 0, 0) | BIT(15);
+	const u16 dimWhite = RGB15(14, 14, 14) | BIT(15);
+	const u16 dimBlack = RGB15(4, 4, 4) | BIT(15);
+	const u16 gridLine = RGB15(20, 20, 20) | BIT(15);
+	int scale, x0, y0;
+
+	if (zoneModules <= 0) {
+		/* whole code, 1 module of quiet zone on each side */
+		scale = SCREEN_H / (size + 2);
+		x0 = (SCREEN_W - size * scale) / 2;
+		y0 = (SCREEN_H - size * scale) / 2;
+	} else {
+		/* the zone's top-left module goes to the centred zone window */
+		scale = ZOOM_PX;
+		x0 = (SCREEN_W - zoneModules * scale) / 2 - zoneX * zoneModules * scale;
+		y0 = (SCREEN_H - zoneModules * scale) / 2 - zoneY * zoneModules * scale;
+	}
+
+	for (int py = 0; py < SCREEN_H; py++) {
+		u16 *row = s_frame + py * SCREEN_W;
+		int my = py - y0 < 0 ? -1 : (py - y0) / scale;
+		for (int px = 0; px < SCREEN_W; px++) {
+			int mx = px - x0 < 0 ? -1 : (px - x0) / scale;
+			bool dark = mx >= 0 && my >= 0 && mx < size && my < size &&
+			            qrcodegen_getModule(s_qr, mx, my);
+			u16 c = dark ? black : white;
+			if (zoneModules > 0) {
+				bool inZone = mx >= 0 && my >= 0 &&
+				              mx / zoneModules == zoneX && my / zoneModules == zoneY &&
+				              px - x0 >= 0 && py - y0 >= 0;
+				if (!inZone)
+					c = dark ? dimBlack : dimWhite;
+				else if ((px - x0) % scale == 0 || (py - y0) % scale == 0)
+					c = gridLine;  /* thin lines to count modules */
+			}
+			row[px] = c;
+		}
+	}
+
+	DC_FlushRange(s_frame, sizeof(s_frame));
+	swiWaitForVBlank();
+	dmaCopyWords(3, s_frame, uiTopBitmap(), sizeof(s_frame));
+	return size;
+}

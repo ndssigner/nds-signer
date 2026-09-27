@@ -171,6 +171,31 @@ static mp_obj_t nds_qr_show(size_t n_args, const mp_obj_t *args)
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_show_obj, 1, 3, nds_qr_show);
 
+/* qr_transcribe(data, zone_modules=0, zone_x=0, zone_y=0): SeedQR for hand
+ * transcription on the top screen, ECC L exactly; bytes data is encoded in
+ * binary mode (CompactSeedQR). zone_modules > 0 zooms into one zone.
+ * Returns the QR size in modules (0 if the data does not fit). */
+static mp_obj_t nds_qr_transcribe(size_t n_args, const mp_obj_t *args)
+{
+	size_t len;
+	const char *data;
+	bool binary = !mp_obj_is_str(args[0]);
+	if (binary) {
+		mp_buffer_info_t buf;
+		mp_get_buffer_raise(args[0], &buf, MP_BUFFER_READ);
+		data = buf.buf;
+		len = buf.len;
+	} else {
+		data = mp_obj_str_get_data(args[0], &len);
+	}
+	int zoneModules = n_args > 1 ? mp_obj_get_int(args[1]) : 0;
+	int zoneX = n_args > 2 ? mp_obj_get_int(args[2]) : 0;
+	int zoneY = n_args > 3 ? mp_obj_get_int(args[3]) : 0;
+	return mp_obj_new_int(ndsbQrTranscribe((const uint8_t *)data, len, binary,
+	                                       zoneModules, zoneX, zoneY));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_transcribe_obj, 1, 4, nds_qr_transcribe);
+
 /* info(): (dsi_mode, camera_ok, c_heap_kb, uptime_s) */
 static mp_obj_t nds_info(void)
 {
@@ -210,6 +235,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_stats), MP_ROM_PTR(&nds_camera_stats_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_scan_benchmark), MP_ROM_PTR(&nds_scan_benchmark_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_show), MP_ROM_PTR(&nds_qr_show_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe), MP_ROM_PTR(&nds_qr_transcribe_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&nds_version_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_A), MP_ROM_INT(NDSB_KEY_A) },

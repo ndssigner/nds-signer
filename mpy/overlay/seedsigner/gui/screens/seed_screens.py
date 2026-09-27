@@ -253,6 +253,86 @@ class SeedWordsBackupTestPromptScreen(ButtonListScreen):
         return [""] + nds_ui.wrap(_("Optionally verify that your mnemonic backup is correct."))
 
 
+class SeedTranscribeSeedQRFormatScreen(ButtonListScreen):
+    def top_lines(self):
+        return ["", _("Standard"), "  " + _("BIP-39 wordlist indices"), "",
+                _("Compact"), "  " + _("Raw entropy bits")]
+
+
+class SeedTranscribeSeedQRWholeQRScreen(ButtonListScreen):
+    """The whole SeedQR on the top screen, ECC level L exactly so it has the
+    size of the SeedQR template (checked: a mismatch is shown, not hidden)."""
+
+    def __post_init__(self):
+        self.button_data = [_("Begin {}x{}").format(self.num_modules, self.num_modules)]
+        super().__post_init__()
+
+    def _render(self):
+        nds.top_clear()
+        size = nds.qr_transcribe(self.qr_data)
+        if size != self.num_modules:
+            nds_ui.top_page(_("Transcribe SeedQR"), nds_ui.wrap(
+                "QR size %dx%d, expected %dx%d" % (size, size, self.num_modules, self.num_modules)))
+
+
+class SeedTranscribeSeedQRZoomedInScreen(BaseTopNavScreen):
+    """One zone of the SeedQR at a time, 24 px per module, like upstream:
+    7x7-module zones for 21x21, 5x5 otherwise; columns 1-6, rows A-F as on
+    the SeedQR templates. D-pad or the touch arrows move; Done (or A/B) ends."""
+
+    ZONE_ROWS = "ABCDEF"
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.zone = 7 if self.num_modules == 21 else 5
+        self.zones = (self.num_modules + self.zone - 1) // self.zone
+        self.zx = self.initial_zone_x or 0
+        self.zy = self.initial_zone_y or 0
+
+    def _render(self):
+        nds.top_clear()
+        nds.qr_transcribe(self.qr_data, self.zone, self.zx, self.zy)
+        nds.top_print(0, -1, str(self.zx + 1))
+        nds.top_print(nds_ui.ROWS // 2, 0, self.ZONE_ROWS[self.zy])
+
+    def _draw_panel(self, panel):
+        panel.draw()
+        nds.bottom_print(18, -1, "%s %s-%d   (%d x %d)" % (
+            _("Zone"), self.ZONE_ROWS[self.zy], self.zx + 1, self.zones, self.zones))
+
+    def _run(self):
+        moves = [("^", 0, -1), ("v", 0, 1), ("<", -1, 0), (">", 1, 0)]
+        panel = nds_ui.ButtonPanel([_("Done")] + [m[0] for m in moves], show_back=False)
+        self._draw_panel(panel)
+        while True:
+            nds.frame()
+            down = nds.keys_down()
+            step = None
+            for key, move in ((nds.KEY_UP, 1), (nds.KEY_DOWN, 2), (nds.KEY_LEFT, 3),
+                              (nds.KEY_RIGHT, 4)):
+                if down & key:
+                    step = moves[move - 1]
+            if step is None:
+                if down & (nds.KEY_A | nds.KEY_B):
+                    return None
+                choice = panel.handle_frame()
+                if choice == 0:
+                    return None
+                if choice is not None and choice != nds_ui.BACK:
+                    step = moves[choice - 1]
+            if step is not None:
+                self.zx = min(max(self.zx + step[1], 0), self.zones - 1)
+                self.zy = min(max(self.zy + step[2], 0), self.zones - 1)
+                self._render()
+                self._draw_panel(panel)
+
+
+class SeedTranscribeSeedQRConfirmQRPromptScreen(ButtonListScreen):
+    def top_lines(self):
+        return [""] + nds_ui.wrap(_("Optionally scan your transcribed SeedQR to confirm "
+                                    "that it reads back correctly."))
+
+
 class SeedAddressVerificationScreen(ButtonListScreen):
     """Upstream shows this while BruteForceAddressVerificationThread searches
     in the background. Threads run synchronously here, so the search and its
