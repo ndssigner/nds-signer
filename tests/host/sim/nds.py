@@ -161,7 +161,7 @@ def camera_stop():
 
 
 def camera_stats():
-    return (_camera_frames, 0, _camera_frames, _camera_frames, 0, 0, 0, _ticks)
+    return (_camera_frames, 0, _camera_frames, _camera_frames, 0, 0, 0, _ticks, 0)
 
 
 def scan_benchmark(text, pixels):

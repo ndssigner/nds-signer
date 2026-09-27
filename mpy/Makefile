@@ -58,6 +58,9 @@ $(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py \
 	@python3 $(TOPDIR)/tools/upy_transform.py --ordered-dicts --no-new-rewrite \
 		--src $(TOPDIR)/third_party/urtypes/src --out $(FROZEN_PY) \
 		$$(cd $(TOPDIR)/third_party/urtypes/src && find urtypes -name '*.py' | sort)
+	@# the overlay's helpers/ur2/__init__.py assumes upstream's is empty
+	@test ! -s $(TOPDIR)/third_party/seedsigner/src/seedsigner/helpers/ur2/__init__.py || \
+		{ echo "upstream helpers/ur2/__init__.py is no longer empty: merge it into the overlay"; exit 1; }
 	@cp -R overlay/seedsigner $(FROZEN_PY)/
 	@rm -f $(FROZEN_PY)/seedsigner/README.md
 	@python3 $(TOPDIR)/tools/gen_gui_api.py $(TOPDIR)/third_party/seedsigner/src \

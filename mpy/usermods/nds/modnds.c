@@ -128,15 +128,15 @@ static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_stop_obj, nds_camera_stop);
 
 /* camera_stats(): (frames processed, last decode ms, frames with a QR
  * candidate, frames decoded, total us in luma copy / quirc identify / quirc
- * decode, ms since camera_start()) */
+ * decode, ms since camera_start(), grids refined) */
 static mp_obj_t nds_camera_stats(void)
 {
-	uint32_t stats[8];
+	uint32_t stats[NDSB_CAMERA_STATS];
+	mp_obj_t t[NDSB_CAMERA_STATS];
 	ndsbCameraStats(stats);
-	mp_obj_t t[8];
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < NDSB_CAMERA_STATS; i++)
 		t[i] = mp_obj_new_int_from_uint(stats[i]);
-	return mp_obj_new_tuple(8, t);
+	return mp_obj_new_tuple(NDSB_CAMERA_STATS, t);
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_stats_obj, nds_camera_stats);
 

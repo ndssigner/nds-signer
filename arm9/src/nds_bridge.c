@@ -97,7 +97,7 @@ void ndsbCameraStop(void)
 	scannerStop();
 }
 
-void ndsbCameraStats(uint32_t stats[8])
+void ndsbCameraStats(uint32_t stats[NDSB_CAMERA_STATS])
 {
 	const ScanStats *s = scannerStats();
 	stats[0] = s->frames;
@@ -108,6 +108,7 @@ void ndsbCameraStats(uint32_t stats[8])
 	stats[5] = s->sumIdentifyUs;
 	stats[6] = s->sumDecodeUs;
 	stats[7] = uiMillis() - s->startMs;
+	stats[8] = s->refines;
 }
 
 #ifdef NDS_SIGNER_DEVBUILD

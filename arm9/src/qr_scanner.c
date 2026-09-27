@@ -31,6 +31,7 @@ static u16 s_vfColumn[VF_W];  /* viewfinder x -> capture x */
 
 static ScanStats s_stats;
 static int s_quickFails;      /* frames in a row with an undecoded QR, see decode() */
+static int s_refineWait;      /* frames left before refining again, see decode() */
 
 #ifdef NDS_SIGNER_DEVBUILD
 /* quirc_end() stage times (lib/quirc/identify.c QUIRC_STAGE_MARK), in timer
@@ -111,6 +112,7 @@ bool scannerStart(void)
 	memset(&s_stats, 0, sizeof(s_stats));
 	s_stats.startMs = uiMillis();
 	s_quickFails = 0;
+	s_refineWait = 0;
 	s_dmaBuffer = 0;
 	cameraTransferStart(s_capture[s_dmaBuffer], CAPTURE_MODE_CAPTURE);
 	s_streaming = true;
@@ -131,9 +133,16 @@ static void processFrame(const u16 *yuv, u16 *viewfinder)
 {
 	uint8_t *img = quirc_begin(s_quirc, NULL, NULL);
 
-	/* YUYV: the low byte of every 16-bit word is the pixel's luma */
-	for (int i = 0; i < CAP_W * CAP_H; i++)
-		img[i] = (u8)yuv[i];
+	/* YUYV: bytes 0 and 2 of every 32-bit word are the luma of two pixels.
+	 * Four pixels per iteration with word accesses: main RAM is slow, and
+	 * byte/halfword accesses one pixel at a time took ~100 ms per frame. */
+	const u32 *src = (const u32 *)yuv;
+	u32 *dst = (u32 *)img;  /* quirc's image is malloc'ed: word aligned */
+	for (int i = 0; i < CAP_W * CAP_H / 4; i++) {
+		u32 w0 = src[2 * i], w1 = src[2 * i + 1];
+		dst[i] = (w0 & 0xFF) | ((w0 >> 8) & 0xFF00) |
+		         ((w1 & 0xFF) << 16) | ((w1 << 8) & 0xFF000000);
+	}
 
 	for (int y = 0; y < VF_H; y++) {
 		const u8 *row = img + (y * CAP_H / VF_H) * CAP_W;
@@ -153,6 +162,9 @@ static void processFrame(const u16 *yuv, u16 *viewfinder)
  * row showed a QR code that the quick read could not decode, and kept while
  * it is what makes frames decode. */
 #define REFINE_AFTER 2
+/* frames without refining after a refinement that did not decode: a QR code
+ * cut by the frame edge or blurred keeps failing, at ~1 s per attempt */
+#define REFINE_COOLDOWN 4
 
 static bool decodeGrid(int index, bool refine, bool *refined)
 {
@@ -189,13 +201,19 @@ static bool decode(void)
 	s_stats.lastGrids = count;
 	s_stats.lastError = 0;
 
+	bool refine = s_quickFails >= REFINE_AFTER && s_refineWait == 0;
 	for (int i = 0; i < count && !found; i++)
-		found = decodeGrid(i, s_quickFails >= REFINE_AFTER, &refined);
+		found = decodeGrid(i, refine, &refined);
 
+	if (s_refineWait > 0)
+		s_refineWait--;
 	if (found)
 		s_quickFails = refined ? REFINE_AFTER : 0;
-	else if (count > 0)
+	else if (count > 0) {
 		s_quickFails++;
+		if (refined)
+			s_refineWait = REFINE_COOLDOWN;
+	}
 
 	u32 decodeUs = timerTicks2usec(cpuEndTiming());
 	s_stats.sumDecodeUs += decodeUs;
@@ -277,6 +295,7 @@ bool scannerBenchmark(const char *text, size_t len, int pixels, u32 *processUs,
 
 	memset(&s_stats, 0, sizeof(s_stats));
 	s_quickFails = 0;
+	s_refineWait = 0;
 	cpuStartTiming(0);
 	processFrame(frame, viewfinder);
 	*processUs = timerTicks2usec(cpuEndTiming());

@@ -48,9 +48,11 @@ bool ndsbCameraStart(void);
  * -1 = camera error. buf must hold 8896 bytes (QUIRC_MAX_PAYLOAD). */
 int ndsbCameraPoll(uint8_t *buf, size_t *len);
 void ndsbCameraStop(void);
-/* stats[8]: frames, last decode ms, frames with a QR candidate, frames
- * decoded, total us in luma copy / quirc identify / quirc decode, elapsed ms */
-void ndsbCameraStats(uint32_t stats[8]);
+/* stats[NDSB_CAMERA_STATS]: frames, last decode ms, frames with a QR
+ * candidate, frames decoded, total us in luma copy / quirc identify / quirc
+ * decode, elapsed ms, grids refined (quirc_refine) */
+#define NDSB_CAMERA_STATS 9
+void ndsbCameraStats(uint32_t stats[NDSB_CAMERA_STATS]);
 /* Developer benchmark (scannerBenchmark): returns -1 if unavailable, 0 if the
  * QR was not decoded back, 1 if it was; times[7] in us: luma copy, quirc
  * identify, quirc decode, then identify's stages (developer builds only):
