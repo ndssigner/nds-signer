@@ -326,6 +326,35 @@ def run_transcribe_flow(prefix, compact):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+def run_explorer_flow(prefix):
+    """Seeds -> Address explorer -> Native Segwit -> Receive: the top screen
+    lists the full addresses; the first two are the test seed's (the same
+    Sparrow showed on Signet, docs/guia-xpub-sparrow.md)."""
+    from seedsigner.models.seed import Seed
+    from seedsigner.models.settings import Settings, SettingsConstants
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
+    controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
+    controller.storage.finalize_pending_seed()
+    expected = ["tb1qw2as76rh4jhykn9zvevdt5tawmqx7hhy7ydvvu", "tb1qdxl0syr9zqwxentq7mzvf7taglscyrmmnpfss6"]
+
+    def check():
+        top = "".join(line.strip("|").strip() for line in nds.sim_text(0).split("\n"))
+        top = top.replace("0:", "").replace("1:", "")
+        ok = all(a in top for a in expected)
+        RESULT["explorer"] = ok
+        print("ok  " if ok else "FAIL", "address explorer flow: first receive addresses listed")
+
+    events = []
+    for label in ("Seeds", "8b218e81", "Address explorer", "Native Segwit", "Receive"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    events += [("wait", 5), ("call", dump), ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -366,6 +395,8 @@ elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
 elif MODE in ("transcribe", "transcribe_compact"):
     run_transcribe_flow("psbt_base64_singlesig", MODE == "transcribe_compact")
+elif MODE == "explorer":
+    run_explorer_flow("psbt_base64_singlesig")
 elif MODE == "backup":
     run_backup_flow("psbt_base64_singlesig")
 elif MODE in ("address", "address_foreign"):
