@@ -5,7 +5,22 @@
 # SeedSigner's non-GUI threads (e.g. the controller's background importer);
 # GUI threads with endless loops (spinners, live previews) are replaced by
 # NDS-Signer's native screens and never reach this class.
+#
+# Worker threads that loop on `self.keep_running` (SeedSigner's BaseThread
+# pattern, e.g. the address verification brute force) would block forever
+# while their progress screen never gets to run. A native screen can register
+# a poll hook for such a thread class: while the thread body runs, every read
+# of keep_running calls hook(thread), which can draw progress, read input and
+# return False to stop the loop (like the user leaving the screen would).
 import sys
+
+_poll_hooks = {}
+
+
+def set_poll_hook(class_name, hook):
+    """hook(thread) -> bool, called on every keep_running check while a
+    thread of class `class_name` runs."""
+    _poll_hooks[class_name] = hook
 
 
 class Thread:
@@ -19,6 +34,19 @@ class Thread:
     def run(self):
         if self._target is not None:
             self._target(*self._args, **self._kwargs)
+
+    @property
+    def keep_running(self):
+        keep = getattr(self, "_keep_running", False)
+        if keep and self._alive:
+            hook = _poll_hooks.get(type(self).__name__)
+            if hook is not None and not hook(self):
+                self._keep_running = keep = False
+        return keep
+
+    @keep_running.setter
+    def keep_running(self, value):
+        self._keep_running = value
 
     def start(self):
         self._alive = True

@@ -198,6 +198,41 @@ def run_seedqr_flow():
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_address_flow(prefix, own):
+    """Home -> Scan an address -> pick the seed. Own address (the seed's
+    first receive address): the search must end on "index 0". Foreign
+    address: the search runs until Cancel, then Home (it used to hang: the
+    brute-force thread ran synchronously, forever)."""
+    from seedsigner.models.seed import Seed
+    from seedsigner.models.settings import Settings, SettingsConstants
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
+    controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
+    controller.storage.finalize_pending_seed()
+    address = read("address_testnet.txt") if not own else "tb1qw2as76rh4jhykn9zvevdt5tawmqx7hhy7ydvvu"
+    name = "address flow (%s)" % ("own address" if own else "foreign address, cancelled")
+
+    def check():
+        top, bottom = nds.sim_text(0), nds.sim_text(1)
+        if own:
+            ok = "receive address" in top and "index 0" in top
+        else:
+            ok = "Scan" in bottom and "Seeds" in bottom  # back Home
+        RESULT["address"] = ok
+        print("ok  " if ok else "FAIL", name)
+
+    events = [("call", dump), ("tap_label", "Scan"), ("key", 0),
+              ("camera", ("bitcoin:" + address).encode()), ("wait", 10),
+              ("call", dump), ("tap_label", "8b218e81"), ("key", 0), ("wait", 30), ("call", dump)]
+    if not own:
+        events += [("tap_label", "Cancel"), ("key", 0), ("wait", 10), ("call", dump)]
+    events += [("call", check), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -236,6 +271,8 @@ elif MODE == "settings":
     run_settings_flow()
 elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
+elif MODE in ("address", "address_foreign"):
+    run_address_flow("psbt_base64_singlesig", MODE == "address")
 else:
     run_flow("psbt_base64_singlesig", SINGLESIG_TAPS if MODE == "preloaded" else MODE.split(","))
 print("PASSED" if RESULT and all(RESULT.values()) else "FAILED")

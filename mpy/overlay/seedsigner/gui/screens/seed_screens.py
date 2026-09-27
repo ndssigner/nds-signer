@@ -9,6 +9,7 @@ from seedsigner.gui.screens.screen import (
     RET_CODE__BACK_BUTTON,
     BaseTopNavScreen,
     ButtonListScreen,
+    LargeIconStatusScreen,
     define_generic_screens,
 )
 
@@ -232,6 +233,55 @@ class SeedFinalizeScreen(ButtonListScreen):
 class SeedOptionsScreen(ButtonListScreen):
     def top_lines(self):
         return ["", nds_ui.center(_("Fingerprint")), "", nds_ui.center(self.fingerprint or "")]
+
+
+class SeedAddressVerificationScreen(ButtonListScreen):
+    """Upstream shows this while BruteForceAddressVerificationThread searches
+    in the background. Threads run synchronously here, so the search and its
+    progress screen run inside the thread (_address_search_poll below); by
+    the time the view shows this screen the search has ended: found, or the
+    user cancelled."""
+
+    def _run(self):
+        if self.verified_index is not None and self.verified_index.cur_count is not None:
+            return 1  # upstream _run_callback: success
+        return RET_CODE__BACK_BUTTON
+
+
+def _address_search_poll(thread):
+    """Poll hook of BruteForceAddressVerificationThread (compat threading):
+    called once per address index. Shows the progress and the Skip 10 /
+    Cancel buttons of upstream's SeedAddressVerificationScreen."""
+    ui = getattr(thread, "_nds_panel", None)
+    if ui is None:
+        ui = thread._nds_panel = nds_ui.ButtonPanel([_("Skip 10"), _("Cancel")], show_back=False)
+        nds_ui.top_page(_("Verify Address"),
+                        nds_ui.wrap(thread.address or "") + ["", thread.derivation_path or ""])
+        ui.draw()
+    nds.top_print(12, 0, nds_ui.pad(_("Checking address {}").format(
+        thread.threadsafe_counter.cur_count)))
+    nds.frame()
+    choice = ui.handle_frame()
+    if choice == 0:
+        thread.threadsafe_counter.increment(10)
+    elif choice == 1 or nds.keys_down() & nds.KEY_B:
+        return False
+    return True
+
+
+import threading as _threading  # noqa: E402  (compat module, see its poll hooks)
+
+_threading.set_poll_hook("BruteForceAddressVerificationThread", _address_search_poll)
+
+
+class SeedAddressVerificationSuccessScreen(LargeIconStatusScreen):
+    """Like upstream: the address, receive or change, and its index."""
+
+    def top_lines(self):
+        lines = super().top_lines()
+        address_type = _("change address") if self.verified_index_is_change else _("receive address")
+        return lines + nds_ui.wrap(self.address or "") + [
+            "", nds_ui.center(address_type), nds_ui.center(_("index {}").format(self.verified_index))]
 
 
 define_generic_screens(globals(), "seed_screens")
