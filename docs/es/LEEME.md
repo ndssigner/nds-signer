@@ -80,6 +80,20 @@ idioma):
 - [Cómo se hizo](como-se-hizo.md) y [Desarrollo con el
   emulador](desarrollo-emulador.md).
 
+## Donar
+
+NDS-Signer es gratis y no tiene financiación. Los donativos ayudan a que
+siga adelante:
+
+<table>
+<tr><td align="center"><img src="../images/donate-bitcoin.png" width="180" alt="Bitcoin"><br><b>Bitcoin</b><br><code>bc1pejkndc4ler9an5tgavxtrcz2r0c6uvhet0tzvjp4apqmzch0cv9qlvlrgj</code></td>
+<td align="center"><img src="../images/donate-lightning.png" width="180" alt="Lightning"><br><b>Lightning</b><br><code>ndssigner@coinos.io</code></td></tr>
+</table>
+
+Las mismas direcciones están en la aplicación (*Ajustes → Donar*).
+NDS-Signer está hecho sobre [SeedSigner](https://github.com/SeedSigner/seedsigner):
+apóyalo también en [seedsigner.com](https://seedsigner.com).
+
 ## Aviso
 
 NDS-Signer es software experimental, sin garantía de ningún tipo (licencia

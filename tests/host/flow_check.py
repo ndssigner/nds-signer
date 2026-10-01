@@ -672,6 +672,44 @@ def run_battery_flow(prefix):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+def run_donate_flow():
+    """Settings -> Donate: the Bitcoin QR code encodes NDS-Signer's address
+    (BIP-21), a tap on Lightning shows the Lightning address; both exactly
+    as published in README.md."""
+    from seedsigner.gui.screens.settings_screens import DONATE_LIGHTNING, DONATE_ONCHAIN
+    from seedsigner.views.view import Destination, MainMenuView
+    state = {}
+    readme = open("/source/README.md").read()
+
+    def top():
+        return "".join(op[3] for op in nds._dl[0] if op[0] == "text")
+
+    def onchain():
+        state["btc"] = (nds.qr_drawn[-1:] == ["bitcoin:" + DONATE_ONCHAIN.upper()]
+                        and DONATE_ONCHAIN in top().replace(" ", ""))
+
+    def lightning():
+        state["ln"] = (nds.qr_drawn[-1:] == ["lightning:" + DONATE_LIGHTNING]
+                       and DONATE_LIGHTNING in top())
+
+    def check():
+        published = DONATE_ONCHAIN in readme and DONATE_LIGHTNING in readme
+        ok = state.get("btc") and state.get("ln") and published
+        RESULT["donate"] = ok
+        print("ok  " if ok else "FAIL", "donate flow: bitcoin %s, lightning %s, same as README %s"
+              % (state.get("btc"), state.get("ln"), published))
+
+    # Donate is the last but one option of Settings: up twice from the first
+    events = [("call", dump), ("tap_label", "Settings"), ("key", 0), ("wait", 2),
+              ("key", nds.KEY_UP), ("wait", 2), ("key", nds.KEY_UP), ("wait", 2),
+              ("key", nds.KEY_A)]
+    events += [("wait", 2), ("call", dump), ("call", onchain), ("tap_label", "Lightning"),
+               ("wait", 4), ("key", 0), ("wait", 2), ("call", dump), ("call", lightning),
+               ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_language_flow():
     """A console set to Spanish starts in Spanish (SeedSigner's translation);
     Settings > Language > English switches back."""
@@ -749,6 +787,8 @@ elif MODE == "language":
     run_language_flow()
 elif MODE == "sound":
     run_sound_flow()
+elif MODE == "donate":
+    run_donate_flow()
 elif MODE == "battery":
     run_battery_flow("psbt_base64_singlesig")
 elif MODE == "scribble_mic":

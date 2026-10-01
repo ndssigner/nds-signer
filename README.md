@@ -139,6 +139,19 @@ problems: see [SECURITY.md](SECURITY.md). NDS-Signer's
 interface is its own, but its core is SeedSigner's: fixes to PSBT
 verification, seeds or signing belong upstream, in SeedSigner or embit.
 
+## Donate
+
+NDS-Signer is free and has no funding. Donations help keep it going:
+
+<table>
+<tr><td align="center"><img src="docs/images/donate-bitcoin.png" width="180" alt="Bitcoin"><br><b>Bitcoin</b><br><code>bc1pejkndc4ler9an5tgavxtrcz2r0c6uvhet0tzvjp4apqmzch0cv9qlvlrgj</code></td>
+<td align="center"><img src="docs/images/donate-lightning.png" width="180" alt="Lightning"><br><b>Lightning</b><br><code>ndssigner@coinos.io</code></td></tr>
+</table>
+
+The same addresses are in the app (*Settings → Donate*). NDS-Signer is built
+on [SeedSigner](https://github.com/SeedSigner/seedsigner): please support it
+too, at [seedsigner.com](https://seedsigner.com).
+
 ## Disclaimer
 
 NDS-Signer is experimental software provided "as is", without warranty of

@@ -36,3 +36,11 @@ commits 686695b and 6565c8c for the code.
 **Safety net already in place.** If no frame arrives for 1 s while scanning,
 `scannerPoll()` restarts the transfer and re-sends the capture mode. Its count
 is shown as `rs` in the developer build's scan statistics.
+
+## Taproot signing on real hardware
+
+NDS-Signer runs SeedSigner's taproot (P2TR) support unmodified, and the host
+tests cover native segwit. Signing a taproot PSBT has not been tried on a
+real DSi yet. Wanted: a Signet test with a taproot wallet in Sparrow
+(export the xpub with *Taproot*, receive, then sign a spend on the DSi),
+before anyone relies on it for mainnet funds.

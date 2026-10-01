@@ -4,7 +4,9 @@
 from gettext import gettext as _
 
 from seedsigner.gui import nds_ui
+from seedsigner.gui.hw import nds
 from seedsigner.gui.screens.screen import (
+    RET_CODE__BACK_BUTTON,
     BaseTopNavScreen,
     ButtonListScreen,
     define_generic_screens,
@@ -43,14 +45,53 @@ class VersionScreen(_InfoScreen):
                 ("text", self.version_fork or ""), ("label", self.short_commit_hash or "")]
 
 
-class DonateScreen(_InfoScreen):
-    """Upstream's text for now. TODO (before publishing): NDS-Signer's own
-    donation details, keeping a credit to SeedSigner."""
+# NDS-Signer's donation addresses (also in README.md and docs/es/LEEME.md)
+DONATE_ONCHAIN = "bc1pejkndc4ler9an5tgavxtrcz2r0c6uvhet0tzvjp4apqmzch0cv9qlvlrgj"
+DONATE_LIGHTNING = "ndssigner@coinos.io"
+
+
+class DonateScreen(BaseTopNavScreen):
+    """NDS-Signer's donation addresses: Bitcoin (on-chain) or Lightning, as a
+    QR code and in full on the top screen; a tap on the other button switches.
+    And a credit to SeedSigner, which NDS-Signer is built on."""
+
+    QR_PX = 96
+
+    def _method(self):
+        panel = getattr(self, "_panel", None)
+        return panel.selected if panel is not None else 0
 
     def top_blocks(self):
-        text = _("SeedSigner is 100%% free & open source, funded solely by the Bitcoin "
-                 "community.\n\nDonate onchain or LN at:").replace("%%", "%")
-        return [("text", text), ("space", 6), ("large", "seedsigner.com")]
+        if self._method() == 0:
+            # BIP-21 URI in capitals: alphanumeric mode, a smaller QR code
+            return [("qr", "bitcoin:" + DONATE_ONCHAIN.upper(), self.QR_PX), ("space", 4),
+                    ("address", DONATE_ONCHAIN)]
+        return [("qr", "lightning:" + DONATE_LIGHTNING, self.QR_PX), ("space", 8),
+                ("value", DONATE_LIGHTNING)]
+
+    def _credit(self):
+        t = nds_ui.theme()
+        nds_ui.text_centered(nds_ui.BOTTOM, 104, _("NDS-Signer is built on SeedSigner."),
+                             nds.FONT_BODY, t["label"])
+        nds_ui.text_centered(nds_ui.BOTTOM, 122, _("Support it too: seedsigner.com"),
+                             nds.FONT_BODY, t["label"])
+        nds.gfx_present(nds_ui.BOTTOM)
+
+    def _switched(self):
+        self._render()
+        self._credit()
+
+    def _run(self):
+        panel = nds_ui.ButtonPanel(["Bitcoin", "Lightning"], show_back=True, tap_selects=True,
+                                   on_select=self._switched, redraw=self._render)
+        self._panel = panel
+        self._render()
+        panel.draw()
+        self._credit()
+        while True:
+            nds.frame()
+            if panel.handle_frame() == nds_ui.BACK:
+                return RET_CODE__BACK_BUTTON
 
 
 class IOTestScreen(_InfoScreen):

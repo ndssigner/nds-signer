@@ -164,3 +164,9 @@ msgstr "Haz algo de ruido"
 
 msgid "Low battery: plug in the charger"
 msgstr "Batería baja: conecta el cargador"
+
+msgid "NDS-Signer is built on SeedSigner."
+msgstr "NDS-Signer está hecho sobre SeedSigner."
+
+msgid "Support it too: seedsigner.com"
+msgstr "Apóyalo también: seedsigner.com"
