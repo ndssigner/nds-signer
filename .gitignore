@@ -13,3 +13,6 @@ __pycache__/
 mpy/build-embed/
 dist/
 fotos/
+
+# personal notes, not part of the project
+docs/*Mejoras*.txt

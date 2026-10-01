@@ -89,7 +89,7 @@ First steps with a watch-only wallet (in Spanish):
 Needs Docker and git.
 
 ```bash
-git clone --recurse-submodules https://github.com/<owner>/nds-signer.git
+git clone --recurse-submodules https://github.com/ndssigner/nds-signer.git
 cd nds-signer
 docker build -t nds-signer-builder .
 docker run --rm -v "$(pwd)":/source nds-signer-builder make MPY_APP=1
