@@ -55,26 +55,48 @@ idioma):
 - **Compilación reproducible:** cualquiera puede compilar la ROM y comprobar
   que su huella SHA-256 coincide con la publicada.
 
-## Qué necesitas
+## Qué consolas sirven
 
-- Una **Nintendo DSi o DSi XL** con un lanzador de homebrew (Unlaunch y/o
-  TWiLight Menu++, ver [dsi.cfw.guide](https://dsi.cfw.guide)). Tiene que
-  arrancar en modo DSi para usar la cámara.
-- DS y DS Lite: no sirven (sin cámara, poca memoria). 3DS: sin probar.
+| Consola | ¿Funciona? |
+| :--- | :---: |
+| Nintendo DS, DS Lite | ❌ No (sin cámara, 4 MB de memoria) |
+| Nintendo DSi, DSi XL | ✅ Sí (probado en una DSi XL) |
+| Familia Nintendo 3DS / 2DS | ❓ Sin probar |
+| Emuladores | ⚠️ Solo desarrollo: nunca una semilla de verdad |
 
 ## Instalar
 
-1. Descarga `nds-signer.nds` y `SHA256.txt` de las versiones publicadas.
+La consola necesita un lanzador de homebrew (Unlaunch y, si quieres,
+TWiLight Menu++). **[instalar.md](instalar.md)** lo explica paso a paso:
+preparar la DSi, comprobar la descarga, arrancar NDS-Signer y la primera
+firma de prueba.
+
+En resumen:
+
+1. Descarga `nds-signer.nds` y `SHA256.txt` de las
+   [versiones publicadas](https://github.com/ndssigner/nds-signer/releases).
 2. Comprueba la huella: `shasum -a 256 nds-signer.nds` tiene que dar lo que
    pone en `SHA256.txt`.
-3. Copia `nds-signer.nds` a la SD y ábrelo desde Unlaunch o TWiLight Menu++.
+3. Copia `nds-signer.nds` a la SD y ábrelo desde Unlaunch (mantén A + B al
+   encender) o desde TWiLight Menu++.
 
 > **Las versiones oficiales solo se publican aquí, en GitHub**, con su huella
 > SHA-256, y la compilación es reproducible. Una ROM de cualquier otro sitio,
 > o una "actualización" anunciada en otro sitio, no es de NDS-Signer.
 
+## Limitaciones conocidas
+
+- **Versión alfa:** nadie ajeno al proyecto la ha auditado.
+- **Probado en la consola:** carteras de una firma Native Segwit (`bc1q…`)
+  con Sparrow, en Signet. Taproot y multifirma vienen con el código de
+  SeedSigner, pero aún no se han probado en una DSi.
+- **Escanear pantallas muy brillantes es lento:** baja el brillo de la
+  pantalla.
+- **Familia 3DS:** sin probar.
+
 ## Guías
 
+- [Instalar](instalar.md): consolas compatibles e instalación paso a paso.
 - [Sparrow en Signet](guia-sparrow-signet.md): firmar una transacción de
   prueba de principio a fin.
 - [Pasar la xpub a Sparrow](guia-xpub-sparrow.md): crear la cartera de solo

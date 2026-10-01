@@ -73,30 +73,43 @@ What it does **not** protect against: a compromised SD card or launcher
 modified to record what it displays. Keep the SeedSigner advice: verify
 addresses, and keep your seed words offline.
 
-## Requirements
+## Which consoles work
 
-- A **Nintendo DSi or DSi XL** with a homebrew launcher (Unlaunch and/or
-  TWiLight Menu++, see [dsi.cfw.guide](https://dsi.cfw.guide)). The camera
-  needs the app to run in DSi mode.
-- Original DS / DS Lite: not supported (no camera, 4 MB RAM). Nintendo 3DS
-  in DSi mode: untested.
+| Console | Works? |
+| :--- | :---: |
+| Nintendo DS, DS Lite | ❌ No (no camera, 4 MB RAM) |
+| Nintendo DSi, DSi XL | ✅ Yes (tested on a DSi XL) |
+| Nintendo 3DS / 2DS family | ❓ Untested |
+| Emulators | ⚠️ Development only: never a real seed |
 
 ## Install
 
-1. Download `nds-signer.nds` and `SHA256.txt` from the
-   [releases](../../releases).
+The console needs a homebrew launcher (Unlaunch, optionally TWiLight
+Menu++). **[docs/install.md](docs/install.md)** explains it step by step:
+preparing the DSi, checking the download, starting NDS-Signer and the first
+test signature.
+
+In short:
+
+1. Download `nds-signer.nds` and `SHA256.txt` from the [releases](https://github.com/ndssigner/nds-signer/releases).
 2. Check the file: `shasum -a 256 nds-signer.nds` must print the hash in
    `SHA256.txt`. Better still, [build it yourself](#build) and compare.
-3. Copy `nds-signer.nds` to the SD card and launch it from Unlaunch or
-   TWiLight Menu++ (in DSi mode).
+3. Copy `nds-signer.nds` to the SD card and launch it from Unlaunch (hold
+   A + B while switching on) or TWiLight Menu++.
 
 > **Official releases are published only here, on GitHub**, with their
 > SHA-256, and the build is reproducible. A ROM from anywhere else, or an
 > "update" announced anywhere else, is not NDS-Signer's.
 
-First steps with a watch-only wallet (in Spanish):
-[Sparrow on Signet](docs/es/guia-sparrow-signet.md),
-[xpub to Sparrow](docs/es/guia-xpub-sparrow.md).
+## Known limitations
+
+- **Alpha:** not audited by anyone outside the project.
+- **Tested on real hardware:** single-signature native segwit wallets
+  (`bc1q…`) with Sparrow, on Signet. Taproot and multisig come with
+  SeedSigner's code but have not been tried on a DSi yet.
+- **Scanning bright screens is slow:** lower the screen's brightness
+  ([help wanted](docs/help-wanted.md)).
+- **3DS family:** untested.
 
 ## Build
 
@@ -126,6 +139,7 @@ make -C tests/host all seedsigner PYTHON=$(pwd)/build/venv/bin/python
 
 ## Documentation
 
+- [docs/install.md](docs/install.md): compatible consoles and installation.
 - [docs/why.md](docs/why.md): why NDS-Signer exists.
 - [docs/how-it-was-built.md](docs/how-it-was-built.md): how it was made
   (with AI), the decisions along the way, and how it was tested.
