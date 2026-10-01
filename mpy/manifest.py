@@ -3,6 +3,23 @@
 # Upstream Python frozen unmodified into the ROM as bytecode (mpy-cross).
 # See docs/architecture.md.
 
+# Reproducible builds: MicroPython's package()/require() walk directories with
+# os.walk, whose order depends on the filesystem (macOS and Linux differ), and
+# the frozen modules land in the ROM in that order. Walk in sorted order.
+import os as _os
+
+_os_walk = _os.walk
+
+
+def _sorted_walk(top, *args, **kwargs):
+    for root, dirs, files in _os_walk(top, *args, **kwargs):
+        dirs.sort()
+        files.sort()
+        yield root, dirs, files
+
+
+_os.walk = _sorted_walk
+
 # embit (SeedSigner's pinned version), minus the Liquid sidechain support and
 # the CPython-only ctypes backend.
 package(
