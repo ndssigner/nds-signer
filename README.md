@@ -124,7 +124,8 @@ make -C tests/host all seedsigner PYTHON=$(pwd)/build/venv/bin/python
 ## Contributing
 
 Issues and pull requests are welcome, especially from people with a DSi to
-test on. Security problems: see [SECURITY.md](SECURITY.md). NDS-Signer's
+test on. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first; security
+problems: see [SECURITY.md](SECURITY.md). NDS-Signer's
 interface is its own, but its core is SeedSigner's: fixes to PSBT
 verification, seeds or signing belong upstream, in SeedSigner or embit.
 
