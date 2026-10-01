@@ -94,7 +94,7 @@ siga adelante:
 <td align="center"><img src="../images/donate-lightning.png" width="180" alt="Lightning"><br><b>Lightning</b><br><code>ndssigner@coinos.io</code><br><sub>LNURL (para carteras sin direcciones Lightning):<br><code>LNURL1DP68GURN8GHJ7CM0D9HX7UEWD9HJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKUERNWD5KWMN9WGQ8XE42</code></sub></td></tr>
 </table>
 
-Las mismas direcciones están en la aplicación (*Ajustes → Donar*).
+Las mismas direcciones están en la aplicación (*menú principal → Donar*).
 NDS-Signer está hecho sobre [SeedSigner](https://github.com/SeedSigner/seedsigner):
 apóyalo también en [seedsigner.com](https://seedsigner.com).
 

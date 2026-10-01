@@ -673,7 +673,7 @@ def run_battery_flow(prefix):
 
 
 def run_donate_flow():
-    """Settings -> Donate: the Bitcoin QR code encodes NDS-Signer's address
+    """Home -> Donate (not in Settings any more): the Bitcoin QR code encodes NDS-Signer's address
     (BIP-21), a tap on Lightning shows the Lightning address and its LNURL
     as a QR code; all exactly as published in README.md."""
     from seedsigner.gui.screens.settings_screens import (DONATE_LIGHTNING, DONATE_LNURL,
@@ -695,18 +695,31 @@ def run_donate_flow():
 
     def check():
         published = all(a in readme for a in (DONATE_ONCHAIN, DONATE_LIGHTNING, DONATE_LNURL))
-        ok = state.get("btc") and state.get("ln") and published
+        not_setting = state.get("page1") and state.get("page2")
+        ok = state.get("btc") and state.get("ln") and published and not_setting and state.get("home")
         RESULT["donate"] = ok
-        print("ok  " if ok else "FAIL", "donate flow: bitcoin %s, lightning %s, same as README %s"
-              % (state.get("btc"), state.get("ln"), published))
+        print("ok  " if ok else "FAIL", "donate flow (Home): bitcoin %s, lightning %s, same as README "
+              "%s, not in Settings %s, back to Home %s" % (state.get("btc"), state.get("ln"),
+                                                           published, not_setting, state.get("home")))
 
-    # Donate is the last but one option of Settings: up twice from the first
+    def home():  # Back from Donate returns to Home
+        state["home"] = "Scan" in "".join(op[3] for op in nds._dl[1] if op[0] == "text")
+
+    def no_donate_in_settings():
+        bottom = "".join(op[3] for op in nds._dl[1] if op[0] == "text")
+        nds._events[0:0] = [("key", nds.KEY_UP), ("wait", 2), ("call", page_two)]
+        state["page1"] = "Donate" not in bottom
+
+    def page_two():
+        bottom = "".join(op[3] for op in nds._dl[1] if op[0] == "text")
+        state["page2"] = "Donate" not in bottom and "Version" in bottom
+
     events = [("call", dump), ("tap_label", "Settings"), ("key", 0), ("wait", 2),
-              ("key", nds.KEY_UP), ("wait", 2), ("key", nds.KEY_UP), ("wait", 2),
-              ("key", nds.KEY_A)]
+              ("call", no_donate_in_settings), ("wait", 4), ("key", nds.KEY_B), ("wait", 2),
+              ("call", dump), ("tap_label", "Donate"), ("key", 0)]
     events += [("wait", 2), ("call", dump), ("call", onchain), ("tap_label", "Lightning"),
                ("wait", 4), ("key", 0), ("wait", 2), ("call", dump), ("call", lightning),
-               ("call", check), ("call", stop)]
+               ("key", nds.KEY_B), ("wait", 2), ("call", home), ("call", check), ("call", stop)]
     nds.sim_script(events)
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 

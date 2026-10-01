@@ -177,6 +177,7 @@ IMPORT_REPLACEMENTS = {
 # lazily (inside run()), so every Destination gets NDS-Signer's class.
 UI_OVERRIDES = {
     "seedsigner/views/tools_views.py": ("seedsigner.views.nds_tools_views", ["ToolsMenuView"]),
+    "seedsigner/views/view.py": ("seedsigner.views.nds_views", ["MainMenuView"]),
 }
 
 

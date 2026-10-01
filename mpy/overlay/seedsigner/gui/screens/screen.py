@@ -175,15 +175,23 @@ class ButtonListScreen(BaseTopNavScreen):
     def top_lines(self):
         return []
 
-    # Upstream options that make no sense on a DS: "I/O test" (SeedSigner's
-    # joystick and keys) and "Persistent settings" (NDS-Signer never writes
-    # to the SD card). They are left out; the indices returned stay upstream's.
-    HIDDEN_OPTIONS = ("I/O test", "Persistent settings")
+    # Upstream options left out (the indices returned stay upstream's): in
+    # Settings, "I/O test" (SeedSigner's joystick and keys) and "Donate"
+    # (NDS-Signer's is on Home, views/nds_views.py); "Persistent settings"
+    # (NDS-Signer never writes to the SD card).
+    HIDDEN_LABELS = ("Persistent settings",)
+
+    @staticmethod
+    def _hidden_options():
+        from seedsigner.views.settings_views import SettingsMenuView
+        return (SettingsMenuView.IO_TEST, SettingsMenuView.DONATE)
 
     def _run(self):
         buttons = self.button_data or []
+        hidden = self._hidden_options()
         shown = [i for i, b in enumerate(buttons)
-                 if not (isinstance(b, ButtonOption) and b.button_label in self.HIDDEN_OPTIONS)]
+                 if not (isinstance(b, ButtonOption) and (b.button_label in self.HIDDEN_LABELS
+                                                          or any(b is h for h in hidden)))]
         checked = [shown.index(i) for i in (getattr(self, "checked_buttons", None) or [])
                    if i in shown]
         selected = self.selected_button or 0
