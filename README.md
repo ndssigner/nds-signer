@@ -73,6 +73,24 @@ What it does **not** protect against: a compromised SD card or launcher
 modified to record what it displays. Keep the SeedSigner advice: verify
 addresses, and keep your seed words offline.
 
+## Compatible wallets
+
+NDS-Signer signs for a watch-only wallet ("coordinator") on your computer or
+phone, exchanging QR codes, exactly like SeedSigner. Any wallet that works
+with SeedSigner should work:
+
+| Wallet | Computer | Phone | Tried with NDS-Signer |
+| :--- | :---: | :---: | :---: |
+| [Sparrow](https://sparrowwallet.com) | ✅ | | ✅ (xpub export, signing on Signet) |
+| [Specter Desktop](https://specter.solutions) | ✅ | | |
+| [Nunchuk](https://nunchuk.io) | ✅ | ✅ | |
+| [Keeper](https://bitcoinkeeper.app) | | ✅ | |
+| [BlueWallet](https://bluewallet.io) | | ✅ | |
+
+Plus any wallet that reads and shows PSBTs as QR codes (animated UR or
+static). Blank in the last column: expected to work, as with SeedSigner, but
+not tried yet; reports welcome.
+
 ## Which consoles work
 
 | Console | Works? |
@@ -146,7 +164,7 @@ make -C tests/host all seedsigner PYTHON=$(pwd)/build/venv/bin/python
 - [docs/architecture.md](docs/architecture.md): how SeedSigner's code runs
   on the DSi.
 - [docs/help-wanted.md](docs/help-wanted.md): open problems.
-- [docs/es/](docs/es/): Spanish user guides and hardware test guides.
+- [docs/es/](docs/es/LEEME.md): the documentation in Spanish.
 - [THIRD_PARTY.md](THIRD_PARTY.md): the projects NDS-Signer is built on.
 
 ## Contributing

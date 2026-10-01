@@ -69,9 +69,7 @@ switches off as it starts.
 4. Sign a test transaction: build it in Sparrow, *Scan* it with the DSi,
    review, approve, and scan the signed QR code back into Sparrow.
 
-Step-by-step guides with Sparrow (in Spanish for now):
-[Sparrow on Signet](es/guia-sparrow-signet.md),
-[xpub to Sparrow](es/guia-xpub-sparrow.md).
+Which wallets work: see the [README](../README.md#compatible-wallets).
 
 ## Good practice
 

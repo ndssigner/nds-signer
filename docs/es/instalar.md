@@ -71,8 +71,7 @@ apaga al arrancar.
 4. Firma una transacción de prueba: créala en Sparrow, *Escanéala* con la
    DSi, revísala, apruébala y escanea el QR firmado con Sparrow.
 
-Guías paso a paso: [Sparrow en Signet](guia-sparrow-signet.md),
-[pasar la xpub a Sparrow](guia-xpub-sparrow.md).
+Qué carteras sirven: mira el [LEEME](LEEME.md#carteras-compatibles).
 
 ## Buenas prácticas
 

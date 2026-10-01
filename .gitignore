@@ -16,3 +16,6 @@ fotos/
 
 # personal notes, not part of the project
 docs/*Mejoras*.txt
+
+# hardware test guides for the maintainers (tools/dist.sh), not published
+dev-notes/

@@ -15,15 +15,18 @@ build "" nds-signer.nds
 build "DEVBUILD=1" nds-signer-dev.nds
 tools/qr_to_png.py tests/vectors/psbt_base64_singlesig.txt -o dist/imagenes-para-el-mac/1-transaccion-de-prueba.png
 tools/qr_to_png.py tests/vectors/psbt_base64_singlesig.seedqr.txt -o dist/imagenes-para-el-mac/2-semilla-de-prueba-SeedQR.png
-cp docs/es/pruebas/guia-pruebas-dsi-xl.md dist/LEEME-guia-de-pruebas.md
-cp docs/es/guia-sparrow-signet.md dist/LEEME-2-sparrow-signet.md
-cp docs/es/guia-xpub-sparrow.md dist/LEEME-3-xpub-a-sparrow.md
-cp docs/es/pruebas/guia-velocidad-escaneo.md dist/LEEME-4-velocidad-escaneo.md
-cp docs/es/pruebas/guia-menus-nuevos.md dist/LEEME-5-menus-nuevos.md
-cp docs/es/pruebas/guia-mejoras-1.md dist/LEEME-6-mejoras.md
-cp docs/es/pruebas/guia-tapa.md dist/LEEME-7-tapa.md
-cp docs/es/pruebas/guia-semilla-camara.md dist/LEEME-8-semilla-camara.md
-cp docs/es/pruebas/guia-semilla-garabato.md dist/LEEME-9-semilla-garabato.md
-cp docs/es/pruebas/guia-bateria.md dist/LEEME-10-bateria.md
+# the maintainers' hardware test guides (dev-notes/, not in git)
+if [ -d dev-notes/pruebas ]; then
+	cp dev-notes/pruebas/guia-pruebas-dsi-xl.md dist/LEEME-guia-de-pruebas.md
+	cp dev-notes/pruebas/guia-sparrow-signet.md dist/LEEME-2-sparrow-signet.md
+	cp dev-notes/pruebas/guia-xpub-sparrow.md dist/LEEME-3-xpub-a-sparrow.md
+	cp dev-notes/pruebas/guia-velocidad-escaneo.md dist/LEEME-4-velocidad-escaneo.md
+	cp dev-notes/pruebas/guia-menus-nuevos.md dist/LEEME-5-menus-nuevos.md
+	cp dev-notes/pruebas/guia-mejoras-1.md dist/LEEME-6-mejoras.md
+	cp dev-notes/pruebas/guia-tapa.md dist/LEEME-7-tapa.md
+	cp dev-notes/pruebas/guia-semilla-camara.md dist/LEEME-8-semilla-camara.md
+	cp dev-notes/pruebas/guia-semilla-garabato.md dist/LEEME-9-semilla-garabato.md
+	cp dev-notes/pruebas/guia-bateria.md dist/LEEME-10-bateria.md
+fi
 (cd dist/para-la-dsi && shasum -a 256 *.nds > SHA256.txt)
 echo "dist/ listo:"; find dist -type f | sort

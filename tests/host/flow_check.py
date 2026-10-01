@@ -360,7 +360,7 @@ def run_explorer_flow(prefix):
     """Seeds -> Address explorer -> Native Segwit -> Receive: the top screen
     shows the selected address in full with its QR code (bech32 in capitals);
     the first two are the test seed's (the same Sparrow showed on Signet,
-    docs/es/guia-xpub-sparrow.md). D-pad down selects the second; a tap on the
+    xpub test with Sparrow). D-pad down selects the second; a tap on the
     first selects it again, a second tap opens its QR view."""
     from seedsigner.models.seed import Seed
     from seedsigner.models.settings import Settings, SettingsConstants

@@ -70,7 +70,7 @@ Three layers, from fastest to most real:
   keyboard, scans a PSBT and signs it; the signed QR code is read back from
   screenshots and checked against the reference.
 - **Real hardware**: every feature was tried on a DSi XL, following
-  step-by-step guides ([es/pruebas](es/pruebas/)); problems came back as
+  step-by-step test guides; problems came back as
   photos of the screen, often with the error report as a QR code. Several
   bugs only showed up there (touch readings on the first frame, camera
   sensor behaviour, a missing `/proc/cpuinfo`), and each one led to a host

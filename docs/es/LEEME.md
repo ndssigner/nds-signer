@@ -55,6 +55,24 @@ idioma):
 - **Compilación reproducible:** cualquiera puede compilar la ROM y comprobar
   que su huella SHA-256 coincide con la publicada.
 
+## Carteras compatibles
+
+NDS-Signer firma para una cartera de solo lectura ("coordinador") en tu
+ordenador o tu móvil, intercambiando códigos QR, igual que SeedSigner.
+Cualquier cartera que funcione con SeedSigner debería funcionar:
+
+| Cartera | Ordenador | Móvil | Probada con NDS-Signer |
+| :--- | :---: | :---: | :---: |
+| [Sparrow](https://sparrowwallet.com) | ✅ | | ✅ (exportar xpub, firmar en Signet) |
+| [Specter Desktop](https://specter.solutions) | ✅ | | |
+| [Nunchuk](https://nunchuk.io) | ✅ | ✅ | |
+| [Keeper](https://bitcoinkeeper.app) | | ✅ | |
+| [BlueWallet](https://bluewallet.io) | | ✅ | |
+
+Y cualquier cartera que lea y muestre transacciones PSBT como QR (animados UR
+o estáticos). En blanco en la última columna: deberían funcionar, como con
+SeedSigner, pero aún no se han probado; se agradecen pruebas.
+
 ## Qué consolas sirven
 
 | Consola | ¿Funciona? |
@@ -97,12 +115,6 @@ En resumen:
 ## Guías
 
 - [Instalar](instalar.md): consolas compatibles e instalación paso a paso.
-- [Sparrow en Signet](guia-sparrow-signet.md): firmar una transacción de
-  prueba de principio a fin.
-- [Pasar la xpub a Sparrow](guia-xpub-sparrow.md): crear la cartera de solo
-  lectura escaneando el QR de la DSi.
-- [Pruebas en consola](pruebas/): las guías que se usaron para probar cada
-  función en una DSi XL.
 - [Cómo se hizo](como-se-hizo.md) y [Desarrollo con el
   emulador](desarrollo-emulador.md).
 

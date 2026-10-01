@@ -75,7 +75,7 @@ Tres niveles, del más rápido al más real:
   prueba en el teclado táctil, escanea una transacción y la firma; el QR
   firmado se lee de capturas de pantalla y se compara con la referencia.
 - **Consola de verdad**: cada función se probó en una DSi XL siguiendo
-  guías paso a paso ([pruebas](pruebas/)); los problemas llegaban como
+  guías de prueba paso a paso; los problemas llegaban como
   fotos de la pantalla, a menudo con el informe de error en forma de QR.
   Varios fallos solo aparecieron ahí (lecturas del táctil en el primer
   fotograma, el comportamiento del sensor de la cámara, la falta de
