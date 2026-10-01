@@ -1,0 +1,91 @@
+# NDS-Signer's own strings (not in SeedSigner's catalogs), merged into
+# SeedSigner's translation by tools/po_to_py.py.
+msgid "< Back"
+msgstr "< Atrás"
+
+msgid "Address not verified"
+msgstr "Dirección no verificada"
+
+msgid "Air-gapped Bitcoin signer"
+msgstr "Firmador Bitcoin aislado"
+
+msgid "Based on"
+msgstr "Basado en"
+
+msgid "Change"
+msgstr "Cambio"
+
+msgid "Del"
+msgstr "Borrar"
+
+msgid "Fee"
+msgstr "Comisión"
+
+msgid "High fee!"
+msgstr "¡Comisión alta!"
+
+msgid "Input:"
+msgstr "Entrada:"
+
+msgid "Inputs"
+msgstr "Entradas"
+
+msgid "Loading..."
+msgstr "Cargando..."
+
+msgid "Passphrase"
+msgstr "Passphrase"
+
+msgid "Passphrase:"
+msgstr "Passphrase:"
+
+msgid "Progress:"
+msgstr "Progreso:"
+
+msgid "Recipients"
+msgstr "Destinatarios"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Scanning..."
+msgstr "Escaneando..."
+
+msgid "Self-transfers"
+msgstr "Autotransferencias"
+
+msgid "Spend"
+msgstr "Gasto"
+
+msgid "Up/Down: QR brightness"
+msgstr "Arriba/Abajo: brillo del QR"
+
+msgid "Without -> with passphrase"
+msgstr "Sin -> con passphrase"
+
+msgid "Word:"
+msgstr "Palabra:"
+
+msgid "Zones"
+msgstr "Zonas"
+
+msgid "camera"
+msgstr "cámara"
+
+msgid "characters"
+msgstr "caracteres"
+
+msgid "dice"
+msgstr "dados"
+
+msgid "matching words"
+msgstr "palabras coincidentes"
+
+msgid "yes"
+msgstr "sí"
+
+msgid "Sound effects"
+msgstr "Efectos de sonido"
+
+msgid "Version"
+msgstr "Versión"

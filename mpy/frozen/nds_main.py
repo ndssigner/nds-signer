@@ -38,6 +38,9 @@ try:
     print("nds_main: starting")
     nds.camera_init()
     from seedsigner.controller import Controller
+    from seedsigner.gui import apply_system_language
+
+    apply_system_language()
 
     Controller.get_instance().start()
 except BaseException as e:  # noqa: B902 - last line of defence

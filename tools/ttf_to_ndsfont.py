@@ -6,19 +6,28 @@ graphics renderer (arm9/src/gfx.c).
     ttf_to_ndsfont.py <seedsigner src dir> <out.c> <out.h>
 
 Runs in the builder image (Pillow and FreeType pinned in the Dockerfile), so
-the output is reproducible. Text fonts cover Latin-1 and Latin Extended-A
-(the languages of SeedSigner's translations that use the Latin script);
+the output is reproducible. Text fonts cover Latin-1, Latin Extended-A,
+Greek, Cyrillic and Vietnamese (the scripts of SeedSigner's translations
+that OpenSans covers);
 icon fonts cover the code points of SeedSigner's icon constants
 (gui/components.py).
 """
 import pathlib
 import re
 import sys
+import unicodedata
 
 from PIL import Image, ImageDraw, ImageFont
 
 TEXT_CHARS = ([chr(c) for c in range(0x20, 0x7F)] + [chr(c) for c in range(0xA0, 0x180)]
-              + list("–—‘’“”•…€→←↑↓"))
+              # Greek, Cyrillic and Vietnamese (Latin Extended Additional): OpenSans has
+              # them, and SeedSigner's translations use them
+              + [chr(c) for c in range(0x384, 0x3CF)] + [chr(c) for c in range(0x400, 0x460)]
+              + [chr(c) for c in range(0x1EA0, 0x1EFA)] + list("\u01A0\u01A1\u01AF\u01B0")
+              # typographic punctuation (OpenSans has no arrows or math minus)
+              + list("\u2013\u2014\u2018\u2019\u201A\u201C\u201D\u201E\u2022\u2026"
+                     "\u2039\u203A\u20AC"))
+TEXT_CHARS = [c for c in TEXT_CHARS if unicodedata.category(c) != "Cn"]  # no unassigned
 
 # (id, file, pixel size, charset); ids become GFX_FONT_<ID> in the header
 FONTS = [
@@ -47,6 +56,17 @@ def icon_codepoints(components_py, class_name):
         for hexcode in re.findall(r"\\u([0-9a-fA-F]{4})", literal):
             points.add(chr(int(hexcode, 16)))
     return sorted(points)
+
+
+# Fixed-width fonts without some scripts (Inconsolata has no Greek or
+# Cyrillic) take those glyphs from OpenSans, centred in the fixed advance.
+FALLBACK = {"Inconsolata-Regular.ttf": "OpenSans-Regular.ttf",
+            "Inconsolata-SemiBold.ttf": "OpenSans-SemiBold.ttf"}
+
+
+def has_glyph(font, ch):
+    """False if `font` would draw its "missing glyph" box for `ch`."""
+    return bytes(font.getmask(ch)) != bytes(font.getmask("\uE000"))
 
 
 def rasterize(font, ch):
@@ -98,9 +118,18 @@ def main():
     for font_id, filename, size, charset in FONTS:
         font = ImageFont.truetype(str(fonts_dir / filename), size)
         ascent, descent = font.getmetrics()
+        fallback = (ImageFont.truetype(str(fonts_dir / FALLBACK[filename]), size)
+                    if filename in FALLBACK else None)
+        mono_advance = int(round(font.getlength("0")))
         glyphs, data = [], bytearray()
         for ch in sorted(set(charsets[charset])):
-            rows, w, hgt, left, top, advance = rasterize(font, ch)
+            if charset == "text" and not has_glyph(font, ch):
+                if fallback is None or not has_glyph(fallback, ch):
+                    sys.exit("%s has no glyph for U+%04X" % (filename, ord(ch)))
+                rows, w, hgt, left, top, advance = rasterize(fallback, ch)
+                left, advance = (mono_advance - w) // 2, mono_advance  # keep the columns
+            else:
+                rows, w, hgt, left, top, advance = rasterize(font, ch)
             offset = len(data)
             for row in rows:
                 row = row + [0] * (len(row) % 2)

@@ -23,4 +23,41 @@ def _register_settings():
     entries.insert(after[0] + 1 if after else len(entries), entry)
 
 
+def _language_options():
+    """Settings > Language offers English and the translations frozen into
+    the ROM (tools/po_to_py.py), in SeedSigner's order and with its names.
+    Upstream looks for .mo files on disk, which NDS-Signer does not have."""
+    from seedsigner.models.settings_definition import SettingsConstants, SettingsDefinition
+    try:
+        from nds_l10n_index import LOCALES
+    except ImportError:
+        LOCALES = []
+    options = [(SettingsConstants.LOCALE__ENGLISH,
+                SettingsConstants.ALL_LOCALES[SettingsConstants.LOCALE__ENGLISH])]
+    for locale, name in SettingsConstants.ALL_LOCALES.items():
+        if locale in LOCALES:
+            options.append((locale, name))
+    for entry in SettingsDefinition.settings_entries:
+        if entry.attr_name == SettingsConstants.SETTING__LOCALE:
+            entry.selection_options = options
+    # LocaleSelectionView asks for them directly
+    SettingsConstants.get_detected_languages = classmethod(lambda cls: list(options))
+    return [locale for locale, _name in options]
+
+
 _register_settings()
+AVAILABLE_LOCALES = _language_options()
+
+# DS user settings language -> SeedSigner locale
+_SYSTEM_LOCALES = {0: "ja", 1: "en", 2: "fr", 3: "de", 4: "it", 5: "es", 6: "zh_Hans_CN", 7: "ko"}
+
+
+def apply_system_language():
+    """Starts in the console's language when there is a translation for it
+    (else English); Settings > Language changes it for the session."""
+    from seedsigner.gui.hw import nds
+    from seedsigner.models.settings import Settings, SettingsConstants
+    locale = _SYSTEM_LOCALES.get(nds.system_language(), "en")
+    if locale != "en" and locale in AVAILABLE_LOCALES:
+        Settings.get_instance().set_value(SettingsConstants.SETTING__LOCALE, locale)
+    return locale if locale in AVAILABLE_LOCALES else "en"

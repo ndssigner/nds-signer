@@ -33,6 +33,8 @@ GALLERY = ([a[10:] for a in sys.argv if a.startswith("--gallery=")] or [None])[0
 # --seed=<tests/vectors mnemonic file>: the seed loaded (default: the test seed)
 SEED_FILE = ([a[7:] for a in sys.argv if a.startswith("--seed=")]
              or ["psbt_base64_singlesig.mnemonic.txt"])[0]
+# --locale=es: crawl in that language (e.g. to check that translations fit)
+LOCALE = ([a[9:] for a in sys.argv if a.startswith("--locale=")] or [None])[0]
 _snapped = set()
 
 
@@ -41,7 +43,7 @@ def snapshot(view, labels):
     if GALLERY is None or key in _snapped:
         return
     _snapped.add(key)
-    tag = PAYLOAD.split(".")[0][:12]
+    tag = (LOCALE + "-" if LOCALE else "") + PAYLOAD.split(".")[0][:12]
     nds.sim_snapshot("%s_%03d_%s" % (tag, len(_snapped), view))
 MAX_DECISIONS = 60000
 
@@ -206,6 +208,7 @@ def _next_path():
     settings = Settings.get_instance()
     settings._data.clear()
     settings._data.update(_copy(_settings0))
+    settings.load_locale()  # a path may have switched the language
     storage = Controller.get_instance().storage
     storage.seeds[:] = list(_seeds0)
     storage.clear_pending_seed()
@@ -237,6 +240,8 @@ def main():
 
     controller = Controller.get_instance()
     Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
+    if LOCALE:
+        Settings.get_instance().set_value(SettingsConstants.SETTING__LOCALE, LOCALE)
     controller.storage.set_pending_seed(Seed(read_vector(SEED_FILE).split()))
     controller.storage.finalize_pending_seed()
     _settings0.update(_copy(Settings.get_instance()._data))

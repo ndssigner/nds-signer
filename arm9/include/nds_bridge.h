@@ -78,6 +78,11 @@ void ndsbGfxFontMetrics(int font, int *ascent, int *lineHeight);
 void ndsbGfxPresent(int screen);
 int ndsbGfxFontCount(void);
 
+/* The console's language (DS user settings, set in the system settings):
+ * 0 Japanese, 1 English, 2 French, 3 German, 4 Italian, 5 Spanish,
+ * 6 Chinese, 7 Korean */
+int ndsbSystemLanguage(void);
+
 /* UI feedback sound (arm9/include/sfx.h ids) */
 void ndsbSound(int sfx);
 /* see qrTranscribeShow() in qr_display.h */

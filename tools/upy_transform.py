@@ -224,7 +224,15 @@ class ImportReplacer(ast.NodeTransformer):
         return node
 
 
+# Upstream modules whose dict order is shown to the user (MicroPython dicts
+# do not keep insertion order): their dicts become OrderedDicts too.
+ORDERED_DICT_MODULES = {
+    "seedsigner/models/settings_definition.py",  # ALL_LOCALES: the Language menu order
+}
+
+
 def transform(path: pathlib.Path, rel: str, ordered_dicts=False, rewrite_new=True) -> str:
+    ordered_dicts = ordered_dicts or rel in ORDERED_DICT_MODULES
     tree = ast.parse(path.read_text(), filename=str(path))
     if rel in IMPORT_REPLACEMENTS:
         tree = ImportReplacer(IMPORT_REPLACEMENTS[rel]).visit(tree)

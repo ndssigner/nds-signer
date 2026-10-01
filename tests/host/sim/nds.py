@@ -280,6 +280,13 @@ def sound(effect):
     sounds.append(effect)
 
 
+system_language_value = 1  # English; tests may change it
+
+
+def system_language():
+    return system_language_value
+
+
 def info():
     return (True, True, 0, _ticks // 1000)
 

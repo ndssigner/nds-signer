@@ -472,6 +472,35 @@ def run_sound_flow():
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_language_flow():
+    """A console set to Spanish starts in Spanish (SeedSigner's translation);
+    Settings > Language > English switches back."""
+    from seedsigner.gui import apply_system_language
+    from seedsigner.views.view import Destination, MainMenuView
+    state = {}
+    nds.system_language_value = 5  # Spanish in the DS user settings
+    state["locale"] = apply_system_language()
+
+    def bottom():
+        return "".join(op[3] for op in nds._dl[1] if op[0] == "text")
+
+    def check_spanish():
+        state["es"] = "Semillas" in bottom() and "Ajustes" in bottom()
+
+    def check():
+        ok = state["locale"] == "es" and state.get("es") and "Seeds" in bottom()
+        RESULT["language"] = ok
+        print("ok  " if ok else "FAIL", "language flow: console in Spanish -> %s, Spanish home %s, "
+              "back to English %s" % (state["locale"], state.get("es"), "Seeds" in bottom()))
+
+    events = [("call", dump), ("call", check_spanish), ("tap_label", "Ajustes"), ("key", 0),
+              ("call", dump), ("tap_label", "Idioma"), ("key", 0), ("call", dump),
+              ("tap_label", "English"), ("key", 0), ("wait", 2), ("key", nds.KEY_B), ("wait", 2),
+              ("call", dump), ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_flow(prefix, taps):
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
@@ -512,6 +541,8 @@ elif MODE == "passphrase":
     run_passphrase_flow("psbt_base64_singlesig")
 elif MODE in ("transcribe", "transcribe_compact"):
     run_transcribe_flow("psbt_base64_singlesig", MODE == "transcribe_compact")
+elif MODE == "language":
+    run_language_flow()
 elif MODE == "sound":
     run_sound_flow()
 elif MODE == "final_word":

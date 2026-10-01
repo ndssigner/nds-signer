@@ -113,8 +113,6 @@ def button(screen, x, y, w, h, label, selected=False, enabled=True, font=None, c
 
 BACK = "back"
 _BACK_LABEL = "< Back"
-_PREV_LABEL = "Prev"
-_NEXT_LABEL = "Next"
 
 
 def pad(text, width=COLS):
@@ -562,16 +560,17 @@ class ButtonPanel:
             self.hits.append((MARGIN, y, GFX_W - MARGIN, y + BUTTON_H, start + i))
             y += BUTTON_H + BUTTON_GAP
         if self.show_back:
-            button(BOTTOM, MARGIN, NAV_Y, 80, NAV_H, _BACK_LABEL, font=nds.FONT_BODY_BOLD)
+            button(BOTTOM, MARGIN, NAV_Y, 80, NAV_H, _(_BACK_LABEL), font=nds.FONT_BODY_BOLD)
             self.hits.append((MARGIN, NAV_Y, MARGIN + 80, NAV_Y + NAV_H, BACK))
         if self.pages() > 1:
             text_centered(BOTTOM, NAV_Y + 3, "%d/%d" % (self.page() + 1, self.pages()),
                           nds.FONT_BODY, t["label"], 96, 40)
-            if self.page() > 0:
-                button(BOTTOM, 140, NAV_Y, 52, NAV_H, _PREV_LABEL, font=nds.FONT_BODY_BOLD)
+            from seedsigner.gui.components import SeedSignerIconConstants as Icons
+            if self.page() > 0:  # chevrons: the same in every language
+                button(BOTTOM, 140, NAV_Y, 52, NAV_H, Icons.CHEVRON_LEFT, font=nds.FONT_SSICON)
                 self.hits.append((140, NAV_Y, 192, NAV_Y + NAV_H, "prev"))
             if self.page() < self.pages() - 1:
-                button(BOTTOM, 196, NAV_Y, 52, NAV_H, _NEXT_LABEL, font=nds.FONT_BODY_BOLD)
+                button(BOTTOM, 196, NAV_Y, 52, NAV_H, Icons.CHEVRON_RIGHT, font=nds.FONT_SSICON)
                 self.hits.append((196, NAV_Y, 248, NAV_Y + NAV_H, "next"))
         nds.gfx_present(BOTTOM)
 

@@ -87,6 +87,10 @@ module("flow_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("bip39_jp_check.py", base_path="$(PORT_DIR)/../tests/host")
 module("test_vectors.py", base_path="$(PORT_DIR)/../build/frozen_py")
 
+# SeedSigner's translations (tools/po_to_py.py, generated with the rest of
+# build/frozen_py by mpy/Makefile)
+include("$(PORT_DIR)/../build/frozen_py/l10n_manifest.py")
+
 # Python entry point
 module("nds_main.py", base_path="$(PORT_DIR)/frozen")
 

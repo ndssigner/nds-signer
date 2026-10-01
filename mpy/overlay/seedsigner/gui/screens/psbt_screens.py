@@ -44,8 +44,8 @@ class PSBTMathScreen(_TxScreen):
     def top_blocks(self):
         warn = nds_ui.theme_color("WARNING_COLOR") if self.is_high_fee_tx else None
         blocks = [("kv", _("Inputs"), amount_text(self.input_amount)),
-                  ("kv", "− " + _("Recipients"), amount_text(self.spend_amount)),
-                  ("kv", "− " + _("Fee"), amount_text(self.fee_amount), warn),
+                  ("kv", "– " + _("Recipients"), amount_text(self.spend_amount)),
+                  ("kv", "– " + _("Fee"), amount_text(self.fee_amount), warn),
                   ("rule",),
                   ("kv", "= " + _("Change"), amount_text(self.change_amount))]
         if self.is_high_fee_tx:

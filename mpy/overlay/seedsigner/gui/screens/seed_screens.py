@@ -34,7 +34,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
         self.prefix = "".join(letters) if len(letters) > 1 else ""
         self.keys = nds_keyboard.qwerty_keys(KEYBOARD_ROW)
         self.del_key = nds_keyboard.Key("Del", 0, 25, width=6, action="del")
-        self.back_key = nds_keyboard.Key("< Back", 20, 1, width=10, action="back")
+        self.back_key = nds_keyboard.Key(_("< Back"), 20, 1, width=10, action="back")
 
     def _candidates(self):
         return [w for w in self.wordlist if w.startswith(self.prefix)]
@@ -145,7 +145,7 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
                      for i, label in enumerate(labels)]
         self.space_key = nds_keyboard.Key("space", 15, 1, width=17, action=" ")
         self.del_key = nds_keyboard.Key("Del", 15, 19, width=6, action="del")
-        self.back_key = nds_keyboard.Key("< Back", 20, 1, width=10, action="back")
+        self.back_key = nds_keyboard.Key(_("< Back"), 20, 1, width=10, action="back")
         self.save_key = nds_keyboard.Key("Save", 20, 21, width=10, action="save")
 
     def _render(self):
@@ -212,7 +212,7 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
     def top_blocks(self):
         return [("label", _("Passphrase")), ("value", self.passphrase or ""), ("space", 10),
                 ("label", _("Without -> with passphrase")),
-                ("value", "%s \u2192 %s" % (self.fingerprint_without or "", self.fingerprint_with or ""))]
+                ("value", "%s -> %s" % (self.fingerprint_without or "", self.fingerprint_with or ""))]
 
 
 class SeedExportXpubDetailsScreen(ButtonListScreen):

@@ -46,7 +46,10 @@ SS_MODULES := $(shell grep -v '^\#' seedsigner_modules.txt)
 
 OVERLAY := $(shell find overlay -name '*.py')
 
+L10N := $(TOPDIR)/third_party/seedsigner/src/seedsigner/resources/seedsigner-translations/l10n
+
 $(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py \
+		$(TOPDIR)/tools/po_to_py.py $(TOPDIR)/tools/ttf_to_ndsfont.py $(wildcard $(TOPDIR)/l10n/*.po) $(wildcard $(L10N)/*/LC_MESSAGES/*.po) \
 		$(shell find $(TOPDIR)/third_party/urtypes/src -name '*.py') $(wildcard $(TOPDIR)/tests/vectors/*.txt) \
 		$(TOPDIR)/tools/gen_gui_api.py $(TOPDIR)/tools/screen_api.py $(OVERLAY) \
 		$(addprefix $(TOPDIR)/third_party/seedsigner/src/,$(SS_MODULES))
@@ -61,6 +64,8 @@ $(FROZEN_PY)/.stamp: seedsigner_modules.txt $(TOPDIR)/tools/upy_transform.py \
 	@# the overlay's helpers/ur2/__init__.py assumes upstream's is empty
 	@test ! -s $(TOPDIR)/third_party/seedsigner/src/seedsigner/helpers/ur2/__init__.py || \
 		{ echo "upstream helpers/ur2/__init__.py is no longer empty: merge it into the overlay"; exit 1; }
+	@# SeedSigner's translations whose characters the UI fonts have
+	@python3 $(TOPDIR)/tools/po_to_py.py $(L10N) $(FROZEN_PY) $(TOPDIR)/l10n | grep -v "^ok" || true
 	@cp -R overlay/seedsigner $(FROZEN_PY)/
 	@rm -f $(FROZEN_PY)/seedsigner/README.md
 	@python3 $(TOPDIR)/tools/gen_gui_api.py $(TOPDIR)/third_party/seedsigner/src \

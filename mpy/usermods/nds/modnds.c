@@ -232,6 +232,14 @@ static mp_obj_t nds_gfx_font_metrics(mp_obj_t font)
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(nds_gfx_font_metrics_obj, nds_gfx_font_metrics);
 
+/* system_language(): the console's language setting (0 Japanese, 1 English,
+ * 2 French, 3 German, 4 Italian, 5 Spanish, 6 Chinese, 7 Korean) */
+static mp_obj_t nds_system_language(void)
+{
+	return mp_obj_new_int(ndsbSystemLanguage());
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_system_language_obj, nds_system_language);
+
 /* sound(effect): a UI feedback sound, SFX_* */
 static mp_obj_t nds_sound(mp_obj_t effect)
 {
@@ -319,6 +327,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_gfx_font_metrics), MP_ROM_PTR(&nds_gfx_font_metrics_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_gfx_present), MP_ROM_PTR(&nds_gfx_present_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_sound), MP_ROM_PTR(&nds_sound_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_system_language), MP_ROM_PTR(&nds_system_language_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_SFX_CLICK), MP_ROM_INT(SFX_CLICK) },
 	{ MP_ROM_QSTR(MP_QSTR_SFX_KEY), MP_ROM_INT(SFX_KEY) },
 	{ MP_ROM_QSTR(MP_QSTR_SFX_BACK), MP_ROM_INT(SFX_BACK) },
