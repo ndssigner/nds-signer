@@ -26,7 +26,7 @@ export TOPDIR := $(CURDIR)
 GAME_TITLE     := NDS-Signer
 GAME_SUBTITLE1 := Air-gapped Bitcoin PSBT signer
 GAME_SUBTITLE2 := github.com/nds-signer
-GAME_ICON      :=
+GAME_ICON      := build/generated/icon.bmp
 
 include $(DEVKITARM)/ds_rules
 
@@ -59,7 +59,12 @@ build/generated/gfx_fonts.c: tools/ttf_to_ndsfont.py \
 	@mkdir -p build/generated
 	python3 tools/ttf_to_ndsfont.py third_party/seedsigner/src $@ build/generated/gfx_fonts.h
 
-$(TARGET).nds: arm7/$(TARGET).elf arm9/$(TARGET).elf
+# Menu icon: SeedSigner's "sign" icon on an orange tile (tools/make_icon.py)
+$(GAME_ICON): tools/make_icon.py third_party/seedsigner/src/seedsigner/resources/fonts/seedsigner-icons.otf
+	@mkdir -p build/generated
+	python3 tools/make_icon.py third_party/seedsigner/src $@
+
+$(TARGET).nds: arm7/$(TARGET).elf arm9/$(TARGET).elf $(GAME_ICON)
 	ndstool -c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
 	-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
 	@echo built ... $(notdir $@)

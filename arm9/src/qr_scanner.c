@@ -26,6 +26,7 @@
 static u16 *s_capture[2];     /* YUV422 frames written by the camera DMA */
 static int s_dmaBuffer;       /* index of the buffer the DMA is filling */
 static bool s_streaming;
+static bool s_decode;
 static struct quirc *s_quirc;
 static u16 s_vfColumn[VF_W];  /* viewfinder x -> capture x */
 
@@ -105,11 +106,12 @@ void scannerClearPayload(void)
 		p[i] = 0;
 }
 
-bool scannerStart(void)
+bool scannerStart(bool inner)
 {
-	if (!s_quirc || !cameraActivate(CAM_OUTER))
+	if (!s_quirc || !cameraActivate(inner ? CAM_INNER : CAM_OUTER))
 		return false;
 
+	s_decode = true;
 	memset(&s_stats, 0, sizeof(s_stats));
 	s_stats.startMs = uiMillis();
 	s_quickFails = 0;
@@ -260,7 +262,12 @@ ScanStatus scannerPoll(u16 *viewfinder)
 	s_stats.sumProcessUs += timerTicks2usec(cpuEndTiming());
 	s_stats.frames++;
 
-	return decode() ? SCAN_DECODED : SCAN_FRAME;
+	return s_decode && decode() ? SCAN_DECODED : SCAN_FRAME;
+}
+
+void scannerSetDecode(bool on)
+{
+	s_decode = on;
 }
 
 const u8 *scannerPayload(size_t *len)

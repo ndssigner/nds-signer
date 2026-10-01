@@ -27,6 +27,8 @@ u16 *uiBottomBitmap(void);
 
 void uiClearTop(void);    /* clears both the bitmap and the text layer */
 void uiClearBottom(void);
+void uiClearTopText(void); /* the text layer only: the bitmap shown stays */
+void uiClearBottomText(void);
 
 void uiDrawButtons(const UiButton *buttons, int count);
 

@@ -58,6 +58,25 @@ def draw_qr(img, data, zone=0, zx=0, zy=0, background=255):
                          y0 + (y + 1) * scale - 1), fill=color)
 
 
+def draw_qr_map(img, data, x0, y0, scale, zone, zx, zy):
+    m = _matrix(data)
+    d = ImageDraw.Draw(img)
+    for y in range(len(m)):
+        for x in range(len(m)):
+            inzone = x // zone == zx and y // zone == zy
+            color = ((0, 0, 0) if m[y][x] else (255, 255, 255)) if inzone else \
+                ((32, 32, 32) if m[y][x] else (112, 112, 112))
+            d.rectangle((x0 + x * scale, y0 + y * scale, x0 + (x + 1) * scale - 1,
+                         y0 + (y + 1) * scale - 1), fill=color)
+
+
+def _matrix(data):
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L, border=0)
+    qr.add_data(bytes.fromhex(data[4:]) if data.startswith("hex:") else data)
+    qr.make(fit=True)
+    return qr.get_matrix()
+
+
 def render(ops):
     img = Image.new("RGB", (W, H), (0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -94,6 +113,23 @@ def render(ops):
         elif kind == "qr":
             _, text, border, background = op
             draw_qr(img, text, background=background)
+            d = ImageDraw.Draw(img)
+        elif kind == "qrdraw":
+            _, text, x, y, px = op
+            m = _matrix(text)
+            scale = max(1, px // (len(m) + 2))
+            side = (len(m) + 2) * scale
+            x, y = x + (px - side) // 2, y + (px - side) // 2
+            d.rectangle((x, y, x + side - 1, y + side - 1), fill=(255, 255, 255))
+            for my_, row in enumerate(m):
+                for mx_, dark in enumerate(row):
+                    if dark:
+                        d.rectangle((x + (mx_ + 1) * scale, y + (my_ + 1) * scale,
+                                     x + (mx_ + 2) * scale - 1, y + (my_ + 2) * scale - 1),
+                                    fill=(0, 0, 0))
+        elif kind == "qrmap":
+            _, data, mx, my, scale, zone, zx, zy = op
+            draw_qr_map(img, data, mx, my, scale, zone, zx, zy)
             d = ImageDraw.Draw(img)
         elif kind == "transcribe":
             _, data, zone, zx, zy = op

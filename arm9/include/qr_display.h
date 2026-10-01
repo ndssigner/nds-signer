@@ -25,4 +25,14 @@ int qrDisplayShow(const char *text, size_t len, int border, u8 background);
 int qrTranscribeShow(const u8 *data, size_t len, bool binary, int zoneModules,
                      int zoneX, int zoneY);
 
+/* `text` as a QR code in a px x px box at (x, y) of `screen`'s graphics back
+ * buffer (no present), white with a 1-module quiet zone, the largest whole
+ * number of pixels per module. Returns the size in modules, 0 if too long. */
+int qrDraw(int screen, const char *text, size_t len, int x, int y, int px);
+
+/* A map of the code last drawn by qrTranscribeShow(), into `screen`'s
+ * graphics back buffer (no present): `scale` px per module from (x, y),
+ * zone (zoneX, zoneY) in full contrast, the other zones dimmed. */
+void qrTranscribeMap(int screen, int x, int y, int scale, int zoneModules, int zoneX, int zoneY);
+
 #endif /* NDS_SIGNER_QR_DISPLAY_H */

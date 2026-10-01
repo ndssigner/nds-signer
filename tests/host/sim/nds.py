@@ -160,16 +160,25 @@ def camera_init():
     return True
 
 
-def camera_start():
-    global _camera_on
-    _camera_on = True
+camera_front = False  # camera of the last camera_start(), for tests
+_camera_decode = True
+
+
+def camera_start(front=False):
+    global _camera_on, camera_front, _camera_decode
+    _camera_on, camera_front, _camera_decode = True, bool(front), True
     _dl[0].append(("camera",))
     return True
 
 
+def camera_decode(on):
+    global _camera_decode
+    _camera_decode = bool(on)
+
+
 def camera_poll():
     global _camera_frames
-    if not _camera_on or not _camera_queue:
+    if not _camera_on or not _camera_decode or not _camera_queue:
         return None
     _camera_frames += 1
     return _camera_queue.pop(0)
@@ -198,6 +207,22 @@ def qr_show(text, border=2, background=255):
 
 
 qr_transcribed = []  # (data, zone_modules, zone_x, zone_y) per qr_transcribe call
+
+qr_drawn = []  # the last texts drawn by qr_draw, for tests
+
+
+def qr_draw(screen, text, x, y, px):
+    qr_drawn[:] = qr_drawn[-9:] + [text]  # bounded: the crawler draws thousands
+    _dl[screen].append(("qrdraw", text, x, y, px))
+    return 21 if len(text) <= 25 else 29 if len(text) <= 77 else 33
+
+
+def qr_transcribe_map(screen, x, y, scale, zone_modules, zone_x, zone_y):
+    if qr_transcribed:
+        data = qr_transcribed[-1][0]
+        shown = data if isinstance(data, str) else "hex:" + "".join("%02x" % b for b in data)
+        _dl[screen].append(("qrmap", shown, x, y, scale, zone_modules, zone_x, zone_y))
+
 
 # QR capacities at ECC level L, versions 1-4 (SeedQRs are 21x21 to 29x29)
 _CAPACITY_L = {"numeric": (41, 77, 127, 187), "byte": (17, 32, 53, 78)}

@@ -44,3 +44,5 @@ class Renderer(ConfigurableSingleton):
         from seedsigner.gui.hw import nds
         nds.top_clear()
         nds.bottom_clear()
+        nds.gfx_present(0)
+        nds.gfx_present(1)

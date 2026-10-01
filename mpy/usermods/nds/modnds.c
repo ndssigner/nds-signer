@@ -96,11 +96,20 @@ static mp_obj_t nds_camera_init(void)
 }
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_init_obj, nds_camera_init);
 
-static mp_obj_t nds_camera_start(void)
+static mp_obj_t nds_camera_start(size_t n_args, const mp_obj_t *args)
 {
-	return mp_obj_new_bool(ndsbCameraStart());
+	/* camera_start(front=False): the outer camera, or the inner one */
+	return mp_obj_new_bool(ndsbCameraStart(n_args > 0 && mp_obj_is_true(args[0])));
 }
-static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_start_obj, nds_camera_start);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_camera_start_obj, 0, 1, nds_camera_start);
+
+/* camera_decode(on): decoding on, or preview only */
+static mp_obj_t nds_camera_decode(mp_obj_t on)
+{
+	ndsbCameraDecode(mp_obj_is_true(on));
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(nds_camera_decode_obj, nds_camera_decode);
 
 /* camera_poll(): processes at most one frame (live preview on the top
  * screen). Returns the decoded QR payload as bytes, or None. */
@@ -280,6 +289,32 @@ static mp_obj_t nds_qr_transcribe(size_t n_args, const mp_obj_t *args)
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_transcribe_obj, 1, 4, nds_qr_transcribe);
 
+/* qr_draw(screen, text, x, y, px): a QR code in a px x px box of the back
+ * buffer (gfx_present() shows it); returns its size in modules, 0 if the
+ * text does not fit */
+static mp_obj_t nds_qr_draw(size_t n_args, const mp_obj_t *args)
+{
+	(void)n_args;
+	size_t len;
+	const char *text = mp_obj_str_get_data(args[1], &len);
+	return mp_obj_new_int(ndsbQrDraw(mp_obj_get_int(args[0]), text, len, mp_obj_get_int(args[2]),
+	                                 mp_obj_get_int(args[3]), mp_obj_get_int(args[4])));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_draw_obj, 5, 5, nds_qr_draw);
+
+/* qr_transcribe_map(screen, x, y, scale, zone_modules, zone_x, zone_y): a map
+ * of the code last shown by qr_transcribe(), the zone highlighted (back
+ * buffer; gfx_present() shows it) */
+static mp_obj_t nds_qr_transcribe_map(size_t n_args, const mp_obj_t *args)
+{
+	(void)n_args;
+	ndsbQrTranscribeMap(mp_obj_get_int(args[0]), mp_obj_get_int(args[1]), mp_obj_get_int(args[2]),
+	                    mp_obj_get_int(args[3]), mp_obj_get_int(args[4]), mp_obj_get_int(args[5]),
+	                    mp_obj_get_int(args[6]));
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_qr_transcribe_map_obj, 7, 7, nds_qr_transcribe_map);
+
 /* info(): (dsi_mode, camera_ok, c_heap_kb, uptime_s) */
 static mp_obj_t nds_info(void)
 {
@@ -349,6 +384,9 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_FONT_SSICON_LARGE), MP_ROM_INT(GFX_FONT_SSICON_LARGE) },
 	{ MP_ROM_QSTR(MP_QSTR_FONT_SSICON_HUGE), MP_ROM_INT(GFX_FONT_SSICON_HUGE) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe), MP_ROM_PTR(&nds_qr_transcribe_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe_map), MP_ROM_PTR(&nds_qr_transcribe_map_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_qr_draw), MP_ROM_PTR(&nds_qr_draw_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_camera_decode), MP_ROM_PTR(&nds_camera_decode_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&nds_version_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_A), MP_ROM_INT(NDSB_KEY_A) },

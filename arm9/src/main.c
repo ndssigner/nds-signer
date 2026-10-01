@@ -96,7 +96,7 @@ static Screen scanScreen(void)
 	uiClearBottom();
 	uiDrawButtons(s_scanButtons, SCAN_BUTTON_COUNT);
 
-	if (!scannerStart()) {
+	if (!scannerStart(false)) {
 		printf("\x1b[3;0HCamera error");
 		return SCREEN_HOME;
 	}

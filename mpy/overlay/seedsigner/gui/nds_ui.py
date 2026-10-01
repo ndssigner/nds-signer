@@ -326,6 +326,15 @@ def _layout(blocks, width):
                 _address_rows(rows, block[1], width)
         elif kind == "status":
             _status_row(rows, block[1], block[2], width)
+        elif kind == "qr":  # ("qr", text, px[, caption]): a QR code in a px x px square
+            def draw(y, text=block[1], px=block[2], caption=block[3] if len(block) > 3 else ""):
+                x = (GFX_W - px) // 2
+                nds.qr_draw(TOP, text, x, y, px)
+                if caption:  # e.g. an address index, left of the code
+                    line_h = nds.gfx_font_metrics(nds.FONT_LARGE)[1]
+                    text_centered(TOP, y + (px - line_h) // 2, caption, nds.FONT_LARGE,
+                                  t["accent"], 0, x)
+            rows.append((block[2], draw))
         elif kind == "icon":
             if block[1]:
                 font = icon_font(block[1])
@@ -526,7 +535,7 @@ class ButtonPanel:
     """A pageable list of full-width touch buttons on the bottom screen."""
 
     def __init__(self, labels, show_back=True, selected=0, header=None, redraw=None, checked=(),
-                 on_page=None):
+                 on_page=None, on_select=None, tap_selects=False, content=None):
         self.redraw = redraw  # redraws the top screen after the dev overlay
         self.taps = TapTracker()
         self.labels = list(labels)
@@ -535,6 +544,12 @@ class ButtonPanel:
         self.header = header
         self.checked = set(checked)
         self.on_page = on_page  # called after the page changes (top screen follows)
+        # called after the selection changes (top screen shows the selected item)
+        self.on_select = on_select
+        # a tap on another button selects it; a tap on the selected one chooses it
+        self.tap_selects = tap_selects
+        # content(index, x, y, w, h, selected) draws a button's label itself
+        self.content = content
         self.per_page = BUTTONS_PER_PAGE - 1 if header else BUTTONS_PER_PAGE
         self.hits = []  # (x0, y0, x1, y1, action) in pixels
 
@@ -555,8 +570,11 @@ class ButtonPanel:
             y += BUTTON_H
         start = self.page() * self.per_page
         for i, label in enumerate(self.labels[start:start + self.per_page]):
-            button(BOTTOM, MARGIN, y, GFX_W - 2 * MARGIN, BUTTON_H, label, start + i == self.selected,
-                   checked=start + i in self.checked)
+            selected = start + i == self.selected
+            button(BOTTOM, MARGIN, y, GFX_W - 2 * MARGIN, BUTTON_H,
+                   "" if self.content else label, selected, checked=start + i in self.checked)
+            if self.content:
+                self.content(start + i, MARGIN, y, GFX_W - 2 * MARGIN, BUTTON_H, selected)
             self.hits.append((MARGIN, y, GFX_W - MARGIN, y + BUTTON_H, start + i))
             y += BUTTON_H + BUTTON_GAP
         if self.show_back:
@@ -590,14 +608,17 @@ class ButtonPanel:
             if action == "prev":
                 self.selected = (self.page() - 1) * self.per_page
                 self.draw()
-                if self.on_page is not None:
-                    self.on_page()
+                self._moved(True)
                 return None
             if action == "next":
                 self.selected = (self.page() + 1) * self.per_page
                 self.draw()
-                if self.on_page is not None:
-                    self.on_page()
+                self._moved(True)
+                return None
+            if self.tap_selects and isinstance(action, int) and action != self.selected:
+                self.selected = action
+                self.draw()
+                self._moved(False)
                 return None
             return action
         down = nds.keys_down()
@@ -615,9 +636,14 @@ class ButtonPanel:
             page = self.page()
             self.selected = (self.selected + step) % len(self.labels)
             self.draw()
-            if self.page() != page and self.on_page is not None:
-                self.on_page()
+            self._moved(self.page() != page)
         return None
+
+    def _moved(self, new_page):
+        if self.on_select is not None:
+            self.on_select()
+        elif new_page and self.on_page is not None:
+            self.on_page()
 
     def run(self):
         self.draw()

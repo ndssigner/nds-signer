@@ -93,7 +93,7 @@ seedsigner: frozen
 	@diff $(TOPDIR)/build/decode_qr.cpython.txt $(TOPDIR)/build/decode_qr.mpy.txt \
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
 	@rm -rf $(TOPDIR)/build/glyph_snaps && mkdir -p $(TOPDIR)/build/glyph_snaps
-	@for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language; do \
+	@for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language scan_intro; do \
 		$(DOCKER_MPY_ROM) flow_check.py /source/tests/vectors $$mode --gallery=/source/build/glyph_snaps \
 			2>/dev/null | grep -E "^(ok|FAIL)"; \
 	done

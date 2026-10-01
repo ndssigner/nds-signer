@@ -303,7 +303,8 @@ def run_backup_flow(prefix):
 def run_transcribe_flow(prefix, compact):
     """Backup seed -> Export as SeedQR: the whole QR (ECC L) must have the
     template's size, the zoomed zones must follow the D-pad, and scanning back
-    exactly what was shown must confirm the SeedQR."""
+    exactly what was shown must confirm the SeedQR. A tap on the map's zone
+    B-2 then D-pad right must show zone C-2."""
     from seedsigner.models.seed import Seed
     from seedsigner.views.view import Destination, MainMenuView
 
@@ -334,12 +335,16 @@ def run_transcribe_flow(prefix, compact):
         RESULT["transcribe"] = ok
         print("ok  " if ok else "FAIL", name, state.get("whole"), state.get("zone"))
 
+    # the centre of zone B-2 on the bottom screen's map (5 px per module)
+    side, cell = size * 5, (7 if compact else 5) * 5
+    map_x = 80 + (176 - side) // 2 + cell + cell // 2
+    map_y = 38 + (148 - side) // 2 + cell + cell // 2
     events = []
     for label in ("Seeds", "8b218e81", "Backup seed", "Export as SeedQR", fmt, "I understand"):
         events += [("call", dump), ("tap_label", label), ("key", 0)]
     events += [("wait", 2), ("call", check_whole), ("tap_label", "Begin %dx%d" % (size, size)),
-               ("key", 0), ("wait", 2), ("key", nds.KEY_RIGHT), ("key", nds.KEY_RIGHT),
-               ("key", nds.KEY_DOWN), ("wait", 2), ("call", dump),
+               ("key", 0), ("wait", 2), ("tap", map_x, map_y), ("wait", 4), ("key", 0),
+               ("wait", 2), ("key", nds.KEY_RIGHT), ("wait", 2), ("call", dump),
                ("call", check_zone), ("tap_label", "Done"), ("key", 0), ("wait", 2),
                ("call", dump), ("call", scan_back), ("tap_label", "Confirm SeedQR"), ("key", 0),
                ("wait", 10), ("call", dump), ("call", check), ("call", stop)]
@@ -349,8 +354,10 @@ def run_transcribe_flow(prefix, compact):
 
 def run_explorer_flow(prefix):
     """Seeds -> Address explorer -> Native Segwit -> Receive: the top screen
-    lists the full addresses; the first two are the test seed's (the same
-    Sparrow showed on Signet, docs/guia-xpub-sparrow.md)."""
+    shows the selected address in full with its QR code (bech32 in capitals);
+    the first two are the test seed's (the same Sparrow showed on Signet,
+    docs/guia-xpub-sparrow.md). D-pad down selects the second; a tap on the
+    first selects it again, a second tap opens its QR view."""
     from seedsigner.models.seed import Seed
     from seedsigner.models.settings import Settings, SettingsConstants
     from seedsigner.views.view import Destination, MainMenuView
@@ -360,18 +367,30 @@ def run_explorer_flow(prefix):
     controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
     controller.storage.finalize_pending_seed()
     expected = ["tb1qw2as76rh4jhykn9zvevdt5tawmqx7hhy7ydvvu", "tb1qdxl0syr9zqwxentq7mzvf7taglscyrmmnpfss6"]
+    seen = []
+
+    def shown(n):
+        def check():
+            # the drawn text itself (the simulator's text grid is only 32 columns)
+            top = "".join(op[3] for op in nds._dl[0] if op[0] == "text").replace(" ", "")
+            seen.append(expected[n] in top and nds.qr_drawn[-1:] == [expected[n].upper()])
+        return check
+
+    def opened():
+        seen.append(any(op[0] == "qr" for op in nds._dl[0]))
 
     def check():
-        # the drawn text itself (the simulator's text grid is only 32 columns)
-        top = "".join(op[3] for op in nds._dl[0] if op[0] == "text").replace(" ", "")
-        ok = all(a in top for a in expected)
+        ok = seen == [True] * 4
         RESULT["explorer"] = ok
-        print("ok  " if ok else "FAIL", "address explorer flow: first receive addresses listed")
+        print("ok  " if ok else "FAIL", "address explorer flow: selected address and QR on top", seen)
 
     events = []
     for label in ("Seeds", "8b218e81", "Address explorer", "Native Segwit", "Receive"):
         events += [("call", dump), ("tap_label", label), ("key", 0)]
-    events += [("wait", 5), ("call", dump), ("call", check), ("call", stop)]
+    events += [("wait", 5), ("call", dump), ("call", shown(0)), ("key", nds.KEY_DOWN), ("wait", 2),
+               ("call", shown(1)), ("tap_label", expected[0][:6]), ("wait", 4), ("key", 0), ("wait", 2),
+               ("call", shown(0)), ("tap_label", expected[0][:6]), ("wait", 4), ("key", 0), ("wait", 4),
+               ("call", dump), ("call", opened), ("call", check), ("call", stop)]
     nds.sim_script(events)
     controller.start(initial_destination=Destination(MainMenuView))
 
@@ -472,6 +491,48 @@ def run_sound_flow():
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_scan_intro_flow(prefix):
+    """Scan with "Scan preparation" enabled: the tips and the camera choice
+    first (switched to the front camera), then Start; the code shown to the
+    camera from the start is decoded only after the countdown, and the PSBT
+    then reaches seed selection."""
+    from seedsigner.models.seed import Seed
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
+    controller.storage.finalize_pending_seed()
+    state = {}
+
+    def top():
+        return "".join(op[3] for op in nds._dl[0] if op[0] == "text")
+
+    def intro():
+        state["tips"] = "15-25 cm" in top()
+
+    def show_code():
+        nds.sim_camera([read(prefix + ".txt").encode()])
+
+    def still_waiting():  # ~2 s in: the countdown is still running
+        state["waited"] = len(nds._camera_queue) == 1
+
+    def check():
+        bottom = "".join(op[3] for op in nds._dl[1] if op[0] == "text")
+        ok = state.get("tips") and nds.camera_front and state.get("waited") and "8b218e81" in bottom
+        RESULT["scan_intro"] = ok
+        print("ok  " if ok else "FAIL", "scan intro flow: tips %s, front camera %s, countdown %s, "
+              "seed selection %s" % (state.get("tips"), nds.camera_front, state.get("waited"),
+                                     "8b218e81" in bottom))
+
+    events = [("call", dump), ("tap_label", "Scan"), ("key", 0), ("wait", 2), ("call", dump),
+              ("call", intro), ("tap_label", "Camera: Rear camera"), ("key", 0), ("wait", 2),
+              ("call", dump), ("tap_label", "Start scanning"), ("key", 0), ("call", show_code),
+              ("wait", 120), ("call", still_waiting), ("wait", 200), ("call", dump),
+              ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
 def run_language_flow():
     """A console set to Spanish starts in Spanish (SeedSigner's translation);
     Settings > Language > English switches back."""
@@ -529,6 +590,10 @@ SINGLESIG_TAPS = ["Scan", "8b218e81", "Review details", "Continue", "Review reci
                   "Next recipient", "Next", "Approve transaction"]
 
 MODE = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith("-") else "preloaded"
+if MODE != "scan_intro":  # the flows below scan straight away
+    from seedsigner.gui import SETTING__NDS_SCAN_INTRO
+    from seedsigner.models.settings import Settings, SettingsConstants
+    Settings.get_instance().set_value(SETTING__NDS_SCAN_INTRO, SettingsConstants.OPTION__DISABLED)
 if MODE == "typed":
     run_typed_seed_flow("psbt_base64_singlesig")
 elif MODE == "seedqr":
@@ -545,6 +610,8 @@ elif MODE == "language":
     run_language_flow()
 elif MODE == "sound":
     run_sound_flow()
+elif MODE == "scan_intro":
+    run_scan_intro_flow("psbt_base64_singlesig")
 elif MODE == "final_word":
     run_final_word_flow("psbt_base64_singlesig")
 elif MODE == "dice":

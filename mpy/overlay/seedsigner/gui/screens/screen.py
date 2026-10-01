@@ -175,15 +175,33 @@ class ButtonListScreen(BaseTopNavScreen):
     def top_lines(self):
         return []
 
-    def _run(self):
-        checked = getattr(self, "checked_buttons", None) or []
-        labels = button_labels(self.button_data or [])
-        panel = nds_ui.ButtonPanel(labels, show_back=self.show_back_button,
-                                   selected=self.selected_button or 0, redraw=self._render,
-                                   checked=checked, on_page=self._render)
-        self._panel = panel  # lets top_blocks() follow the page shown
-        return self._back_or(panel.run())
+    # Upstream options that make no sense on a DS: "I/O test" (SeedSigner's
+    # joystick and keys) and "Persistent settings" (NDS-Signer never writes
+    # to the SD card). They are left out; the indices returned stay upstream's.
+    HIDDEN_OPTIONS = ("I/O test", "Persistent settings")
 
+    def _run(self):
+        buttons = self.button_data or []
+        shown = [i for i, b in enumerate(buttons)
+                 if not (isinstance(b, ButtonOption) and b.button_label in self.HIDDEN_OPTIONS)]
+        checked = [shown.index(i) for i in (getattr(self, "checked_buttons", None) or [])
+                   if i in shown]
+        selected = self.selected_button or 0
+        selected = shown.index(selected) if selected in shown else 0
+        labels = button_labels([buttons[i] for i in shown])
+        panel = nds_ui.ButtonPanel(labels, show_back=self.show_back_button,
+                                   selected=selected, redraw=self._render,
+                                   checked=checked, on_page=self._render, **self.panel_options())
+        self._panel = panel  # lets top_blocks() follow the page shown
+        ret = panel.run()
+        if isinstance(ret, int) and 0 <= ret < len(shown):
+            ret = shown[ret]
+        return self._back_or(ret)
+
+
+    def panel_options(self):
+        """Extra nds_ui.ButtonPanel arguments (e.g. on_select, content)."""
+        return {}
 
     # Menus with nothing else on the top screen show their section's icon
     SECTION_ICONS = (("seed", "SEEDS"), ("passphrase", "PASSPHRASE"), ("xpub", "QRCODE"),

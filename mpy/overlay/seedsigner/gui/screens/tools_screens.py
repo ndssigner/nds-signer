@@ -27,36 +27,68 @@ class ToolsAddressExplorerAddressTypeScreen(ButtonListScreen):
 
 
 class ToolsAddressExplorerAddressListScreen(ButtonListScreen):
-    """Upstream: one button per address ("index:start...end"), then "Next N".
-    The buttons here are abbreviated too, and the top screen lists this
-    page's addresses in full, to compare them character by character."""
+    """Upstream: one button per address ("index:start...end"), then "Next N";
+    choosing one shows its QR code. Here the top screen shows the selected
+    address in full, with its QR code; a tap selects an address (or the
+    D-pad), a tap on the selected one (or A) opens upstream's QR view."""
+
+    QR_PX = 92
+    HEAD = TAIL = 11  # characters shown on the buttons, as upstream
 
     def __post_init__(self):
         addresses = self.addresses or []
-        last = self.start_index + len(addresses) - 1
-        prefix_len = len(str(last)) + 1
-        half = (nds_ui.COLS - 4 - prefix_len - 3) // 2
-        self.button_data = ["%d:%s...%s" % (self.start_index + i, a[:half], a[-half:])
+        self.button_data = ["%d:%s...%s" % (self.start_index + i, a[:self.HEAD], a[-self.TAIL:])
                             for i, a in enumerate(addresses)]
         self.button_data.append(_("Next {}").format(len(addresses)))
         super().__post_init__()
 
-    def top_blocks(self):
-        """The full addresses of the button page shown below."""
+    def panel_options(self):
+        return dict(on_select=self._render, tap_selects=True, content=self._button_content)
+
+    def _selected(self):
         panel = getattr(self, "_panel", None)
-        first = panel.page() * panel.per_page if panel is not None else 0
-        blocks = []
-        per_line = (nds_ui.GFX_W - 2 * nds_ui.MARGIN) // nds.gfx_text_width("0", nds.FONT_MONO_SMALL)
-        for i, address in enumerate((self.addresses or [])[first:first + nds_ui.BUTTONS_PER_PAGE]):
-            prefix = "%d:" % (self.start_index + first + i)
-            prefix += " " * (4 - len(prefix)) if len(prefix) < 4 else " "
-            head = per_line - len(prefix)
-            blocks.append(("mono_small", prefix + address[:head]))
-            rest = address[head:]
-            while rest:  # continuation lines, indented under the address
-                blocks.append(("mono_small", " " * len(prefix) + rest[:head]))
-                rest = rest[head:]
-        return blocks
+        return panel.selected if panel is not None else (self.selected_button or 0)
+
+    def _button_content(self, i, x, y, w, h, selected):
+        """Index on the left, then the address' start and end in the
+        fixed-width font (the top screen shows it in full)."""
+        t = nds_ui.theme()
+        addresses = self.addresses or []
+        if i >= len(addresses):  # "Next N"
+            line_h = nds.gfx_font_metrics(nds.FONT_BUTTON)[1]
+            color = t["bg"] if selected else t["button_fg"]
+            nds_ui.text_centered(nds_ui.BOTTOM, y + (h - line_h) // 2, self.button_data[i],
+                                 nds.FONT_BUTTON, color, x, w)
+            return
+        address = addresses[i]
+        font, mono = nds.FONT_BODY_BOLD, nds.FONT_MONO
+        index_color = t["bg"] if selected else t["label"]
+        text_color = t["bg"] if selected else t["button_fg"]
+        dots_color = t["bg"] if selected else t["label"]
+        line_h = nds.gfx_font_metrics(font)[1]
+        index = str(self.start_index + i)
+        nds.gfx_text(nds_ui.BOTTOM, x + 36 - nds.gfx_text_width(index, font), y + (h - line_h) // 2,
+                     index, font, index_color)
+        char_w = nds.gfx_text_width("0", mono)
+        mono_h = nds.gfx_font_metrics(mono)[1]
+        my = y + (h - mono_h) // 2
+        parts = ((address[:self.HEAD], text_color), ("\u2026", dots_color),
+                 (address[-self.TAIL:], text_color))
+        mx = x + 48
+        for text, color in parts:
+            nds.gfx_text(nds_ui.BOTTOM, mx, my, text, mono, color)
+            mx += len(text) * char_w
+
+    def top_blocks(self):
+        addresses = self.addresses or []
+        sel = self._selected()
+        if sel >= len(addresses):
+            return [("headline", self.button_data[-1] if self.button_data else "")]
+        address = addresses[sel]
+        # bech32 in capitals: a smaller QR code (alphanumeric mode, BIP-173)
+        qr = address.upper() if address.lower().startswith(("bc1", "tb1", "bcrt1")) else address
+        return [("qr", qr, self.QR_PX, "#%d" % (self.start_index + sel)), ("space", 6),
+                ("address", address)]
 
 
 class ToolsDiceEntropyEntryScreen(KeyboardScreen):

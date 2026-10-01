@@ -106,19 +106,29 @@ u16 *uiBottomBitmap(void)
 	return s_bottomBitmap;
 }
 
+void uiClearTopText(void)
+{
+	consoleSelect(&g_uiTop);
+	consoleClear();
+}
+
+void uiClearBottomText(void)
+{
+	consoleSelect(&g_uiBottom);
+	consoleClear();
+	s_pressed = -1;
+}
+
 void uiClearTop(void)
 {
 	dmaFillHalfWords(RGB15(0, 0, 0) | BIT(15), s_topBitmap, 256 * 192 * 2);
-	consoleSelect(&g_uiTop);
-	consoleClear();
+	uiClearTopText();
 }
 
 void uiClearBottom(void)
 {
 	dmaFillHalfWords(RGB15(0, 0, 0) | BIT(15), s_bottomBitmap, 256 * 192 * 2);
-	consoleSelect(&g_uiBottom);
-	consoleClear();
-	s_pressed = -1;
+	uiClearBottomText();
 }
 
 static void drawButton(const UiButton *b)

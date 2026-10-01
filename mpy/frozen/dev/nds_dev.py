@@ -130,6 +130,7 @@ def diagnostics():
 
 def _touch_test():
     nds.bottom_clear()
+    nds.gfx_present(nds_ui.BOTTOM)
     nds.bottom_print(0, -1, "Touch anywhere. B = exit")
     nds_ui.top_page("Touch test", ["Tap the bottom screen;", "the position is shown here."])
     while True:

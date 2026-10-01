@@ -43,7 +43,8 @@ uint32_t ndsbTicksMs(void);
 
 /* Camera / QR scanning (see qr_scanner.h) */
 bool ndsbCameraInit(void);
-bool ndsbCameraStart(void);
+bool ndsbCameraStart(bool inner);
+void ndsbCameraDecode(bool on);
 /* 1 = payload decoded (copied into buf, *len set), 0 = nothing yet,
  * -1 = camera error. buf must hold 8896 bytes (QUIRC_MAX_PAYLOAD). */
 int ndsbCameraPoll(uint8_t *buf, size_t *len);
@@ -88,6 +89,11 @@ void ndsbSound(int sfx);
 /* see qrTranscribeShow() in qr_display.h */
 int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
                      int zoneX, int zoneY);
+/* see qrDraw() in qr_display.h */
+int ndsbQrDraw(int screen, const char *text, size_t len, int x, int y, int px);
+/* see qrTranscribeMap() in qr_display.h */
+void ndsbQrTranscribeMap(int screen, int x, int y, int scale, int zoneModules, int zoneX,
+                         int zoneY);
 
 /* Diagnostics for the developer build / crash reports */
 typedef struct {

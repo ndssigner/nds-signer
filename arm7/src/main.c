@@ -37,10 +37,26 @@
  * linked, so the ARM9 has no way to ask for network or storage access, or to
  * listen. The RTC is not needed either. The sound driver is started (output
  * only): optional UI feedback sounds, see arm9/src/sfx.c.
+ *
+ * On top of that, wirelessOff() powers the wireless hardware down at start
+ * (the launcher may leave it on): both the DS (Mitsumi) and the DSi
+ * (Atheros) chips, and the wireless LED.
  */
 #include <nds.h>
 
 #include "camera_server.h"
+
+static void wirelessOff(void)
+{
+	pmPowerOff(POWCNT_WL_MITSUMI);
+	if (systemIsTwlMode()) {
+		REG_GPIO_WL &= ~GPIO_WL_ACTIVE;  // hold the Atheros chip in reset
+		i2cLock();
+		u8 led = i2cReadRegister8(I2cDev_MCU, McuReg_WifiLed);
+		i2cWriteRegister8(I2cDev_MCU, McuReg_WifiLed, led & ~1);  // bit 0: LED on
+		i2cUnlock();
+	}
+}
 
 int main(void)
 {
@@ -56,6 +72,9 @@ int main(void)
 
 	// Initialize power management
 	pmInit();
+
+	// No networking: the wireless hardware stays off
+	wirelessOff();
 
 	// Set up touch screen driver
 	touchInit();

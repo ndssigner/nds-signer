@@ -3,24 +3,44 @@
 from .renderer import Renderer  # noqa: F401  (upstream's gui/__init__.py)
 
 SETTING__NDS_SOUND = "nds_sound_effects"
+SETTING__NDS_SCAN_INTRO = "nds_scan_intro"
+SETTING__NDS_CAMERA = "nds_scan_camera"
+CAMERA__REAR, CAMERA__FRONT = "rear", "front"
 
 
 def _register_settings():
-    """Adds "Sound effects" (Enabled/Disabled) to SeedSigner's settings,
-    after "Denomination display" in the main Settings menu."""
+    """Adds NDS-Signer's settings to SeedSigner's: "Sound effects" and "Scan
+    preparation" (Enabled/Disabled) after "Denomination display" in the main
+    Settings menu, "Scan camera" (rear/front) in Advanced."""
     from seedsigner.models.settings_definition import (SettingsConstants, SettingsDefinition,
                                                        SettingsEntry)
     entries = SettingsDefinition.settings_entries
     if any(e.attr_name == SETTING__NDS_SOUND for e in entries):
         return
-    entry = SettingsEntry(category=SettingsConstants.CATEGORY__SYSTEM,
-                          attr_name=SETTING__NDS_SOUND,
-                          abbreviated_name="sound",
-                          display_name="Sound effects",
-                          default_value=SettingsConstants.OPTION__ENABLED)
+    new = [SettingsEntry(category=SettingsConstants.CATEGORY__SYSTEM,
+                         attr_name=SETTING__NDS_SOUND,
+                         abbreviated_name="sound",
+                         display_name="Sound effects",
+                         default_value=SettingsConstants.OPTION__ENABLED),
+           SettingsEntry(category=SettingsConstants.CATEGORY__SYSTEM,
+                         attr_name=SETTING__NDS_SCAN_INTRO,
+                         abbreviated_name="scan_intro",
+                         display_name="Scan preparation",
+                         help_text="Camera choice and tips before scanning",
+                         default_value=SettingsConstants.OPTION__ENABLED),
+           SettingsEntry(category=SettingsConstants.CATEGORY__SYSTEM,
+                         attr_name=SETTING__NDS_CAMERA,
+                         abbreviated_name="camera",
+                         display_name="Scan camera",
+                         type=SettingsConstants.TYPE__SELECT_1,
+                         visibility=SettingsConstants.VISIBILITY__ADVANCED,
+                         selection_options=[(CAMERA__REAR, "Rear camera"),
+                                            (CAMERA__FRONT, "Front camera")],
+                         default_value=CAMERA__REAR)]
     after = [i for i, e in enumerate(entries)
              if e.attr_name == SettingsConstants.SETTING__BTC_DENOMINATION]
-    entries.insert(after[0] + 1 if after else len(entries), entry)
+    at = after[0] + 1 if after else len(entries)
+    entries[at:at] = new
 
 
 def _language_options():

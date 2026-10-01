@@ -89,3 +89,33 @@ msgstr "Efectos de sonido"
 
 msgid "Version"
 msgstr "Versión"
+
+msgid "Start scanning"
+msgstr "Empezar a escanear"
+
+msgid "Camera"
+msgstr "Cámara"
+
+msgid "Front camera"
+msgstr "Cámara frontal"
+
+msgid "Rear camera"
+msgstr "Cámara trasera"
+
+msgid "Scan preparation"
+msgstr "Preparar escaneo"
+
+msgid "Camera choice and tips before scanning"
+msgstr "Elegir cámara y consejos antes de escanear"
+
+msgid "Scan camera"
+msgstr "Cámara de escaneo"
+
+msgid "Hold it 15-25 cm away, in good light."
+msgstr "Sostenlo a 15-25 cm, con buena luz."
+
+msgid "The DSi camera is slow: hold still, a scan can take several seconds."
+msgstr "La cámara de la DSi es lenta: no te muevas, un escaneo puede tardar varios segundos."
+
+msgid "Starting in {}..."
+msgstr "Empezando en {}..."

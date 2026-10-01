@@ -17,6 +17,7 @@
 static uint8_t s_qr[qrcodegen_BUFFER_LEN_MAX];
 static uint8_t s_temp[qrcodegen_BUFFER_LEN_MAX];
 static char s_text[qrcodegen_BUFFER_LEN_MAX];
+static bool s_transcribed;  /* s_qr holds the code of qrTranscribeShow() */
 
 /* The frame is composed in the graphical UI's top back buffer and copied to
  * VRAM in one DMA burst right after VBlank, so a half-drawn QR is never
@@ -65,7 +66,61 @@ int qrDisplayShow(const char *text, size_t len, int border, u8 background)
 
 	swiWaitForVBlank();
 	gfxPresent(GFX_TOP);
+	s_transcribed = false;
 	return size;
+}
+
+int qrDraw(int screen, const char *text, size_t len, int x, int y, int px)
+{
+	if (len >= sizeof(s_text))
+		return 0;
+	memcpy(s_text, text, len);
+	s_text[len] = '\0';
+	s_transcribed = false;
+	if (!qrcodegen_encodeText(s_text, s_temp, s_qr, qrcodegen_Ecc_LOW,
+	                          qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX,
+	                          qrcodegen_Mask_AUTO, true))
+		return 0;
+	const int size = qrcodegen_getSize(s_qr);
+	const int scale = px / (size + 2) > 0 ? px / (size + 2) : 1;
+	const int side = (size + 2) * scale;
+	x += (px - side) / 2;
+	y += (px - side) / 2;
+	gfxRect(screen, x, y, side, side, 0xffffff, 0);
+	u16 *frame = gfxBackBuffer(screen);
+	const u16 dark = RGB15(0, 0, 0) | BIT(15);
+	for (int my = 0; my < size; my++)
+		for (int mx = 0; mx < size; mx++)
+			if (qrcodegen_getModule(s_qr, mx, my))
+				for (int py = y + (my + 1) * scale; py < y + (my + 2) * scale; py++)
+					for (int qx = x + (mx + 1) * scale; qx < x + (mx + 2) * scale; qx++)
+						if (py >= 0 && py < SCREEN_H && qx >= 0 && qx < SCREEN_W)
+							frame[py * SCREEN_W + qx] = dark;
+	return size;
+}
+
+void qrTranscribeMap(int screen, int x, int y, int scale, int zoneModules, int zoneX, int zoneY)
+{
+	if (!s_transcribed || scale <= 0 || zoneModules <= 0)
+		return;
+	const int size = qrcodegen_getSize(s_qr);
+	u16 *frame = gfxBackBuffer(screen);
+	for (int my = 0; my < size; my++) {
+		for (int mx = 0; mx < size; mx++) {
+			bool dark = qrcodegen_getModule(s_qr, mx, my);
+			bool inZone = mx / zoneModules == zoneX && my / zoneModules == zoneY;
+			u16 c = inZone ? (dark ? RGB15(0, 0, 0) : RGB15(31, 31, 31))
+			               : (dark ? RGB15(4, 4, 4) : RGB15(14, 14, 14));
+			c |= BIT(15);
+			for (int py = y + my * scale; py < y + (my + 1) * scale; py++) {
+				if (py < 0 || py >= SCREEN_H)
+					continue;
+				for (int px = x + mx * scale; px < x + (mx + 1) * scale; px++)
+					if (px >= 0 && px < SCREEN_W)
+						frame[py * SCREEN_W + px] = c;
+			}
+		}
+	}
 }
 
 #define ZOOM_PX 24  /* pixels per module when zoomed, as upstream */
@@ -135,5 +190,6 @@ int qrTranscribeShow(const u8 *data, size_t len, bool binary, int zoneModules,
 
 	swiWaitForVBlank();
 	gfxPresent(GFX_TOP);
+	s_transcribed = true;
 	return size;
 }

@@ -244,6 +244,9 @@ def main():
         Settings.get_instance().set_value(SettingsConstants.SETTING__LOCALE, LOCALE)
     controller.storage.set_pending_seed(Seed(read_vector(SEED_FILE).split()))
     controller.storage.finalize_pending_seed()
+    # scan straight away (the scan preparation screen has its own flow test)
+    from seedsigner.gui import SETTING__NDS_SCAN_INTRO
+    Settings.get_instance().set_value(SETTING__NDS_SCAN_INTRO, SettingsConstants.OPTION__DISABLED)
     _settings0.update(_copy(Settings.get_instance()._data))
     _seeds0.extend(controller.storage.seeds)
     try:

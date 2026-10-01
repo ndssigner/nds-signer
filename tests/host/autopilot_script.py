@@ -1,6 +1,7 @@
 # Taps for the unattended emulator run (make AUTOTEST=1 MPY_APP=1): the seed
 # is typed on the touch keyboard, then the camera scans the PSBT QR
-# (tools/qr_to_png.py tests/vectors/psbt_base64_singlesig.txt) and it is signed.
+# (tools/qr_to_png.py tests/vectors/psbt_base64_singlesig.txt), after the scan
+# preparation screen, and it is signed.
 #
 # Everything goes through the UI, as a user would do it: first the network
 # (Settings -> Advanced -> Bitcoin network -> Testnet), back home with B.
@@ -25,7 +26,8 @@ def _type(words):
 
 EVENTS = ([("log", "start")] + SETTINGS + [("tap_label", "Seeds"),
            ("tap_label", "Enter 12-word seed")] + _type(WORDS) +
-          [("wait", 180), ("tap_label", "Done"), ("wait", 180), ("tap_label", "Scan transaction")] +
+          [("wait", 180), ("tap_label", "Done"), ("wait", 180), ("tap_label", "Scan transaction"),
+           ("tap_label", "Start scanning")] +
           [("tap_label", label) for label in ("Review details", "Continue", "Review recipients",
                                               "Next recipient", "Next", "Approve transaction")] +
           [("log", "done")])

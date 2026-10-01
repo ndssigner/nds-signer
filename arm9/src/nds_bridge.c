@@ -33,12 +33,14 @@ void ndsbPrint(int screen, int row, int col, const char *text, size_t len)
 
 void ndsbClear(int screen)
 {
-	/* the graphical UI's back buffer too, so a screen starts from black */
+	/* The graphical UI's back buffer, not the bitmap shown: the screen
+	 * changes at once on the next gfxPresent(), without a black flash
+	 * (e.g. on every key press of a keyboard). */
 	gfxClear(screen == NDSB_TOP ? GFX_TOP : GFX_BOTTOM, 0);
 	if (screen == NDSB_TOP)
-		uiClearTop();
+		uiClearTopText();
 	else
-		uiClearBottom();
+		uiClearBottomText();
 }
 
 void ndsbFrame(void)
@@ -78,9 +80,14 @@ bool ndsbCameraInit(void)
 	return s_haveCamera;
 }
 
-bool ndsbCameraStart(void)
+bool ndsbCameraStart(bool inner)
 {
-	return s_haveCamera && scannerStart();
+	return s_haveCamera && scannerStart(inner);
+}
+
+void ndsbCameraDecode(bool on)
+{
+	scannerSetDecode(on);
 }
 
 int ndsbCameraPoll(uint8_t *buf, size_t *len)
@@ -162,12 +169,24 @@ void ndsbGfxFontMetrics(int font, int *ascent, int *lineHeight) { gfxFontMetrics
 void ndsbGfxPresent(int screen) { gfxPresent(screen); }
 int ndsbGfxFontCount(void) { return GFX_FONT_COUNT; }
 void ndsbSound(int sfx) { sfxPlay(sfx); }
-int ndsbSystemLanguage(void) { return g_envUserSettings->language; }
+int ndsbSystemLanguage(void) { return g_envUserSettings->config.language; }
 
 int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,
                      int zoneX, int zoneY)
 {
 	return qrTranscribeShow(data, len, binary, zoneModules, zoneX, zoneY);
+}
+
+int ndsbQrDraw(int screen, const char *text, size_t len, int x, int y, int px)
+{
+	return qrDraw(screen == NDSB_TOP ? GFX_TOP : GFX_BOTTOM, text, len, x, y, px);
+}
+
+void ndsbQrTranscribeMap(int screen, int x, int y, int scale, int zoneModules, int zoneX,
+                         int zoneY)
+{
+	qrTranscribeMap(screen == NDSB_TOP ? GFX_TOP : GFX_BOTTOM, x, y, scale, zoneModules, zoneX,
+	                zoneY);
 }
 
 #ifndef NDS_SIGNER_VERSION

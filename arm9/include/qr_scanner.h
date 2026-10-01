@@ -40,9 +40,12 @@ typedef struct {
 bool scannerInit(void);
 void scannerShutdown(void);
 
-/* Starts / stops streaming frames from the outer camera. */
-bool scannerStart(void);
+/* Starts / stops streaming frames from the outer (or inner) camera. */
+bool scannerStart(bool inner);
 void scannerStop(void);
+/* Decoding on (the default after scannerStart) or off: preview only, e.g.
+ * while the user aims and the sensor's auto exposure settles. */
+void scannerSetDecode(bool on);
 
 /* Call once per frame. Renders the viewfinder into `viewfinder`
  * (256x192 RGB555 bitmap, 256 pixels per line) when a frame is processed. */

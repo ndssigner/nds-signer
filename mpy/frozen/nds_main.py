@@ -14,6 +14,7 @@ def _fatal(exc):
     text = buf.getvalue()
     print(text)  # also to the debug channel (melonDS log)
     nds.top_clear()
+    nds.gfx_present(0)  # clears only the back buffer: show it (black)
     nds.top_print(0, -1, "NDS-Signer stopped")
     row = 2
     for line in text.split("\n"):
@@ -24,6 +25,7 @@ def _fatal(exc):
     # The same report as a QR code: a phone photo of it can be decoded exactly
     report = "NDS-Signer " + nds.version() + "\n" + text
     nds.bottom_clear()
+    nds.gfx_present(1)
     nds.bottom_print(9, -1, "A: show error as QR code")
     nds.bottom_print(11, -1, "Switch the console off")
     while True:

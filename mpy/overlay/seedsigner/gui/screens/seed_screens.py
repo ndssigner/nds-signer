@@ -282,14 +282,12 @@ class SeedTranscribeSeedQRWholeQRScreen(ButtonListScreen):
 class SeedTranscribeSeedQRZoomedInScreen(BaseTopNavScreen):
     """One zone of the SeedQR at a time, 24 px per module, like upstream:
     7x7-module zones for 21x21, 5x5 otherwise; columns 1-6, rows A-F as on
-    the SeedQR templates (shown as labels over the code). D-pad or the
-    touch arrows move; Done (or A/B) ends."""
+    the SeedQR templates (shown as labels over the code). The bottom screen
+    shows a map of the whole code with the zone framed: tap a zone to go
+    there, or move with the D-pad. Done (or A/B) ends."""
 
     ZONE_ROWS = "ABCDEF"
-    # touch arrows (x, y, w, h, label, dx, dy) around the centre of the screen
-    ARROW_W, ARROW_H = 60, 40
-    ARROWS = ((98, 44, "^", 0, -1), (98, 136, "v", 0, 1), (30, 90, "<", -1, 0),
-              (166, 90, ">", 1, 0))
+    MAP_LEFT, MAP_TOP, MAP_SIZE = 80, 38, 148  # map area, right of the zone label
 
     def __post_init__(self):
         super().__post_init__()
@@ -297,6 +295,10 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseTopNavScreen):
         self.zones = (self.num_modules + self.zone - 1) // self.zone
         self.zx = self.initial_zone_x or 0
         self.zy = self.initial_zone_y or 0
+        self.scale = max(1, min(5, self.MAP_SIZE // self.num_modules))
+        side = self.num_modules * self.scale
+        self.map_x = self.MAP_LEFT + (256 - self.MAP_LEFT - side) // 2
+        self.map_y = self.MAP_TOP + (self.MAP_SIZE - side) // 2
 
     def _render(self):
         t = nds_ui.theme()
@@ -314,20 +316,29 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseTopNavScreen):
         nds.bottom_clear()
         nds.gfx_clear(nds_ui.BOTTOM, t["bg"])
         nds_ui.button(nds_ui.BOTTOM, 8, 4, 240, 28, _("Done"), selected=True)
-        for x, y, label, _dx, _dy in self.ARROWS:
-            nds_ui.button(nds_ui.BOTTOM, x, y, self.ARROW_W, self.ARROW_H, label)
-        nds_ui.text_centered(nds_ui.BOTTOM, 100, "%s-%d" % (self.ZONE_ROWS[self.zy], self.zx + 1),
-                             nds.FONT_TITLE, t["accent"], 98, self.ARROW_W)
-        nds_ui.text_centered(nds_ui.BOTTOM, 172, "%s %d x %d" % (_("Zones"), self.zones, self.zones),
-                             nds.FONT_BODY, t["label"])
+        nds.qr_transcribe_map(nds_ui.BOTTOM, self.map_x, self.map_y, self.scale, self.zone,
+                              self.zx, self.zy)
+        # the zone shown on the top screen, framed
+        cell = self.zone * self.scale
+        w = min(self.zone, self.num_modules - self.zx * self.zone) * self.scale
+        h = min(self.zone, self.num_modules - self.zy * self.zone) * self.scale
+        nds.gfx_frame(nds_ui.BOTTOM, self.map_x + self.zx * cell - 3, self.map_y + self.zy * cell - 3,
+                      w + 6, h + 6, t["accent"], 3, 2)
+        nds_ui.text_centered(nds_ui.BOTTOM, 86, "%s-%d" % (self.ZONE_ROWS[self.zy], self.zx + 1),
+                             nds.FONT_LARGE, t["accent"], 0, self.MAP_LEFT)
+        nds_ui.text_centered(nds_ui.BOTTOM, 122, _("Zones"), nds.FONT_BODY, t["label"], 0,
+                             self.MAP_LEFT)
+        nds_ui.text_centered(nds_ui.BOTTOM, 138, "%d x %d" % (self.zones, self.zones),
+                             nds.FONT_BODY, t["label"], 0, self.MAP_LEFT)
         nds.gfx_present(nds_ui.BOTTOM)
 
     def _tap(self, x, y):
         if 8 <= x < 248 and 4 <= y < 32:
             return "done"
-        for ax, ay, _label, dx, dy in self.ARROWS:
-            if ax <= x < ax + self.ARROW_W and ay <= y < ay + self.ARROW_H:
-                return (dx, dy)
+        cell = self.zone * self.scale
+        side = self.num_modules * self.scale
+        if self.map_x <= x < self.map_x + side and self.map_y <= y < self.map_y + side:
+            return ((x - self.map_x) // cell - self.zx, (y - self.map_y) // cell - self.zy)
         return None
 
     def _run(self):
