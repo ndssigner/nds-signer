@@ -88,7 +88,7 @@ class PSBTFinalizeScreen(_TxScreen):
         from seedsigner.gui.components import GUIConstants as GC
         from seedsigner.gui.components import SeedSignerIconConstants as Icons
         return [("icon", Icons.SIGN, GC.INFO_COLOR), ("space", 6),
-                ("text", _("Click to approve this transaction"))]
+                ("text", _("Click to approve this transaction"))] + nds_ui.low_battery_blocks()
 
 
 define_generic_screens(globals(), "psbt_screens")

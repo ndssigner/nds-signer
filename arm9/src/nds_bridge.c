@@ -210,6 +210,7 @@ void ndsbGfxFontMetrics(int font, int *ascent, int *lineHeight) { gfxFontMetrics
 void ndsbGfxPresent(int screen) { gfxPresent(screen); }
 int ndsbGfxFontCount(void) { return GFX_FONT_COUNT; }
 void ndsbSound(int sfx) { sfxPlay(sfx); }
+unsigned ndsbBattery(void) { return pmGetBatteryState(); }
 int ndsbSystemLanguage(void) { return g_envUserSettings->config.language; }
 
 int ndsbQrTranscribe(const uint8_t *data, size_t len, bool binary, int zoneModules,

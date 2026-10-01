@@ -299,6 +299,15 @@ static MP_DEFINE_CONST_FUN_OBJ_1(nds_gfx_font_metrics_obj, nds_gfx_font_metrics)
 
 /* system_language(): the console's language setting (0 Japanese, 1 English,
  * 2 French, 3 German, 4 Italian, 5 Spanish, 6 Chinese, 7 Korean) */
+/* battery(): (level 0-15, charging) */
+static mp_obj_t nds_battery(void)
+{
+	unsigned state = ndsbBattery();
+	mp_obj_t items[2] = {mp_obj_new_int(state & 0x7f), mp_obj_new_bool(state & 0x80)};
+	return mp_obj_new_tuple(2, items);
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_battery_obj, nds_battery);
+
 static mp_obj_t nds_system_language(void)
 {
 	return mp_obj_new_int(ndsbSystemLanguage());
@@ -442,6 +451,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe), MP_ROM_PTR(&nds_qr_transcribe_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe_map), MP_ROM_PTR(&nds_qr_transcribe_map_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_draw), MP_ROM_PTR(&nds_qr_draw_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_battery), MP_ROM_PTR(&nds_battery_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_decode), MP_ROM_PTR(&nds_camera_decode_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_grab), MP_ROM_PTR(&nds_camera_grab_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_running), MP_ROM_PTR(&nds_camera_running_obj) },

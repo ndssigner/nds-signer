@@ -249,6 +249,13 @@ def mic_take(buf):
     return (len(buf), 300 + (n * 997) % 3000)
 
 
+battery_state = (15, False)  # (level 0-15, charging), set by tests
+
+
+def battery():
+    return battery_state
+
+
 def camera_running():
     return _camera_on
 

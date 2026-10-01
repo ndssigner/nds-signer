@@ -400,18 +400,51 @@ def network_badge(always=False, draw=True):
     return w
 
 
+LOW_BATTERY_LEVEL = 3  # DSi levels 0-15; DS mode reports only 3 (low) or 15
+
+
+def battery_low():
+    """True when the battery is low and the console is not charging."""
+    level, charging = nds.battery()
+    return level <= LOW_BATTERY_LEVEL and not charging
+
+
+def low_battery_blocks():
+    """A warning line for screens before signing or showing secrets."""
+    if not battery_low():
+        return []
+    return [("space", 6), ("status", "error", _("Low battery: plug in the charger"))]
+
+
+def battery_badge(draw=True):
+    """A red battery in the top-left corner while the battery is low.
+    Returns its width (0 if not shown), so the title can make room."""
+    if not battery_low():
+        return 0
+    if draw:
+        from seedsigner.gui.components import GUIConstants as GC
+        red = _rgb(GC.ERROR_COLOR)
+        nds.gfx_frame(TOP, 6, 9, 20, 11, red, 2, 1)       # body
+        nds.gfx_rect(TOP, 26, 12, 2, 5, red)               # terminal
+        nds.gfx_rect(TOP, 8, 11, 4, 7, red)                # what is left
+    return 28
+
+
 def _title(title, network_always=False):
-    """The title, centred, or left of the network badge when there is one."""
+    """The title, centred, or between the low battery icon and the network
+    badge when they are shown."""
     t = theme()
     badge = network_badge(network_always, draw=False)
+    left = battery_badge(draw=False)
     if title:
         room = GFX_W - (badge + 12 if badge else 0)
         w = nds.gfx_text_width(title, nds.FONT_TITLE)
-        x = (GFX_W - w) // 2
+        x = max((GFX_W - w) // 2, left + 4 if left else 0)
         if badge and x + w > room:
-            x = max(4, room - w)
+            x = max(left + 4 if left else 4, room - w)
         nds.gfx_text(TOP, x, TITLE_Y, title, nds.FONT_TITLE, t["body"], room - x)
     network_badge(network_always)
+    battery_badge()
 
 
 def top_blocks(title, blocks, network_always=False):

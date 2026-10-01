@@ -12,7 +12,7 @@ for p in $PAYLOADS; do
 	build/runflow.sh -X heapsize=32M menu_crawl.py "$p" --gallery=/source/build/gallery 2>&1 | grep "^crawl" | cut -c1-70
 done
 for m in preloaded typed seedqr passphrase settings xpub address address_foreign backup \
-		transcribe transcribe_compact explorer dice final_word sound language scan_intro camera_seed scribble_mic; do
+		transcribe transcribe_compact explorer dice final_word sound language scan_intro camera_seed scribble_mic battery; do
 	build/runflow.sh flow_check.py /source/tests/vectors $m --gallery=/source/build/gallery 2>&1 \
 		| grep -E "^(ok|FAIL)" | cut -c1-60
 done

@@ -161,3 +161,6 @@ msgstr "Sigue garabateando"
 
 msgid "Make some noise"
 msgstr "Haz algo de ruido"
+
+msgid "Low battery: plug in the charger"
+msgstr "Batería baja: conecta el cargador"

@@ -624,6 +624,46 @@ def run_scribble_mic_flow():
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_battery_flow(prefix):
+    """Seeds -> Backup seed -> View seed words with a low battery: the red
+    battery icon is in the title bar and the warning before the words says
+    to plug in the charger; while charging, neither is shown."""
+    from seedsigner.models.seed import Seed
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
+    controller.storage.finalize_pending_seed()
+    seen = {}
+
+    def look(name):
+        def call():
+            top = "".join(op[3] for op in nds._dl[0] if op[0] == "text")
+            icon = any(op[0] == "frame" and op[1:3] == (6, 9) for op in nds._dl[0])
+            seen[name] = ("Low battery" in top, icon)
+        return call
+
+    def charging():
+        nds.battery_state = (3, True)
+
+    def check():
+        ok = seen.get("low") == (True, True) and seen.get("charging") == (False, False)
+        RESULT["battery"] = ok
+        print("ok  " if ok else "FAIL", "battery flow: low %s, charging %s" % (
+            seen.get("low"), seen.get("charging")))
+
+    nds.battery_state = (3, False)
+    events = []
+    for label in ("Seeds", "8b218e81", "Backup seed", "View seed words"):
+        events += [("call", dump), ("tap_label", label), ("key", 0)]
+    events += [("wait", 2), ("call", dump), ("call", look("low")), ("call", charging),
+               ("key", nds.KEY_B), ("wait", 2), ("tap_label", "View seed words"), ("key", 0),
+               ("wait", 2), ("call", dump), ("call", look("charging")), ("call", check),
+               ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
 def run_language_flow():
     """A console set to Spanish starts in Spanish (SeedSigner's translation);
     Settings > Language > English switches back."""
@@ -701,6 +741,8 @@ elif MODE == "language":
     run_language_flow()
 elif MODE == "sound":
     run_sound_flow()
+elif MODE == "battery":
+    run_battery_flow("psbt_base64_singlesig")
 elif MODE == "scribble_mic":
     run_scribble_mic_flow()
 elif MODE == "camera_seed":

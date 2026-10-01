@@ -277,9 +277,15 @@ class WarningScreen(LargeIconStatusScreen):
 
 
 class DireWarningScreen(WarningScreen):
+    """Shown before secrets (seed words, SeedQR): also warns when the battery
+    is low, as the console could switch off while they are copied."""
+
     def default_status(self):
         GC, Icons = _gc()
         return Icons.WARNING, GC.DIRE_WARNING_COLOR
+
+    def top_blocks(self):
+        return super().top_blocks() + nds_ui.low_battery_blocks()
 
 
 class ErrorScreen(WarningScreen):

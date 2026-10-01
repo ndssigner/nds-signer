@@ -93,6 +93,8 @@ int ndsbGfxFontCount(void);
  * 0 Japanese, 1 English, 2 French, 3 German, 4 Italian, 5 Spanish,
  * 6 Chinese, 7 Korean */
 int ndsbSystemLanguage(void);
+/* pmGetBatteryState(): level 0-15 in bits 0-6, bit 7 = charging */
+unsigned ndsbBattery(void);
 
 /* UI feedback sound (arm9/include/sfx.h ids) */
 void ndsbSound(int sfx);
