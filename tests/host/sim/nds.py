@@ -6,6 +6,21 @@
 #   import nds
 #   nds.sim_script([("tap_label", "Scan"), ("camera", b"cHNidP8..."), ...])
 #   nds.sim_dump()   # prints both text screens
+import builtins
+
+# A DS has no /proc (SeedSigner reads the Pi's serial number from
+# /proc/cpuinfo and must cope with its absence): hide the host's.
+_host_open = builtins.open
+
+
+def _open(path, *args, **kwargs):
+    if isinstance(path, str) and path.startswith("/proc/"):
+        raise OSError(2, "no /proc on a DS")
+    return _host_open(path, *args, **kwargs)
+
+
+builtins.open = _open
+
 COLS = 32
 ROWS = 24
 

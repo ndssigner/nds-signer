@@ -65,6 +65,26 @@ def _language_options():
     return [locale for locale, _name in options]
 
 
+def _logging_keywords():
+    """micropython-lib's logging takes no keyword arguments; SeedSigner passes
+    CPython's exc_info= (e.g. logger.info(repr(e), exc_info=True) when
+    /proc/cpuinfo, which a DS does not have, cannot be read). Accept and
+    ignore exc_info, stack_info, stacklevel and extra."""
+    import logging
+    if getattr(logging, "_nds_keywords", False):
+        return
+
+    def tolerant(method):
+        def call(self, msg, *args, **kwargs):
+            return method(self, msg, *args)
+        return call
+
+    for name in ("debug", "info", "warning", "error", "critical"):
+        setattr(logging.Logger, name, tolerant(getattr(logging.Logger, name)))
+    logging._nds_keywords = True
+
+
+_logging_keywords()
 _register_settings()
 AVAILABLE_LOCALES = _language_options()
 
