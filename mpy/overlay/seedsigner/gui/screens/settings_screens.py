@@ -46,7 +46,7 @@ class VersionScreen(_InfoScreen):
 
 
 # NDS-Signer's donation addresses (also in README.md and docs/es/LEEME.md)
-DONATE_ONCHAIN = "bc1pejkndc4ler9an5tgavxtrcz2r0c6uvhet0tzvjp4apqmzch0cv9qlvlrgj"
+DONATE_ONCHAIN = "bc1qx5snc0wlc8cg9gwxhyx27y6pkru8rnngyq7uja"
 DONATE_LIGHTNING = "ndssigner@coinos.io"
 
 
