@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0  # tags, so a release build names its version
 
       - name: Builder image (devkitARM, pinned by digest)
         run: docker build -t nds-signer-builder .

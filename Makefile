@@ -17,9 +17,14 @@ $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>dev
 endif
 
 export TARGET := nds-signer
-# Version string for screens and reports (git inside the builder container
-# sees a repo owned by another user, hence safe.directory)
-export NDS_VERSION := $(shell git -c safe.directory='*' describe --tags --always --dirty 2>/dev/null)
+# Version string for screens and reports, the same in any clone (full,
+# shallow, with or without tags), so the build stays reproducible: a release
+# tag (v*) when building exactly that tag, else dev-<12 hex of the commit>;
+# -dirty with uncommitted changes. (git inside the builder container sees a
+# repo owned by another user, hence safe.directory.)
+GIT := git -c safe.directory='*'
+export NDS_VERSION := $(shell $(GIT) describe --tags --exact-match --match 'v*' 2>/dev/null || \
+	echo dev-$$($(GIT) rev-parse HEAD 2>/dev/null | cut -c1-12))$(shell $(GIT) diff --quiet HEAD -- 2>/dev/null || echo -dirty)
 export TOPDIR := $(CURDIR)
 
 # Banner text shown by TWiLight Menu++ / the DSi menu: just the name (the
