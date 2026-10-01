@@ -22,10 +22,10 @@ export TARGET := nds-signer
 export NDS_VERSION := $(shell git -c safe.directory='*' describe --tags --always --dirty 2>/dev/null)
 export TOPDIR := $(CURDIR)
 
-# Banner text shown by TWiLight Menu++ / the DSi menu
+# Banner text shown by TWiLight Menu++ / the DSi menu: just the name (the
+# console's menu need not say what the app is for). The other two lines are
+# a space: left empty, ndstool would fill in its own text.
 GAME_TITLE     := NDS-Signer
-GAME_SUBTITLE1 := Air-gapped Bitcoin PSBT signer
-GAME_SUBTITLE2 := github.com/nds-signer
 GAME_ICON      := build/generated/icon.bmp
 
 include $(DEVKITARM)/ds_rules
@@ -66,7 +66,7 @@ $(GAME_ICON): tools/make_icon.py third_party/seedsigner/src/seedsigner/resources
 
 $(TARGET).nds: arm7/$(TARGET).elf arm9/$(TARGET).elf $(GAME_ICON)
 	ndstool -c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
-	-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
+	-b $(GAME_ICON) "$(GAME_TITLE); ; "
 	@echo built ... $(notdir $@)
 
 arm7/$(TARGET).elf:
