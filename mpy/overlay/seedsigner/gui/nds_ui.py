@@ -326,6 +326,15 @@ def _layout(blocks, width):
                 _address_rows(rows, block[1], width)
         elif kind == "status":
             _status_row(rows, block[1], block[2], width)
+        elif kind == "bar":  # ("bar", label, fraction 0..1[, colour]): a progress bar
+            def draw(y, label=block[1], frac=block[2], color=block[3] if len(block) > 3 else None):
+                nds.gfx_text(TOP, MARGIN + 8, y, label, nds.FONT_BODY, t["label"], 96)
+                x0, w = MARGIN + 110, GFX_W - 2 * MARGIN - 118
+                nds.gfx_rect(TOP, x0, y + 6, w, 6, t["inactive"], 3)
+                fill = int(w * min(max(frac, 0), 1))
+                if fill:
+                    nds.gfx_rect(TOP, x0, y + 6, max(fill, 6), 6, color_value(color, t["accent"]), 3)
+            rows.append((nds.gfx_font_metrics(nds.FONT_BODY)[1] + 4, draw))
         elif kind == "qr":  # ("qr", text, px[, caption]): a QR code in a px x px square
             def draw(y, text=block[1], px=block[2], caption=block[3] if len(block) > 3 else ""):
                 x = (GFX_W - px) // 2

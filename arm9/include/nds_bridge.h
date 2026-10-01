@@ -44,6 +44,10 @@ uint32_t ndsbTicksMs(void);
 /* Camera / QR scanning (see qr_scanner.h) */
 bool ndsbCameraInit(void);
 bool ndsbCameraStart(bool inner);
+/* see mic_entropy.h */
+bool ndsbMicStart(void);
+void ndsbMicStop(void);
+size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak);
 /* see scannerGrab(): 0 no new frame, 1 frame copied, 2 flat frame copied */
 int ndsbCameraGrab(uint8_t *dst, size_t len);
 size_t ndsbCameraFrameBytes(void);

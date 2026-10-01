@@ -14,6 +14,7 @@
 #include "camera_pxi.h"
 #include "gfx.h"
 #include "qr_display.h"
+#include "mic_entropy.h"
 #include "qr_scanner.h"
 #include "ui.h"
 #include "wipe.h"
@@ -39,6 +40,7 @@ void wipeAndPowerOff(void)
 	gfxClear(GFX_BOTTOM, 0);
 
 	scannerWipe();
+	micEntropyStop();
 	qrDisplayWipe();
 	if (g_mpyHeap)
 		secureZero(g_mpyHeap, g_mpyHeapSize);

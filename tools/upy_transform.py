@@ -170,6 +170,34 @@ IMPORT_REPLACEMENTS = {
 }
 
 
+# rel path -> [(upstream text, replacement)]: NDS-Signer's additions to
+# upstream code. Each upstream text must occur exactly once, so an upstream
+# change fails the build instead of silently dropping the addition.
+SOURCE_PATCHES = {
+    # Tools: NDS-Signer's own new seed tool (views/nds_entropy_views.py)
+    "seedsigner/views/tools_views.py": [
+        ("        button_data = [self.IMAGE, self.DICE, self.KEYBOARD, self.ADDRESS_EXPLORER, "
+         "self.VERIFY_ADDRESS]\n",
+         "        from seedsigner.views.nds_entropy_views import SCRIBBLE_MIC, ToolsScribbleMicEntropyView\n"
+         "        button_data = [self.IMAGE, self.DICE, SCRIBBLE_MIC, self.KEYBOARD, "
+         "self.ADDRESS_EXPLORER, self.VERIFY_ADDRESS]\n"),
+        ("        elif button_data[selected_menu_num] == self.DICE:\n",
+         "        elif button_data[selected_menu_num] == SCRIBBLE_MIC:\n"
+         "            return Destination(ToolsScribbleMicEntropyView)\n\n"
+         "        elif button_data[selected_menu_num] == self.DICE:\n"),
+    ],
+}
+
+
+def apply_source_patches(rel, text):
+    for old, new in SOURCE_PATCHES.get(rel, []):
+        if text.count(old) != 1:
+            sys.exit("%s: upstream text to patch found %d times (expected once):\n%s"
+                     % (rel, text.count(old), old))
+        text = text.replace(old, new)
+    return text
+
+
 # str methods missing in MicroPython -> function in nds_strcompat
 STR_METHODS = {"zfill": "_nds_zfill"}
 
@@ -233,7 +261,7 @@ ORDERED_DICT_MODULES = {
 
 def transform(path: pathlib.Path, rel: str, ordered_dicts=False, rewrite_new=True) -> str:
     ordered_dicts = ordered_dicts or rel in ORDERED_DICT_MODULES
-    tree = ast.parse(path.read_text(), filename=str(path))
+    tree = ast.parse(apply_source_patches(rel, path.read_text()), filename=str(path))
     if rel in IMPORT_REPLACEMENTS:
         tree = ImportReplacer(IMPORT_REPLACEMENTS[rel]).visit(tree)
     tree = NameReplacer().visit(tree)

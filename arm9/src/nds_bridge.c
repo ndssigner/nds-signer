@@ -15,6 +15,7 @@
 #include "qr_scanner.h"
 #include "ui.h"
 #include "wipe.h"
+#include "mic_entropy.h"
 
 void ndsbPrint(int screen, int row, int col, const char *text, size_t len)
 {
@@ -93,6 +94,10 @@ int ndsbCameraGrab(uint8_t *dst, size_t len)
 {
 	return scannerGrab(dst, len);
 }
+
+bool ndsbMicStart(void) { return micEntropyStart(); }
+void ndsbMicStop(void) { micEntropyStop(); }
+size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak) { return micEntropyTake(dst, len, peak); }
 
 bool ndsbCameraRunning(void)
 {

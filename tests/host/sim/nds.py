@@ -211,6 +211,44 @@ def camera_grab(buf):
     return 1
 
 
+MIC_BUFFER_BYTES = 4096 * 2
+mic_on = False
+mic_buffers = [0]     # buffers handed out by mic_take, for tests
+sim_mic_silent = 0    # the next n buffers are flat (a dead microphone)
+_mic_frames = [0]
+
+
+def mic_start():
+    global mic_on
+    mic_on = True
+    return True
+
+
+def mic_stop():
+    global mic_on
+    mic_on = False
+
+
+def mic_take(buf):
+    """A new noise buffer every 15 frames (1/4 s at 60 fps) while on."""
+    global sim_mic_silent
+    if not mic_on:
+        return (0, 0)
+    _mic_frames[0] += 1
+    if _mic_frames[0] % 15:
+        return (0, 0)
+    mic_buffers[0] += 1
+    if sim_mic_silent:
+        sim_mic_silent -= 1
+        for i in range(len(buf)):
+            buf[i] = 0
+        return (len(buf), 0)
+    n = mic_buffers[0]
+    for i in range(0, len(buf), 64):
+        buf[i] = (n * 37 + i * 11) & 255
+    return (len(buf), 300 + (n * 997) % 3000)
+
+
 def camera_running():
     return _camera_on
 

@@ -125,3 +125,21 @@ msgstr "Hacer la foto"
 
 msgid "Collecting entropy frames"
 msgstr "Recogiendo imágenes de entropía"
+
+msgid "New seed (scribble + mic)"
+msgstr "Nueva semilla (garabato+mic)"
+
+msgid "Scribble on the bottom screen and make some noise: talk, whistle or tap the console."
+msgstr "Garabatea en la pantalla de abajo y haz ruido: habla, silba o da golpecitos a la consola."
+
+msgid "Stylus"
+msgstr "Lápiz"
+
+msgid "Microphone"
+msgstr "Micrófono"
+
+msgid "Sound level"
+msgstr "Nivel de sonido"
+
+msgid "Microphone not available"
+msgstr "Micrófono no disponible"

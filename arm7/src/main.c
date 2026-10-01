@@ -33,10 +33,12 @@
  *
  * Security: compared with the default calico core, this ARM7 deliberately does
  * NOT start the wireless manager (wlmgr), the block-device driver for the
- * SD card / NAND (blk), the microphone or maxmod. Their code is not even
- * linked, so the ARM9 has no way to ask for network or storage access, or to
- * listen. The RTC is not needed either. The sound driver is started (output
- * only): optional UI feedback sounds, see arm9/src/sfx.c.
+ * SD card / NAND (blk) or maxmod. Their code is not even linked, so the ARM9
+ * has no way to ask for network or storage access. The RTC is not needed
+ * either. The sound driver is started for optional UI feedback sounds (see
+ * arm9/src/sfx.c), and the microphone driver for one screen only: "New seed
+ * (scribble + mic)" records noise as entropy (arm9/src/mic_entropy.c); the
+ * microphone and its amplifier are off at any other time.
  *
  * On top of that, wirelessOff() powers the wireless hardware down at start
  * (the launcher may leave it on): both the DS (Mitsumi) and the DSi
@@ -84,8 +86,13 @@ int main(void)
 	touchInit();
 	touchStartServer(80, MAIN_THREAD_PRIO);
 
-	// Sound driver (output only; handles the DSi audio codec)
+	// Sound driver (handles the DSi audio codec)
 	soundStartServer(MAIN_THREAD_PRIO - 0x10);
+
+	// Microphone driver: idle (microphone and amplifier off) except while the
+	// "New seed (scribble + mic)" screen records noise as entropy
+	// (arm9/src/mic_entropy.c)
+	micStartServer(MAIN_THREAD_PRIO - 0x18);
 
 	// DSi camera (I2C) server
 	cameraServerStart(MAIN_THREAD_PRIO);

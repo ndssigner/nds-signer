@@ -582,6 +582,47 @@ def run_camera_seed_flow():
     Controller.get_instance().start(initial_destination=Destination(MainMenuView))
 
 
+def run_scribble_mic_flow():
+    """Tools -> New seed (scribble + mic): Done stays disabled until there are
+    256 distinct stylus points and 16 non-flat microphone buffers (three
+    flat ones are skipped); then 12 words: a valid new mnemonic, and the
+    microphone is off again."""
+    from seedsigner.views.view import Destination, MainMenuView
+    state = {}
+
+    def silent():  # a dead microphone at first: those buffers must not count
+        nds.sim_mic_silent = 3
+
+    def too_early():  # Done before enough entropy: nothing happens
+        state["early"] = nds.mic_on
+
+    def check():
+        from seedsigner.models.seed import Seed
+        seed = Controller.get_instance().storage.pending_seed
+        words = seed.mnemonic_list if seed else []
+        try:
+            valid = len(words) == 12 and bool(Seed(words))
+        except Exception:
+            valid = False
+        ok = state.get("early") and valid and not nds.mic_on
+        RESULT["scribble_mic"] = ok
+        print("ok  " if ok else "FAIL", "scribble + mic flow: Done waits %s, 12 valid words %s, "
+              "%d mic buffers, mic off %s" % (state.get("early"), valid, nds.mic_buffers[0],
+                                             not nds.mic_on))
+
+    scribble = []
+    for i in range(260):  # distinct points over the canvas
+        scribble += [("tap", 8 + (i * 37) % 240, 8 + (i * 11) % 150), ("wait", 1)]
+    events = [("call", dump), ("tap_label", "Tools"), ("key", 0), ("call", silent),
+              ("tap_label", "New seed (scribble + mic)"), ("key", 0), ("wait", 2), ("call", dump),
+              ("tap", 220, 178), ("wait", 4), ("key", 0), ("call", too_early)] + scribble + [
+              ("wait", 30), ("call", dump), ("tap", 220, 178), ("wait", 4), ("key", 0),
+              ("wait", 2), ("call", dump), ("tap_label", "12 words"), ("key", 0), ("wait", 4),
+              ("call", dump), ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_language_flow():
     """A console set to Spanish starts in Spanish (SeedSigner's translation);
     Settings > Language > English switches back."""
@@ -659,6 +700,8 @@ elif MODE == "language":
     run_language_flow()
 elif MODE == "sound":
     run_sound_flow()
+elif MODE == "scribble_mic":
+    run_scribble_mic_flow()
 elif MODE == "camera_seed":
     run_camera_seed_flow()
 elif MODE == "scan_intro":

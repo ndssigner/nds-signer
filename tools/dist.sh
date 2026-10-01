@@ -23,5 +23,6 @@ cp docs/guia-menus-nuevos.md dist/LEEME-5-menus-nuevos.md
 cp docs/guia-mejoras-1.md dist/LEEME-6-mejoras.md
 cp docs/guia-tapa.md dist/LEEME-7-tapa.md
 cp docs/guia-semilla-camara.md dist/LEEME-8-semilla-camara.md
+cp docs/guia-semilla-garabato.md dist/LEEME-9-semilla-garabato.md
 (cd dist/para-la-dsi && shasum -a 256 *.nds > SHA256.txt)
 echo "dist/ listo:"; find dist -type f | sort

@@ -106,6 +106,104 @@ class ToolsImageEntropyFinalImageScreen(BaseScreen):
         return RET_CODE__BACK_BUTTON if choice == 1 else None
 
 
+class ToolsScribbleMicEntropyScreen(BaseScreen):
+    """NDS-Signer's own new seed tool (views/nds_entropy_views.py): scribble
+    on the bottom screen while the microphone records. Every stylus reading
+    (position and time) and every microphone buffer goes into one SHA-256.
+    Done is enabled once there are TOUCH_POINTS distinct stylus positions
+    and MIC_BUFFERS microphone buffers that are not flat (a dead microphone
+    gives identical samples). Returns the 32-byte digest, or
+    RET_CODE__BACK_BUTTON. The microphone is on only on this screen."""
+
+    TOUCH_POINTS = 256
+    MIC_BUFFERS = 16       # 1/4 s each
+    LEVEL_FULL = 4000      # sample magnitude shown as a full level bar
+    BUTTON_W = 80
+
+    def _top(self, points, buffers, level):
+        nds_ui.top_blocks(_("New seed"), [
+            ("text", _("Scribble on the bottom screen and make some noise: talk, whistle or "
+                       "tap the console.")), ("space", 10),
+            ("bar", _("Stylus"), points / self.TOUCH_POINTS),
+            ("bar", _("Microphone"), buffers / self.MIC_BUFFERS),
+            ("bar", _("Sound level"), level / self.LEVEL_FULL, nds_ui.theme()["label"])])
+
+    def _buttons(self, complete):
+        t = nds_ui.theme()
+        nds.gfx_rect(nds_ui.BOTTOM, 0, nds_ui.NAV_Y - 2, nds_ui.GFX_W, nds_ui.GFX_H - nds_ui.NAV_Y + 2,
+                     t["bg"])
+        nds_ui.button(nds_ui.BOTTOM, nds_ui.MARGIN, nds_ui.NAV_Y, self.BUTTON_W, nds_ui.NAV_H,
+                      _("< Back"), font=nds.FONT_BODY_BOLD)
+        nds_ui.button(nds_ui.BOTTOM, nds_ui.GFX_W - nds_ui.MARGIN - self.BUTTON_W, nds_ui.NAV_Y,
+                      self.BUTTON_W, nds_ui.NAV_H, _("Done"), selected=complete, enabled=complete,
+                      font=nds.FONT_BODY_BOLD)
+
+    def _render(self):
+        self._top(0, 0, 0)
+
+    def _run(self):
+        import hashlib
+        import struct
+
+        t = nds_ui.theme()
+        nds.bottom_clear()
+        nds.gfx_clear(nds_ui.BOTTOM, t["bg"])
+        canvas_h = nds_ui.NAV_Y - 4
+        nds.gfx_frame(nds_ui.BOTTOM, 0, 0, nds_ui.GFX_W, canvas_h, t["inactive"], 6, 1)
+        self._buttons(False)
+        nds.gfx_present(nds_ui.BOTTOM)
+        if not nds.mic_start():
+            raise Exception(_("Microphone not available"))
+        h = hashlib.sha256(b"NDS-Signer scribble + mic entropy v1")
+        buf = bytearray(nds.MIC_BUFFER_BYTES)
+        points, buffers, level, last = set(), 0, 0, None
+        shown = (0, 0, 0)
+        complete = False
+        taps = nds_ui.TapTracker()
+        try:
+            while True:
+                nds.frame()
+                down = nds.keys_down()
+                xy = nds.touch()
+                if xy is not None and (xy[0] or xy[1]) and xy != last:
+                    last = xy
+                    h.update(struct.pack("<HHI", xy[0], xy[1], nds.ticks_ms()))
+                    if xy[1] < canvas_h - 2 and xy not in points:
+                        points.add(xy)
+                        nds.gfx_rect(nds_ui.BOTTOM, max(1, xy[0] - 1), max(1, xy[1] - 1), 3, 3,
+                                     t["accent"], 0)
+                        nds.gfx_present(nds_ui.BOTTOM)
+                n, peak = nds.mic_take(buf)
+                if n:
+                    h.update(buf)
+                    if peak:
+                        buffers += 1
+                    level = peak
+                progress = (min(len(points), self.TOUCH_POINTS), min(buffers, self.MIC_BUFFERS),
+                            level)
+                if progress != shown:
+                    shown = progress
+                    self._top(*progress)
+                if not complete and len(points) >= self.TOUCH_POINTS and buffers >= self.MIC_BUFFERS:
+                    complete = True
+                    nds_ui.sound("success")
+                    self._buttons(True)
+                    nds.gfx_present(nds_ui.BOTTOM)
+                tap = taps.update()
+                on_nav = tap is not None and tap[1] >= nds_ui.NAV_Y
+                if down & nds.KEY_B or (on_nav and tap[0] < nds_ui.MARGIN + self.BUTTON_W):
+                    nds_ui.sound("back")
+                    return RET_CODE__BACK_BUTTON
+                done = down & nds.KEY_A or (on_nav and tap[0] >= nds_ui.GFX_W - nds_ui.MARGIN
+                                            - self.BUTTON_W)
+                if done and complete:
+                    nds_ui.sound("click")
+                    h.update(struct.pack("<I", nds.ticks_ms()))
+                    return h.digest()
+        finally:
+            nds.mic_stop()
+
+
 class ToolsAddressExplorerAddressTypeScreen(ButtonListScreen):
     """Like upstream: fingerprint and derivation, or the wallet descriptor."""
 

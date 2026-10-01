@@ -114,6 +114,34 @@ static mp_obj_t nds_camera_grab(mp_obj_t buf_in)
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(nds_camera_grab_obj, nds_camera_grab);
 
+/* mic_start() / mic_stop(): microphone noise for entropy (mic_entropy.h) */
+static mp_obj_t nds_mic_start(void)
+{
+	return mp_obj_new_bool(ndsbMicStart());
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_mic_start_obj, nds_mic_start);
+
+static mp_obj_t nds_mic_stop(void)
+{
+	ndsbMicStop();
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_mic_stop_obj, nds_mic_stop);
+
+/* mic_take(buf): the last recorded buffer (16-bit samples, MIC_BUFFER_BYTES)
+ * into `buf`, once: (bytes copied, peak magnitude); (0, 0) if none yet,
+ * peak 0 for a flat buffer */
+static mp_obj_t nds_mic_take(mp_obj_t buf_in)
+{
+	mp_buffer_info_t buf;
+	mp_get_buffer_raise(buf_in, &buf, MP_BUFFER_WRITE);
+	int peak = 0;
+	size_t n = ndsbMicTake(buf.buf, buf.len, &peak);
+	mp_obj_t items[2] = {mp_obj_new_int(n), mp_obj_new_int(peak)};
+	return mp_obj_new_tuple(2, items);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(nds_mic_take_obj, nds_mic_take);
+
 /* camera_running(): True between camera_start() and camera_stop() */
 static mp_obj_t nds_camera_running(void)
 {
@@ -417,6 +445,10 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_decode), MP_ROM_PTR(&nds_camera_decode_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_grab), MP_ROM_PTR(&nds_camera_grab_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_running), MP_ROM_PTR(&nds_camera_running_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_mic_start), MP_ROM_PTR(&nds_mic_start_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_mic_stop), MP_ROM_PTR(&nds_mic_stop_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_mic_take), MP_ROM_PTR(&nds_mic_take_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_MIC_BUFFER_BYTES), MP_ROM_INT(4096 * 2) },
 	{ MP_ROM_QSTR(MP_QSTR_frame_show), MP_ROM_PTR(&nds_frame_show_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_CAMERA_FRAME_BYTES), MP_ROM_INT(640 * 480 * 2) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
