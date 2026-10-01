@@ -1,3 +1,8 @@
+> **Historical document.** The brief NDS-Signer started from (2026-09-26).
+> The plan changed: SeedSigner is run unmodified through MicroPython instead
+> of being ported to C, and only the DSi is supported. See
+> [how-it-was-built.md](../how-it-was-built.md).
+
 # Project Name: NDS-Signer (Air-Gapped Bitcoin PSBT Signer for Nintendo DS/DSi/3DS)
 
 ## 1. Project Overview

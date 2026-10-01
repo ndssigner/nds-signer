@@ -1,7 +1,9 @@
 # NDS-Signer architecture: reusing SeedSigner
 
-Status: **proposed** (2026-09-26). The MicroPython spike (end of this
-document) succeeded in the emulator; pending validation on real hardware.
+Status: **implemented.** Proposed on 2026-09-26; the MicroPython spike (end
+of this document) succeeded in the emulator and then on a real DSi XL, and
+NDS-Signer v0.1.0-alpha is built this way. Sections below keep the reasoning
+as it was written; [how-it-was-built.md](how-it-was-built.md) tells the rest.
 
 ## Goal
 
@@ -194,4 +196,6 @@ Findings:
   it for key generation helpers, and NDS-Signer must never use a PRNG.
 - libsecp256k1 upgraded to v0.8.0 (from the 2021 commit secp256k1-embedded
   used); signatures unchanged, library tests pass in 32-bit mode.
-- Follow-up: confirm timings on hardware.
+- Timings on a real DSi XL (2026-09-26): PBKDF2 418 ms, BIP-32 derivation
+  301 ms, signing 70 ms, faster than in melonDS
+  ([history/hardware-reports](history/hardware-reports/)).

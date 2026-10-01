@@ -3,7 +3,7 @@
 Setup: Sparrow 2.5.5 (Homebrew cask) on the Mac, Signet, public server; a
 watch-only wallet from the test seed's account xpub (fingerprint 8b218e81,
 m/84'/1'/0'); coins from a Signet faucet. Signing on the real DSi XL.
-Guide: docs/guia-sparrow-signet.md.
+Guide: docs/es/guia-sparrow-signet.md.
 
 | Step | Result |
 | :--- | :--- |
