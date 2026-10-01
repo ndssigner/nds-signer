@@ -412,10 +412,22 @@ def run_dice_flow():
             if len(parts) == 2 and parts[0].endswith(".") and parts[0][:-1].isdigit():
                 shown.append(parts[1])
 
+    # every key tapped is shown pressed while the stylus is on it
+    from seedsigner.gui import nds_keyboard
+    pressed = []
+    _orig_show = nds_keyboard.KeyTracker._show
+
+    def _show(self, key):
+        if key is not None and key is not self.pressed:
+            pressed.append(key.label)
+        _orig_show(self, key)
+    nds_keyboard.KeyTracker._show = _show
+
     def check():
-        ok = shown == expected
+        ok = shown == expected and "".join(pressed) == rolls
         RESULT["dice"] = ok
-        print("ok  " if ok else "FAIL", "dice flow: 50 rolls ->", " ".join(shown[:3]), "... (%d words)" % len(shown))
+        print("ok  " if ok else "FAIL", "dice flow: 50 rolls ->", " ".join(shown[:3]),
+              "... (%d words), %d keys shown pressed" % (len(shown), len(pressed)))
 
     events = []
     for label in ("Tools", "New seed (dice)", "12 words (50 rolls)"):

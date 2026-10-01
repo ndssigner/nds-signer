@@ -72,6 +72,10 @@ bool cameraActivate(Camera cam)
 		return false;
 
 	s_activeCamera = cam;
+	/* the mode is per sensor: send it to the one just activated (the inner
+	 * camera would otherwise stream small preview frames until the scanner's
+	 * watchdog sends it) */
+	cameraForgetMode();
 	return true;
 }
 

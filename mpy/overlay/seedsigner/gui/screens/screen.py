@@ -364,7 +364,7 @@ class KeyboardScreen(BaseTopNavScreen):
     def _run(self):
         from seedsigner.gui import nds_keyboard
         self._draw()
-        taps = nds_ui.TapTracker()
+        taps = nds_keyboard.KeyTracker()
         while True:
             nds.frame()
             if nds.keys_down() & nds.KEY_B and self.show_back_button:

@@ -82,7 +82,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
 
     def _run(self):
         self._draw()
-        taps = nds_ui.TapTracker()
+        taps = nds_keyboard.KeyTracker()
         while True:
             nds.frame()
             tap = taps.update()
@@ -178,7 +178,7 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
 
     def _run(self):
         self._draw()
-        taps = nds_ui.TapTracker()
+        taps = nds_keyboard.KeyTracker()
         while True:
             nds.frame()
             tap = taps.update()
