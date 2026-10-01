@@ -674,9 +674,10 @@ def run_battery_flow(prefix):
 
 def run_donate_flow():
     """Settings -> Donate: the Bitcoin QR code encodes NDS-Signer's address
-    (BIP-21), a tap on Lightning shows the Lightning address; both exactly
-    as published in README.md."""
-    from seedsigner.gui.screens.settings_screens import DONATE_LIGHTNING, DONATE_ONCHAIN
+    (BIP-21), a tap on Lightning shows the Lightning address and its LNURL
+    as a QR code; all exactly as published in README.md."""
+    from seedsigner.gui.screens.settings_screens import (DONATE_LIGHTNING, DONATE_LNURL,
+                                                         DONATE_ONCHAIN)
     from seedsigner.views.view import Destination, MainMenuView
     state = {}
     readme = open("/source/README.md").read()
@@ -689,11 +690,11 @@ def run_donate_flow():
                         and DONATE_ONCHAIN in top().replace(" ", ""))
 
     def lightning():
-        state["ln"] = (nds.qr_drawn[-1:] == ["lightning:" + DONATE_LIGHTNING]
+        state["ln"] = (nds.qr_drawn[-1:] == ["LIGHTNING:" + DONATE_LNURL]
                        and DONATE_LIGHTNING in top())
 
     def check():
-        published = DONATE_ONCHAIN in readme and DONATE_LIGHTNING in readme
+        published = all(a in readme for a in (DONATE_ONCHAIN, DONATE_LIGHTNING, DONATE_LNURL))
         ok = state.get("btc") and state.get("ln") and published
         RESULT["donate"] = ok
         print("ok  " if ok else "FAIL", "donate flow: bitcoin %s, lightning %s, same as README %s"

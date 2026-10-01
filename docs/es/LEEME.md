@@ -69,6 +69,10 @@ idioma):
    pone en `SHA256.txt`.
 3. Copia `nds-signer.nds` a la SD y ábrelo desde Unlaunch o TWiLight Menu++.
 
+> **Las versiones oficiales solo se publican aquí, en GitHub**, con su huella
+> SHA-256, y la compilación es reproducible. Una ROM de cualquier otro sitio,
+> o una "actualización" anunciada en otro sitio, no es de NDS-Signer.
+
 ## Guías
 
 - [Sparrow en Signet](guia-sparrow-signet.md): firmar una transacción de
@@ -87,7 +91,7 @@ siga adelante:
 
 <table>
 <tr><td align="center"><img src="../images/donate-bitcoin.png" width="180" alt="Bitcoin"><br><b>Bitcoin</b><br><code>bc1qx5snc0wlc8cg9gwxhyx27y6pkru8rnngyq7uja</code></td>
-<td align="center"><img src="../images/donate-lightning.png" width="180" alt="Lightning"><br><b>Lightning</b><br><code>ndssigner@coinos.io</code></td></tr>
+<td align="center"><img src="../images/donate-lightning.png" width="180" alt="Lightning"><br><b>Lightning</b><br><code>ndssigner@coinos.io</code><br><sub>LNURL (para carteras sin direcciones Lightning):<br><code>LNURL1DP68GURN8GHJ7CM0D9HX7UEWD9HJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKUERNWD5KWMN9WGQ8XE42</code></sub></td></tr>
 </table>
 
 Las mismas direcciones están en la aplicación (*Ajustes → Donar*).

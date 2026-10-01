@@ -48,14 +48,20 @@ class VersionScreen(_InfoScreen):
 # NDS-Signer's donation addresses (also in README.md and docs/es/LEEME.md)
 DONATE_ONCHAIN = "bc1qx5snc0wlc8cg9gwxhyx27y6pkru8rnngyq7uja"
 DONATE_LIGHTNING = "ndssigner@coinos.io"
+# the same Lightning address as an LNURL (bech32 of its LUD-16 endpoint
+# https://coinos.io/.well-known/lnurlp/ndssigner): wallets that do not know
+# Lightning addresses read LNURLs
+DONATE_LNURL = "LNURL1DP68GURN8GHJ7CM0D9HX7UEWD9HJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKUERNWD5KWMN9WGQ8XE42"
 
 
 class DonateScreen(BaseTopNavScreen):
-    """NDS-Signer's donation addresses: Bitcoin (on-chain) or Lightning, as a
-    QR code and in full on the top screen; a tap on the other button switches.
+    """NDS-Signer's donation addresses: Bitcoin (on-chain) or Lightning (the QR
+    code holds the LNURL, which more wallets read than Lightning addresses),
+    on the top screen; a tap on the other button switches.
     And a credit to SeedSigner, which NDS-Signer is built on."""
 
     QR_PX = 96
+    LNURL_QR_PX = 112  # a larger code: give it room
 
     def _method(self):
         panel = getattr(self, "_panel", None)
@@ -66,7 +72,7 @@ class DonateScreen(BaseTopNavScreen):
             # BIP-21 URI in capitals: alphanumeric mode, a smaller QR code
             return [("qr", "bitcoin:" + DONATE_ONCHAIN.upper(), self.QR_PX), ("space", 4),
                     ("address", DONATE_ONCHAIN)]
-        return [("qr", "lightning:" + DONATE_LIGHTNING, self.QR_PX), ("space", 8),
+        return [("qr", "LIGHTNING:" + DONATE_LNURL, self.LNURL_QR_PX), ("space", 8),
                 ("value", DONATE_LIGHTNING)]
 
     def _credit(self):

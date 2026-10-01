@@ -90,6 +90,10 @@ addresses, and keep your seed words offline.
 3. Copy `nds-signer.nds` to the SD card and launch it from Unlaunch or
    TWiLight Menu++ (in DSi mode).
 
+> **Official releases are published only here, on GitHub**, with their
+> SHA-256, and the build is reproducible. A ROM from anywhere else, or an
+> "update" announced anywhere else, is not NDS-Signer's.
+
 First steps with a watch-only wallet (in Spanish):
 [Sparrow on Signet](docs/es/guia-sparrow-signet.md),
 [xpub to Sparrow](docs/es/guia-xpub-sparrow.md).
@@ -145,7 +149,7 @@ NDS-Signer is free and has no funding. Donations help keep it going:
 
 <table>
 <tr><td align="center"><img src="docs/images/donate-bitcoin.png" width="180" alt="Bitcoin"><br><b>Bitcoin</b><br><code>bc1qx5snc0wlc8cg9gwxhyx27y6pkru8rnngyq7uja</code></td>
-<td align="center"><img src="docs/images/donate-lightning.png" width="180" alt="Lightning"><br><b>Lightning</b><br><code>ndssigner@coinos.io</code></td></tr>
+<td align="center"><img src="docs/images/donate-lightning.png" width="180" alt="Lightning"><br><b>Lightning</b><br><code>ndssigner@coinos.io</code><br><sub>LNURL (for wallets without Lightning addresses):<br><code>LNURL1DP68GURN8GHJ7CM0D9HX7UEWD9HJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKUERNWD5KWMN9WGQ8XE42</code></sub></td></tr>
 </table>
 
 The same addresses are in the app (*Settings → Donate*). NDS-Signer is built
