@@ -84,7 +84,8 @@ seedsigner: frozen
 	@$(DOCKER_MPY_ROM) gui_imports_check.py /source/build/gui_imports.json 2>&1 | grep -v "^WARNING\|^Set LANG"
 	$(DOCKER_MPY_ROM) seedsigner_check.py /source/tests/vectors
 	@$(DOCKER_MPY_ROM) -X heapsize=16M bytewords_check.py 2>&1 | grep -v "^WARNING\|^Set LANG"
-	@$(DOCKER_MPY_ROM) dev_scan_check.py 2>&1 | grep -E "^(ok|FAIL)|Error"
+	@# must print its "ok" line (a crash only prints the error)
+	@$(DOCKER_MPY_ROM) dev_scan_check.py 2>&1 | grep -E "^(ok|FAIL)|Error" | tee /dev/stderr | grep -q "^ok"
 	@test ! -f $(TOPDIR)/build/generated/gfx_fonts.c || \
 		python3 gfx_sim_check.py sim $(TOPDIR)/build/generated/gfx_fonts.c
 	@PYTHONPATH=$(TOPDIR)/third_party/seedsigner/src:$(TOPDIR)/mpy/frozen/hwstubs $(PYTHON) decode_qr_check.py $(TOPDIR)/tests/vectors \
@@ -93,10 +94,14 @@ seedsigner: frozen
 	@diff $(TOPDIR)/build/decode_qr.cpython.txt $(TOPDIR)/build/decode_qr.mpy.txt \
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
 	@rm -rf $(TOPDIR)/build/glyph_snaps && mkdir -p $(TOPDIR)/build/glyph_snaps
-	@for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language scan_intro camera_seed scribble_mic; do \
-		$(DOCKER_MPY_ROM) -X heapsize=6M flow_check.py /source/tests/vectors $$mode --gallery=/source/build/glyph_snaps \
-			2>/dev/null | grep -E "^(ok|FAIL)"; \
-	done
+	@# every flow must print ok lines and no FAIL (a crash prints neither)
+	@fail=; for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language scan_intro camera_seed scribble_mic; do \
+		out=$$($(DOCKER_MPY_ROM) -X heapsize=6M flow_check.py /source/tests/vectors $$mode \
+			--gallery=/source/build/glyph_snaps 2>/dev/null | grep -E "^(ok|FAIL)"); \
+		echo "$$out"; \
+		if ! echo "$$out" | grep -q "^ok" || echo "$$out" | grep -q "^FAIL"; then \
+			echo "FAIL flow $$mode"; fail=1; fi; \
+	done; test -z "$$fail"
 	@test ! -f $(TOPDIR)/build/generated/gfx_fonts.c || \
 		python3 glyph_check.py $(TOPDIR)/build/glyph_snaps $(TOPDIR)/build/generated/gfx_fonts.c
 

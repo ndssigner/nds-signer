@@ -121,12 +121,28 @@ class ToolsScribbleMicEntropyScreen(BaseScreen):
     BUTTON_W = 80
 
     def _top(self, points, buffers, level):
+        """One progress bar for both sources (each counts half), a line
+        saying what is missing, and the sound level in colour."""
+        from seedsigner.gui.components import GUIConstants as GC
+        touch = min(points / self.TOUCH_POINTS, 1)
+        mic = min(buffers / self.MIC_BUFFERS, 1)
+        if touch >= 1 and mic >= 1:
+            hint = _("Done: enough entropy collected")
+        elif touch < 1 and mic < 1:
+            hint = _("Keep scribbling and making noise")
+        elif touch < 1:
+            hint = _("Keep scribbling")
+        else:
+            hint = _("Make some noise")
+        loud = level / self.LEVEL_FULL
+        color = (GC.SUCCESS_COLOR if loud < 0.4 else GC.WARNING_COLOR if loud < 0.75
+                 else GC.ERROR_COLOR)
         nds_ui.top_blocks(_("New seed"), [
             ("text", _("Scribble on the bottom screen and make some noise: talk, whistle or "
                        "tap the console.")), ("space", 10),
-            ("bar", _("Stylus"), points / self.TOUCH_POINTS),
-            ("bar", _("Microphone"), buffers / self.MIC_BUFFERS),
-            ("bar", _("Sound level"), level / self.LEVEL_FULL, nds_ui.theme()["label"])])
+            ("bar", _("Progress"), (touch + mic) / 2),
+            ("label", hint), ("space", 6),
+            ("bar", _("Sound level"), loud, color)])
 
     def _buttons(self, complete):
         t = nds_ui.theme()

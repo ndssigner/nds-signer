@@ -18,6 +18,11 @@ native_len = [int(line.split()[2]) for line in open("/source/arm9/include/nds_br
               if line.startswith("#define NDSB_CAMERA_STATS")][0]
 assert len(nds.camera_stats()) == native_len, "sim camera_stats() differs from the native API"
 
+# straight to the camera (the scan preparation screen has its own test)
+from seedsigner.gui import SETTING__NDS_SCAN_INTRO
+from seedsigner.models.settings import Settings, SettingsConstants
+Settings.get_instance().set_value(SETTING__NDS_SCAN_INTRO, SettingsConstants.OPTION__DISABLED)
+
 parts = DATA["psbt_base64_singlesig.ur.txt"].split()
 events = []
 for p in parts:

@@ -396,7 +396,7 @@ def run_explorer_flow(prefix):
 
 
 def run_dice_flow():
-    """Tools -> New seed (dice) -> 12 words: the 50 rolls typed on the touch
+    """Tools -> New seed -> Dice -> 12 words: the 50 rolls typed on the touch
     keyboard must give the mnemonic of SeedSigner's own test vector
     (tests/test_mnemonic_generation.py, same as iancoleman.io/bip39), shown
     word by word."""
@@ -430,7 +430,7 @@ def run_dice_flow():
               "... (%d words), %d keys shown pressed" % (len(shown), len(pressed)))
 
     events = []
-    for label in ("Tools", "New seed (dice)", "12 words (50 rolls)"):
+    for label in ("Tools", "New seed", "Dice", "12 words (50 rolls)"):
         events += [("call", dump), ("tap_label", label), ("key", 0)]
     for roll in rolls:
         events += [("tap_key", roll), ("key", 0)]
@@ -546,7 +546,7 @@ def run_scan_intro_flow(prefix):
 
 
 def run_camera_seed_flow():
-    """Tools -> New seed (camera): 50 distinct frames (two flat ones skipped),
+    """Tools -> New seed -> Camera: 50 distinct frames (two flat ones skipped),
     Take photo, Accept, 12 words: a valid new 12-word mnemonic is shown, and
     the camera is off again."""
     from seedsigner.views.view import Destination, MainMenuView
@@ -573,7 +573,8 @@ def run_camera_seed_flow():
                                  not nds.camera_running()))
 
     events = [("call", dump), ("tap_label", "Tools"), ("key", 0), ("call", dump),
-              ("call", flat), ("tap_label", "New seed (camera)"), ("key", 0), ("wait", 80),
+              ("tap_label", "New seed"), ("key", 0), ("call", flat), ("tap_label", "Camera"),
+              ("key", 0), ("wait", 80),
               ("call", check_pool), ("call", dump), ("tap_label", "Take photo"), ("key", 0),
               ("wait", 6), ("call", dump), ("tap_label", "Accept"), ("key", 0), ("wait", 2),
               ("call", dump), ("tap_label", "12 words"), ("key", 0), ("wait", 4), ("call", dump),
@@ -583,7 +584,7 @@ def run_camera_seed_flow():
 
 
 def run_scribble_mic_flow():
-    """Tools -> New seed (scribble + mic): Done stays disabled until there are
+    """Tools -> New seed -> Scribble + microphone: Done stays disabled until there are
     256 distinct stylus points and 16 non-flat microphone buffers (three
     flat ones are skipped); then 12 words: a valid new mnemonic, and the
     microphone is off again."""
@@ -614,7 +615,7 @@ def run_scribble_mic_flow():
     for i in range(260):  # distinct points over the canvas
         scribble += [("tap", 8 + (i * 37) % 240, 8 + (i * 11) % 150), ("wait", 1)]
     events = [("call", dump), ("tap_label", "Tools"), ("key", 0), ("call", silent),
-              ("tap_label", "New seed (scribble + mic)"), ("key", 0), ("wait", 2), ("call", dump),
+              ("tap_label", "New seed"), ("key", 0), ("tap_label", "Scribble + microphone"), ("key", 0), ("wait", 2), ("call", dump),
               ("tap", 220, 178), ("wait", 4), ("key", 0), ("call", too_early)] + scribble + [
               ("wait", 30), ("call", dump), ("tap", 220, 178), ("wait", 4), ("key", 0),
               ("wait", 2), ("call", dump), ("tap_label", "12 words"), ("key", 0), ("wait", 4),

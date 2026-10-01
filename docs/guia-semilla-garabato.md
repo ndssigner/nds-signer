@@ -2,23 +2,25 @@
 
 Copia `dist/para-la-dsi/nds-signer.nds` a la SD (sustituye el anterior).
 
-> ⚠️ La semilla que crees en esta prueba es **solo para probar**: no le
-> envíes dinero nunca.
+> ⚠️ Las semillas que crees en esta prueba son **solo para probar**: no
+> les envíes dinero nunca.
 
-1. *Herramientas → Nueva semilla (garabato+mic)*.
-2. Arriba hay tres barras: **Lápiz**, **Micrófono** y **Nivel de sonido**.
-3. Garabatea con el lápiz por la pantalla de abajo: van saliendo puntos
-   naranjas y la barra *Lápiz* sube.
-4. A la vez, habla, silba o da golpecitos a la consola: la barra *Nivel de
-   sonido* debe moverse con el ruido, y *Micrófono* sube sola (tarda unos
-   4 segundos).
-5. Cuando las dos barras están llenas suena un aviso y **Hecho** se
-   enciende. Antes de eso no hace nada.
-6. *Hecho → 12 palabras*: salen 12 palabras nuevas. Repite: cada vez deben
+## 1 · Menú nuevo
+
+1. *Herramientas*: ahora hay un solo botón **Nueva semilla** (antes había
+   tres).
+2. Dentro: *Cámara*, *Dados* y *Garabato + micrófono*. Comprueba que
+   *Cámara* y *Dados* siguen funcionando como antes.
+
+## 2 · Garabato + micrófono
+
+1. *Herramientas → Nueva semilla → Garabato + micrófono*.
+2. Arriba hay una sola barra, **Progreso**, y debajo una frase que dice
+   qué falta: *Sigue garabateando*, *Haz algo de ruido* o las dos cosas.
+3. Garabatea por la pantalla de abajo y haz ruido (habla, silba, da
+   golpecitos). La barra *Nivel de sonido* cambia de color con el volumen:
+   verde (bajo), amarillo, rojo (alto).
+4. Con la barra *Progreso* llena suena un aviso, sale *Listo: entropía
+   suficiente* y **Hecho** se enciende.
+5. *Hecho → 12 palabras*: salen 12 palabras nuevas. Repite: cada vez deben
    ser **distintas**.
-7. Comprueba que, al salir de esa pantalla, la consola no sigue
-   escuchando: no hay ninguna luz para el micrófono, así que basta con que
-   todo funcione normal.
-
-Dime si la barra *Nivel de sonido* reacciona al ruido y cuánto tardas en
-llenar las dos barras.

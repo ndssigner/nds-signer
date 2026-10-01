@@ -126,9 +126,6 @@ msgstr "Hacer la foto"
 msgid "Collecting entropy frames"
 msgstr "Recogiendo imágenes de entropía"
 
-msgid "New seed (scribble + mic)"
-msgstr "Nueva semilla (garabato+mic)"
-
 msgid "Scribble on the bottom screen and make some noise: talk, whistle or tap the console."
 msgstr "Garabatea en la pantalla de abajo y haz ruido: habla, silba o da golpecitos a la consola."
 
@@ -143,3 +140,24 @@ msgstr "Nivel de sonido"
 
 msgid "Microphone not available"
 msgstr "Micrófono no disponible"
+
+msgid "Scribble + microphone"
+msgstr "Garabato + micrófono"
+
+msgid "Dice"
+msgstr "Dados"
+
+msgid "Progress"
+msgstr "Progreso"
+
+msgid "Done: enough entropy collected"
+msgstr "Listo: entropía suficiente"
+
+msgid "Keep scribbling and making noise"
+msgstr "Sigue garabateando y haciendo ruido"
+
+msgid "Keep scribbling"
+msgstr "Sigue garabateando"
+
+msgid "Make some noise"
+msgstr "Haz algo de ruido"

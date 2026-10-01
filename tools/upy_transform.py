@@ -170,32 +170,26 @@ IMPORT_REPLACEMENTS = {
 }
 
 
-# rel path -> [(upstream text, replacement)]: NDS-Signer's additions to
-# upstream code. Each upstream text must occur exactly once, so an upstream
-# change fails the build instead of silently dropping the addition.
-SOURCE_PATCHES = {
-    # Tools: NDS-Signer's own new seed tool (views/nds_entropy_views.py)
-    "seedsigner/views/tools_views.py": [
-        ("        button_data = [self.IMAGE, self.DICE, self.KEYBOARD, self.ADDRESS_EXPLORER, "
-         "self.VERIFY_ADDRESS]\n",
-         "        from seedsigner.views.nds_entropy_views import SCRIBBLE_MIC, ToolsScribbleMicEntropyView\n"
-         "        button_data = [self.IMAGE, self.DICE, SCRIBBLE_MIC, self.KEYBOARD, "
-         "self.ADDRESS_EXPLORER, self.VERIFY_ADDRESS]\n"),
-        ("        elif button_data[selected_menu_num] == self.DICE:\n",
-         "        elif button_data[selected_menu_num] == SCRIBBLE_MIC:\n"
-         "            return Destination(ToolsScribbleMicEntropyView)\n\n"
-         "        elif button_data[selected_menu_num] == self.DICE:\n"),
-    ],
+# rel path -> (NDS-Signer module, [upstream class names]): NDS-Signer's own
+# UI. Menus are NDS-Signer's (its interface differs from SeedSigner's); the
+# upstream module keeps its code (entropy, seeds, signing) and only rebinds
+# these names, at its end, to NDS-Signer's classes. Upstream imports them
+# lazily (inside run()), so every Destination gets NDS-Signer's class.
+UI_OVERRIDES = {
+    "seedsigner/views/tools_views.py": ("seedsigner.views.nds_tools_views", ["ToolsMenuView"]),
 }
 
 
-def apply_source_patches(rel, text):
-    for old, new in SOURCE_PATCHES.get(rel, []):
-        if text.count(old) != 1:
-            sys.exit("%s: upstream text to patch found %d times (expected once):\n%s"
-                     % (rel, text.count(old), old))
-        text = text.replace(old, new)
-    return text
+def ui_override(rel, tree):
+    if rel not in UI_OVERRIDES:
+        return
+    module, names = UI_OVERRIDES[rel]
+    defined = {n.name for n in tree.body if isinstance(n, ast.ClassDef)}
+    for name in names:
+        if name not in defined:
+            sys.exit("%s: no class %s to override any more" % (rel, name))
+    tree.body.append(ast.ImportFrom(module=module, names=[ast.alias(name=n) for n in names],
+                                    level=0))
 
 
 # str methods missing in MicroPython -> function in nds_strcompat
@@ -261,7 +255,8 @@ ORDERED_DICT_MODULES = {
 
 def transform(path: pathlib.Path, rel: str, ordered_dicts=False, rewrite_new=True) -> str:
     ordered_dicts = ordered_dicts or rel in ORDERED_DICT_MODULES
-    tree = ast.parse(apply_source_patches(rel, path.read_text()), filename=str(path))
+    tree = ast.parse(path.read_text(), filename=str(path))
+    ui_override(rel, tree)
     if rel in IMPORT_REPLACEMENTS:
         tree = ImportReplacer(IMPORT_REPLACEMENTS[rel]).visit(tree)
     tree = NameReplacer().visit(tree)
