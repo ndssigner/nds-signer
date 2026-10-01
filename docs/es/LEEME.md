@@ -15,6 +15,17 @@ mano cuesta menos que las piezas de un firmador casero, y en un cajón parece
 un juguete viejo, no una cartera de bitcoin. Por qué existe este proyecto:
 [por-que.md](por-que.md).
 
+## Capturas
+
+Pantalla de arriba y de abajo de la DSi, dibujadas con las fuentes de la ROM
+por el simulador de los tests (textos en inglés; en la consola salen en tu
+idioma):
+
+<table>
+<tr><td align="center"><img src="../images/home.png" width="190" alt="Inicio"><br><sub>Inicio</sub></td><td align="center"><img src="../images/review.png" width="190" alt="Revisar la transacción"><br><sub>Revisar la transacción</sub></td><td align="center"><img src="../images/recipient.png" width="190" alt="Dirección de cada destinatario"><br><sub>Dirección de cada destinatario</sub></td><td align="center"><img src="../images/math.png" width="190" alt="Las cuentas cuadran"><br><sub>Las cuentas cuadran</sub></td></tr>
+<tr><td align="center"><img src="../images/signed-qr.png" width="190" alt="Transacción firmada, QR animado"><br><sub>Transacción firmada, QR animado</sub></td><td align="center"><img src="../images/addresses.png" width="190" alt="Direcciones con su QR"><br><sub>Direcciones con su QR</sub></td><td align="center"><img src="../images/seedqr-map.png" width="190" alt="Copia del SeedQR con mapa"><br><sub>Copia del SeedQR con mapa</sub></td><td align="center"><img src="../images/new-seed.png" width="190" alt="Nueva semilla: garabato + micro"><br><sub>Nueva semilla: garabato + micro</sub></td></tr>
+</table>
+
 ## Qué hace
 
 - **Firmar transacciones:** escaneas el QR de una transacción preparada en

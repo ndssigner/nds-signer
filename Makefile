@@ -58,6 +58,7 @@ build/generated/gfx_fonts.c: tools/ttf_to_ndsfont.py \
 		third_party/seedsigner/src/seedsigner/gui/components.py
 	@mkdir -p build/generated
 	python3 tools/ttf_to_ndsfont.py third_party/seedsigner/src $@ build/generated/gfx_fonts.h
+	@# (also writes build/generated/gfx_advances.json for the host simulator)
 
 # Menu icon: SeedSigner's "sign" icon on an orange tile (tools/make_icon.py)
 $(GAME_ICON): tools/make_icon.py third_party/seedsigner/src/seedsigner/resources/fonts/seedsigner-icons.otf

@@ -12,6 +12,7 @@ that OpenSans covers);
 icon fonts cover the code points of SeedSigner's icon constants
 (gui/components.py).
 """
+import json
 import pathlib
 import re
 import sys
@@ -115,6 +116,7 @@ def main():
          "} GfxFont;", "",
          "enum {"]
     names = []
+    advances = []  # per font: {code point: advance}, for the host simulator
     for font_id, filename, size, charset in FONTS:
         font = ImageFont.truetype(str(fonts_dir / filename), size)
         ascent, descent = font.getmetrics()
@@ -122,6 +124,8 @@ def main():
                     if filename in FALLBACK else None)
         mono_advance = int(round(font.getlength("0")))
         glyphs, data = [], bytearray()
+        font_advances = {}
+        advances.append(font_advances)
         for ch in sorted(set(charsets[charset])):
             if charset == "text" and not has_glyph(font, ch):
                 if fallback is None or not has_glyph(fallback, ch):
@@ -135,6 +139,7 @@ def main():
                 row = row + [0] * (len(row) % 2)
                 data += bytes((row[i] | (row[i + 1] << 4)) for i in range(0, len(row), 2))
             glyphs.append((ord(ch), offset, w, hgt, left, top, advance))
+            font_advances[str(ord(ch))] = advance
         name = font_id.lower()
         names.append(name)
         h.append("\tGFX_FONT_%s," % font_id)
@@ -159,6 +164,9 @@ def main():
     c += ["};", ""]
     out_c.write_text("\n".join(c))
     out_h.write_text("\n".join(h))
+    # glyph advances for the host simulator's text widths (tests/host/sim)
+    out_c.with_name("gfx_advances.json").write_text(
+        json.dumps(advances, separators=(",", ":"), sort_keys=True))
 
 
 if __name__ == "__main__":

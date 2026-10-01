@@ -15,6 +15,16 @@ it costs less than the parts of a DIY signer, and in a drawer it looks like
 an old toy, not like a Bitcoin wallet. Why this project exists:
 [docs/why.md](docs/why.md).
 
+## Screenshots
+
+Top and bottom screen of the DSi, rendered with the ROM's fonts by the
+host simulator (`tools/dev/readme_screenshots.sh`):
+
+<table>
+<tr><td align="center"><img src="docs/images/home.png" width="190" alt="Home"><br><sub>Home</sub></td><td align="center"><img src="docs/images/review.png" width="190" alt="Review the transaction"><br><sub>Review the transaction</sub></td><td align="center"><img src="docs/images/recipient.png" width="190" alt="Each recipient's address"><br><sub>Each recipient's address</sub></td><td align="center"><img src="docs/images/math.png" width="190" alt="The amounts add up"><br><sub>The amounts add up</sub></td></tr>
+<tr><td align="center"><img src="docs/images/signed-qr.png" width="190" alt="Signed PSBT, animated QR"><br><sub>Signed PSBT, animated QR</sub></td><td align="center"><img src="docs/images/addresses.png" width="190" alt="Address explorer with QR"><br><sub>Address explorer with QR</sub></td><td align="center"><img src="docs/images/seedqr-map.png" width="190" alt="SeedQR backup with a map"><br><sub>SeedQR backup with a map</sub></td><td align="center"><img src="docs/images/new-seed.png" width="190" alt="New seed: scribble + mic"><br><sub>New seed: scribble + mic</sub></td></tr>
+</table>
+
 ## What it does
 
 NDS-Signer runs SeedSigner's Python code (views, PSBT verification, seed

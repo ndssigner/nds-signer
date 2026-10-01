@@ -370,7 +370,9 @@ def gfx_text(screen, x, y, text, font, rgb, max_width=0):
     _dl[screen].append(("text", x, y, str(text), font, rgb, max_width))
     width = gfx_text_width(text, font)
     if max_width and width > max_width:
-        text = text[:max(0, max_width // _FONT_ADVANCE[font])]
+        text = str(text)
+        while text and gfx_text_width(text, font) > max_width:  # clipped like the ROM
+            text = text[:-1]
         width = gfx_text_width(text, font)
     if font not in _ICON_FONTS:
         line_height = FONT_METRICS[font][1]
@@ -378,8 +380,27 @@ def gfx_text(screen, x, y, text, font, rgb, max_width=0):
     return width
 
 
+def _load_advances():
+    """The ROM fonts' glyph advances (build/generated/gfx_advances.json,
+    written by tools/ttf_to_ndsfont.py), so text is measured, centred and
+    clipped exactly as on the DSi; an average advance without it."""
+    import json
+    path = __file__.rsplit("/", 4)[0] + "/build/generated/gfx_advances.json"
+    try:
+        with open(path) as f:
+            return [{int(k): v for k, v in font.items()} for font in json.load(f)]
+    except OSError:
+        return None
+
+
+_ADVANCES = _load_advances()
+
+
 def gfx_text_width(text, font):
-    return len(text) * _FONT_ADVANCE[font]
+    if _ADVANCES is None:
+        return len(text) * _FONT_ADVANCE[font]
+    table, avg = _ADVANCES[font], _FONT_ADVANCE[font]
+    return sum(table.get(ord(c), avg) for c in str(text))
 
 
 def gfx_font_metrics(font):
@@ -409,8 +430,11 @@ def info():
     return (True, True, 0, _ticks // 1000)
 
 
+version_string = "sim"  # e.g. a release name for README screenshots
+
+
 def version():
-    return "sim"
+    return version_string
 
 
 # ---- simulator controls (not part of the native API) ----

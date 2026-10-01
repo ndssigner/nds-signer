@@ -46,6 +46,10 @@ def stop():
 # --gallery=DIR: snapshot of the screen at every dump() point, named after the
 # screen class shown last (tools/dev/render_gallery.py)
 GALLERY = ([a[10:] for a in sys.argv if a.startswith("--gallery=")] or [None])[0]
+# --version=NAME: the version shown on Home (tools/dev/readme_screenshots.sh)
+for _a in sys.argv:
+    if _a.startswith("--version="):
+        nds.version_string = _a[10:]
 _last_screen = ["?"]
 _snaps = [0]
 if GALLERY:
@@ -611,9 +615,13 @@ def run_scribble_mic_flow():
               "%d mic buffers, mic off %s" % (state.get("early"), valid, nds.mic_buffers[0],
                                              not nds.mic_on))
 
+    import math
     scribble = []
-    for i in range(260):  # distinct points over the canvas
-        scribble += [("tap", 8 + (i * 37) % 240, 8 + (i * 11) % 150), ("wait", 1)]
+    for i in range(300):  # a looping scribble over the canvas (distinct points)
+        t = i * 2 * math.pi / 300
+        x = 128 + int(108 * math.sin(3 * t + 0.5))
+        y = 80 + int(68 * math.sin(2 * t))
+        scribble += [("tap", x, y), ("wait", 1)]
     events = [("call", dump), ("tap_label", "Tools"), ("key", 0), ("call", silent),
               ("tap_label", "New seed"), ("key", 0), ("tap_label", "Scribble + microphone"), ("key", 0), ("wait", 2), ("call", dump),
               ("tap", 220, 178), ("wait", 4), ("key", 0), ("call", too_early)] + scribble + [
