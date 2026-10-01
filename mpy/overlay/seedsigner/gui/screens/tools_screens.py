@@ -14,7 +14,8 @@ class ToolsImageEntropyLivePreviewScreen(BaseScreen):
     """Like upstream: the camera's live image (top screen) while
     PREVIEW_POOL_SIZE distinct frames are collected as extra entropy, flat
     frames (a covered or saturated sensor) and repeats skipped; once the
-    pool is full, "Take photo" (or A) ends. Returns the frames, as NdsFrame
+    pool is full (collecting stops: the screen stays responsive), "Take
+    photo" (or A) ends. Returns the frames, as NdsFrame
     objects holding each frame's SHA-256 (see hardware/camera.py), or
     RET_CODE__BACK_BUTTON. The camera keeps running for the final image
     (Camera.capture_frame, ToolsImageEntropyFinalImageView)."""
@@ -67,12 +68,14 @@ class ToolsImageEntropyLivePreviewScreen(BaseScreen):
                     nds.camera_stop()
                     return RET_CODE__BACK_BUTTON
                 nds.camera_poll()  # live image on the top screen
-                if nds.camera_grab(buf) == 1:
+                # Upstream keeps replacing the oldest frame once the pool is
+                # full; here collecting stops then: hashing a 600 KB frame
+                # takes long enough to miss quick taps on "Take photo"
+                full = len(pool) == self.PREVIEW_POOL_SIZE
+                if not full and nds.camera_grab(buf) == 1:
                     digest = hashlib.sha256(buf).digest()
                     if digest not in seen:
                         seen.add(digest)
-                        if len(pool) == self.PREVIEW_POOL_SIZE:
-                            pool.pop(0)
                         pool.append(NdsFrame(digest))
                 if len(pool) != shown:
                     shown = len(pool)
