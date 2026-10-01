@@ -1,5 +1,7 @@
 # NDS-Signer
 
+![NDS-Signer: SeedSigner on a Nintendo DSi](docs/images/hero.jpg)
+
 **An air-gapped, stateless Bitcoin PSBT signer for the Nintendo DSi, running
 [SeedSigner](https://github.com/SeedSigner/seedsigner)'s own code.**
 

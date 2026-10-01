@@ -1,5 +1,7 @@
 # NDS-Signer
 
+![NDS-Signer: SeedSigner en una Nintendo DSi](../images/hero.jpg)
+
 **Un firmador de transacciones Bitcoin (PSBT) sin conexión y sin memoria
 para la Nintendo DSi, que ejecuta el propio código de
 [SeedSigner](https://github.com/SeedSigner/seedsigner).**
