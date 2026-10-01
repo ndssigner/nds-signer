@@ -76,6 +76,10 @@ int main(void)
 	// No networking: the wireless hardware stays off
 	wirelessOff();
 
+	// Closing the lid must not suspend the app with a seed in memory: the
+	// ARM9 sees the lid closed, wipes its memory and turns the console off
+	pmSetSleepAllowed(false);
+
 	// Set up touch screen driver
 	touchInit();
 	touchStartServer(80, MAIN_THREAD_PRIO);

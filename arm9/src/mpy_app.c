@@ -13,9 +13,14 @@
 
 #define MPY_HEAP_SIZE (6 * 1024 * 1024)
 
+/* the Python heap holds seeds and PSBTs: wipe.c clears it */
+void *g_mpyHeap;
+size_t g_mpyHeapSize = MPY_HEAP_SIZE;
+
 void mpyRunApp(void)
 {
 	char *heap = malloc(MPY_HEAP_SIZE);
+	g_mpyHeap = heap;
 	if (!heap) {
 		consoleSelect(&g_uiTop);
 		printf("Python heap alloc failed\n");

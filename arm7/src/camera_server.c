@@ -35,6 +35,10 @@ static u32 handleCommand(u32 cmd)
 	case CAM_CMD_OUTER_DEACTIVATE: return reply(aptDeactivate(I2C_CAM_OUTER));
 	case CAM_CMD_MODE_PREVIEW:     return reply(aptSetMode(CAPTURE_MODE_PREVIEW));
 	case CAM_CMD_MODE_CAPTURE:     return reply(aptSetMode(CAPTURE_MODE_CAPTURE));
+	case CAM_CMD_POWER_OFF:  /* no return */
+		if (isDSiMode())
+			mcuIssueShutdown();
+		pmicIssueShutdown();
 	default:                       return CAM_REPLY_ERROR;
 	}
 }

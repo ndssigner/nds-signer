@@ -21,5 +21,6 @@ cp docs/guia-xpub-sparrow.md dist/LEEME-3-xpub-a-sparrow.md
 cp docs/guia-velocidad-escaneo.md dist/LEEME-4-velocidad-escaneo.md
 cp docs/guia-menus-nuevos.md dist/LEEME-5-menus-nuevos.md
 cp docs/guia-mejoras-1.md dist/LEEME-6-mejoras.md
+cp docs/guia-tapa.md dist/LEEME-7-tapa.md
 (cd dist/para-la-dsi && shasum -a 256 *.nds > SHA256.txt)
 echo "dist/ listo:"; find dist -type f | sort

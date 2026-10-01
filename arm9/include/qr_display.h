@@ -35,4 +35,7 @@ int qrDraw(int screen, const char *text, size_t len, int x, int y, int px);
  * zone (zoneX, zoneY) in full contrast, the other zones dimmed. */
 void qrTranscribeMap(int screen, int x, int y, int scale, int zoneModules, int zoneX, int zoneY);
 
+/* Clears the encoder buffers (they held the last code shown). */
+void qrDisplayWipe(void);
+
 #endif /* NDS_SIGNER_QR_DISPLAY_H */

@@ -32,6 +32,7 @@ typedef enum {
 	CAM_CMD_OUTER_DEACTIVATE,
 	CAM_CMD_MODE_PREVIEW,
 	CAM_CMD_MODE_CAPTURE,
+	CAM_CMD_POWER_OFF,  /* not a camera command: turns the console off (wipe.c) */
 } CameraPxiCommand;
 
 /* Every command is answered with CAM_REPLY_OK, CAM_REPLY_ERROR, or (for

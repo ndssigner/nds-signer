@@ -14,6 +14,7 @@
 #include "qr_display.h"
 #include "qr_scanner.h"
 #include "ui.h"
+#include "wipe.h"
 
 void ndsbPrint(int screen, int row, int col, const char *text, size_t len)
 {
@@ -47,6 +48,9 @@ void ndsbFrame(void)
 {
 	swiWaitForVBlank();
 	scanKeys();
+	/* lid closed, power button or reset combination: wipe and power off */
+	if ((keysHeld() & KEY_LID) || pmShouldReset())
+		wipeAndPowerOff();
 }
 
 uint32_t ndsbKeysDown(void) { return keysDown(); }

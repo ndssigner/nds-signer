@@ -40,6 +40,10 @@ typedef struct {
 bool scannerInit(void);
 void scannerShutdown(void);
 
+/* Clears every buffer that may hold a scanned code (camera frames, quirc's
+ * image, the last payload); stops the camera first. */
+void scannerWipe(void);
+
 /* Starts / stops streaming frames from the outer (or inner) camera. */
 bool scannerStart(bool inner);
 void scannerStop(void);

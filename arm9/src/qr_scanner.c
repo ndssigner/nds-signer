@@ -98,6 +98,20 @@ void scannerShutdown(void)
 	scannerClearPayload();
 }
 
+void scannerWipe(void)
+{
+	scannerStop();
+	for (int i = 0; i < 2; i++)
+		if (s_capture[i])
+			memset(s_capture[i], 0, CAP_W * CAP_H * sizeof(u16));
+	if (s_quirc) {
+		int w, h;
+		uint8_t *image = quirc_begin(s_quirc, &w, &h);
+		memset(image, 0, (size_t)w * h);
+	}
+	scannerClearPayload();
+}
+
 void scannerClearPayload(void)
 {
 	/* volatile so the compiler cannot drop the wipe as a dead store */

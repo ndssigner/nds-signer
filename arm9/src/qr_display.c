@@ -23,6 +23,14 @@ static bool s_transcribed;  /* s_qr holds the code of qrTranscribeShow() */
  * VRAM in one DMA burst right after VBlank, so a half-drawn QR is never
  * visible (no tearing/flicker); the UI can draw over it before showing it. */
 
+void qrDisplayWipe(void)
+{
+	memset(s_qr, 0, sizeof(s_qr));
+	memset(s_temp, 0, sizeof(s_temp));
+	memset(s_text, 0, sizeof(s_text));
+	s_transcribed = false;
+}
+
 int qrDisplayShow(const char *text, size_t len, int border, u8 background)
 {
 	if (len >= sizeof(s_text))
