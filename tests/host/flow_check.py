@@ -545,6 +545,43 @@ def run_scan_intro_flow(prefix):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+def run_camera_seed_flow():
+    """Tools -> New seed (camera): 50 distinct frames (two flat ones skipped),
+    Take photo, Accept, 12 words: a valid new 12-word mnemonic is shown, and
+    the camera is off again."""
+    from seedsigner.views.view import Destination, MainMenuView
+    state = {}
+
+    def flat():  # a covered lens: these frames must not count
+        nds.sim_flat_frames = 2
+
+    def check_pool():
+        state["pool"] = "50/50" in "".join(op[3] for op in nds._dl[1] if op[0] == "text")
+
+    def check():
+        from seedsigner.models.seed import Seed
+        seed = Controller.get_instance().storage.pending_seed
+        words = seed.mnemonic_list if seed else []
+        try:
+            valid = len(words) == 12 and bool(Seed(words))
+        except Exception:
+            valid = False
+        ok = state.get("pool") and valid and not nds.camera_running() and nds.camera_grabbed[0] >= 52
+        RESULT["camera_seed"] = ok
+        print("ok  " if ok else "FAIL", "camera seed flow: pool %s, 12 valid words %s, %d frames, "
+              "camera off %s" % (state.get("pool"), valid, nds.camera_grabbed[0],
+                                 not nds.camera_running()))
+
+    events = [("call", dump), ("tap_label", "Tools"), ("key", 0), ("call", dump),
+              ("call", flat), ("tap_label", "New seed (camera)"), ("key", 0), ("wait", 80),
+              ("call", check_pool), ("call", dump), ("tap_label", "Take photo"), ("key", 0),
+              ("wait", 6), ("call", dump), ("tap_label", "Accept"), ("key", 0), ("wait", 2),
+              ("call", dump), ("tap_label", "12 words"), ("key", 0), ("wait", 4), ("call", dump),
+              ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_language_flow():
     """A console set to Spanish starts in Spanish (SeedSigner's translation);
     Settings > Language > English switches back."""
@@ -622,6 +659,8 @@ elif MODE == "language":
     run_language_flow()
 elif MODE == "sound":
     run_sound_flow()
+elif MODE == "camera_seed":
+    run_camera_seed_flow()
 elif MODE == "scan_intro":
     run_scan_intro_flow("psbt_base64_singlesig")
 elif MODE == "final_word":

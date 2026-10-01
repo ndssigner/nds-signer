@@ -171,6 +171,39 @@ def camera_start(front=False):
     return True
 
 
+CAMERA_FRAME_BYTES = 640 * 480 * 2
+camera_grabbed = [0]  # frames handed out by camera_grab, for tests
+sim_flat_frames = 0   # the next n frames grabbed are flat (all pixels identical)
+
+
+def camera_grab(buf):
+    """A new frame on every call while the camera is on: a different
+    pattern each time, like a real sensor's noise."""
+    global sim_flat_frames
+    if not _camera_on:
+        return 0
+    camera_grabbed[0] += 1
+    n = camera_grabbed[0]
+    if sim_flat_frames:
+        sim_flat_frames -= 1
+        for i in range(0, len(buf), 4096):
+            buf[i:i + 4096] = bytes(min(4096, len(buf) - i))
+        return 2
+    for i in range(0, len(buf), 4096):
+        buf[i] = (n * 131 + i) & 255
+    buf[1] = n & 255
+    buf[2] = (n >> 8) & 255
+    return 1
+
+
+def camera_running():
+    return _camera_on
+
+
+def frame_show(screen, frame):
+    _dl[screen].append(("camera",))
+
+
 def camera_decode(on):
     global _camera_decode
     _camera_decode = bool(on)

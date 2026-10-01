@@ -40,6 +40,14 @@ typedef struct {
 bool scannerInit(void);
 void scannerShutdown(void);
 
+/* Raw camera frames (YUV422, 640x480, Y0 U Y1 V), e.g. as entropy for a new
+ * seed. scannerGrab() copies the frame processed by the last scannerPoll()
+ * (each frame once) and tells whether every pixel was identical. */
+#define SCANNER_FRAME_BYTES (640 * 480 * 2)
+enum { SCANNER_GRAB_NONE, SCANNER_GRAB_FRAME, SCANNER_GRAB_FLAT };
+int scannerGrab(u8 *dst, size_t len);
+bool scannerStreaming(void);
+
 /* Clears every buffer that may hold a scanned code (camera frames, quirc's
  * image, the last payload); stops the camera first. */
 void scannerWipe(void);

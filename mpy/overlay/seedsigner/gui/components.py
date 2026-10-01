@@ -23,5 +23,10 @@ def load_image(*args, **kwargs):
     raise NotImplementedError("Pillow images are not available on NDS-Signer")
 
 
-def resize_image_to_fill(*args, **kwargs):
+def resize_image_to_fill(image, *args, **kwargs):
+    """Camera frames (the camera entropy tool's final image) are drawn to fit
+    the screen natively: returned unchanged."""
+    from seedsigner.hardware.camera import NdsFrame
+    if isinstance(image, NdsFrame):
+        return image
     raise NotImplementedError("Pillow images are not available on NDS-Signer")

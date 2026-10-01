@@ -103,6 +103,34 @@ static mp_obj_t nds_camera_start(size_t n_args, const mp_obj_t *args)
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_camera_start_obj, 0, 1, nds_camera_start);
 
+/* camera_grab(buf): the raw frame (YUV422 640x480, CAMERA_FRAME_BYTES) of
+ * the last camera_poll() into `buf`, each frame once: 0 = no new frame,
+ * 1 = copied, 2 = copied but flat (every pixel identical) */
+static mp_obj_t nds_camera_grab(mp_obj_t buf_in)
+{
+	mp_buffer_info_t buf;
+	mp_get_buffer_raise(buf_in, &buf, MP_BUFFER_WRITE);
+	return mp_obj_new_int(ndsbCameraGrab(buf.buf, buf.len));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(nds_camera_grab_obj, nds_camera_grab);
+
+/* camera_running(): True between camera_start() and camera_stop() */
+static mp_obj_t nds_camera_running(void)
+{
+	return mp_obj_new_bool(ndsbCameraRunning());
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_camera_running_obj, nds_camera_running);
+
+/* frame_show(screen, frame): a raw camera frame in grey, shown at once */
+static mp_obj_t nds_frame_show(mp_obj_t screen, mp_obj_t frame_in)
+{
+	mp_buffer_info_t buf;
+	mp_get_buffer_raise(frame_in, &buf, MP_BUFFER_READ);
+	ndsbFrameShow(mp_obj_get_int(screen), buf.buf, buf.len);
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(nds_frame_show_obj, nds_frame_show);
+
 /* camera_decode(on): decoding on, or preview only */
 static mp_obj_t nds_camera_decode(mp_obj_t on)
 {
@@ -387,6 +415,10 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_qr_transcribe_map), MP_ROM_PTR(&nds_qr_transcribe_map_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_draw), MP_ROM_PTR(&nds_qr_draw_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_decode), MP_ROM_PTR(&nds_camera_decode_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_camera_grab), MP_ROM_PTR(&nds_camera_grab_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_camera_running), MP_ROM_PTR(&nds_camera_running_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_frame_show), MP_ROM_PTR(&nds_frame_show_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_CAMERA_FRAME_BYTES), MP_ROM_INT(640 * 480 * 2) },
 	{ MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&nds_info_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_version), MP_ROM_PTR(&nds_version_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_KEY_A), MP_ROM_INT(NDSB_KEY_A) },

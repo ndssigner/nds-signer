@@ -44,6 +44,12 @@ uint32_t ndsbTicksMs(void);
 /* Camera / QR scanning (see qr_scanner.h) */
 bool ndsbCameraInit(void);
 bool ndsbCameraStart(bool inner);
+/* see scannerGrab(): 0 no new frame, 1 frame copied, 2 flat frame copied */
+int ndsbCameraGrab(uint8_t *dst, size_t len);
+size_t ndsbCameraFrameBytes(void);
+bool ndsbCameraRunning(void);
+/* a raw camera frame (YUV422 640x480) in grey on `screen`, then shown */
+void ndsbFrameShow(int screen, const uint8_t *frame, size_t len);
 void ndsbCameraDecode(bool on);
 /* 1 = payload decoded (copied into buf, *len set), 0 = nothing yet,
  * -1 = camera error. buf must hold 8896 bytes (QUIRC_MAX_PAYLOAD). */

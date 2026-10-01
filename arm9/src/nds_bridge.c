@@ -89,6 +89,38 @@ bool ndsbCameraStart(bool inner)
 	return s_haveCamera && scannerStart(inner);
 }
 
+int ndsbCameraGrab(uint8_t *dst, size_t len)
+{
+	return scannerGrab(dst, len);
+}
+
+bool ndsbCameraRunning(void)
+{
+	return scannerStreaming();
+}
+
+size_t ndsbCameraFrameBytes(void)
+{
+	return SCANNER_FRAME_BYTES;
+}
+
+void ndsbFrameShow(int screen, const uint8_t *frame, size_t len)
+{
+	int s = screen == NDSB_TOP ? GFX_TOP : GFX_BOTTOM;
+	u16 *dst = gfxBackBuffer(s);
+	if (len < SCANNER_FRAME_BYTES)
+		return;
+	/* 640x480 -> 256x192 (same 4:3 shape), the luma of the nearest pixel */
+	for (int y = 0; y < 192; y++) {
+		const uint8_t *row = frame + (size_t)(y * 480 / 192) * 640 * 2;
+		for (int x = 0; x < 256; x++) {
+			int g = row[(x * 640 / 256) * 2] >> 3;
+			dst[y * 256 + x] = RGB15(g, g, g) | BIT(15);
+		}
+	}
+	gfxPresent(s);
+}
+
 void ndsbCameraDecode(bool on)
 {
 	scannerSetDecode(on);

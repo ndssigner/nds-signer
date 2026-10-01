@@ -27,6 +27,8 @@ static u16 *s_capture[2];     /* YUV422 frames written by the camera DMA */
 static int s_dmaBuffer;       /* index of the buffer the DMA is filling */
 static bool s_streaming;
 static bool s_decode;
+static const u16 *s_lastFrame;  /* frame processed by the last scannerPoll() */
+static bool s_newFrame;
 static struct quirc *s_quirc;
 static u16 s_vfColumn[VF_W];  /* viewfinder x -> capture x */
 
@@ -126,6 +128,7 @@ bool scannerStart(bool inner)
 		return false;
 
 	s_decode = true;
+	s_newFrame = false;
 	memset(&s_stats, 0, sizeof(s_stats));
 	s_stats.startMs = uiMillis();
 	s_quickFails = 0;
@@ -275,8 +278,36 @@ ScanStatus scannerPoll(u16 *viewfinder)
 	processFrame(frame, viewfinder);
 	s_stats.sumProcessUs += timerTicks2usec(cpuEndTiming());
 	s_stats.frames++;
+	s_lastFrame = frame;
+	s_newFrame = true;
 
 	return s_decode && decode() ? SCAN_DECODED : SCAN_FRAME;
+}
+
+int scannerGrab(u8 *dst, size_t len)
+{
+	if (!s_streaming || !s_newFrame)
+		return SCANNER_GRAB_NONE;
+	s_newFrame = false;
+	/* YUV422 as Y0 U Y1 V: the frame is flat if each channel is constant */
+	const u8 *src = (const u8 *)s_lastFrame;
+	const size_t n = CAP_W * CAP_H * sizeof(u16);
+	u8 lo[4] = {255, 255, 255, 255}, hi[4] = {0, 0, 0, 0};
+	for (size_t i = 0; i < n; i++) {
+		u8 v = src[i];
+		int c = i & 3;
+		if (v < lo[c]) lo[c] = v;
+		if (v > hi[c]) hi[c] = v;
+	}
+	memcpy(dst, src, len < n ? len : n);
+	bool flat = lo[0] == hi[0] && lo[2] == hi[2] && lo[0] == lo[2] && lo[1] == hi[1] &&
+	            lo[3] == hi[3];
+	return flat ? SCANNER_GRAB_FLAT : SCANNER_GRAB_FRAME;
+}
+
+bool scannerStreaming(void)
+{
+	return s_streaming;
 }
 
 void scannerSetDecode(bool on)

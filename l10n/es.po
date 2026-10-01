@@ -119,3 +119,9 @@ msgstr "La cámara de la DSi es lenta: no te muevas, un escaneo puede tardar var
 
 msgid "Starting in {}..."
 msgstr "Empezando en {}..."
+
+msgid "Take photo"
+msgstr "Hacer la foto"
+
+msgid "Collecting entropy frames"
+msgstr "Recogiendo imágenes de entropía"

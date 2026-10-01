@@ -8,3 +8,8 @@ class Image:
 
 def new(*args, **kwargs):
     raise NotImplementedError("Pillow is not available on NDS-Signer")
+
+
+class Resampling:
+    """Names used as arguments by upstream views (camera entropy)."""
+    NEAREST = BILINEAR = BICUBIC = LANCZOS = 0

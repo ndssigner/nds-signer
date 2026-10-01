@@ -5,8 +5,102 @@ from gettext import gettext as _
 
 from seedsigner.gui import nds_ui
 from seedsigner.gui.hw import nds
-from seedsigner.gui.screens.screen import ButtonListScreen, KeyboardScreen, define_generic_screens
+from seedsigner.gui.screens.screen import (RET_CODE__BACK_BUTTON, BaseScreen, ButtonListScreen,
+                                           KeyboardScreen, define_generic_screens)
 from seedsigner.models.settings_definition import SettingsConstants, SettingsDefinition
+
+
+class ToolsImageEntropyLivePreviewScreen(BaseScreen):
+    """Like upstream: the camera's live image (top screen) while
+    PREVIEW_POOL_SIZE distinct frames are collected as extra entropy, flat
+    frames (a covered or saturated sensor) and repeats skipped; once the
+    pool is full, "Take photo" (or A) ends. Returns the frames, as NdsFrame
+    objects holding each frame's SHA-256 (see hardware/camera.py), or
+    RET_CODE__BACK_BUTTON. The camera keeps running for the final image
+    (Camera.capture_frame, ToolsImageEntropyFinalImageView)."""
+
+    PREVIEW_POOL_SIZE = 50
+    BAR_Y, BUTTON_Y = 70, 104
+
+    def _render(self):
+        nds.top_clear()
+        nds.gfx_present(nds_ui.TOP)
+
+    def _draw_panel(self, count):
+        t = nds_ui.theme()
+        nds.bottom_clear()
+        nds.gfx_clear(nds_ui.BOTTOM, t["bg"])
+        full = count >= self.PREVIEW_POOL_SIZE
+        nds_ui.text_centered(nds_ui.BOTTOM, 24, _("Collecting entropy frames"), nds.FONT_BODY_BOLD,
+                             t["body"])
+        width = nds_ui.GFX_W - 2 * 24 - 50
+        nds.gfx_rect(nds_ui.BOTTOM, 24, self.BAR_Y, width, 6, t["inactive"], 3)
+        if count:
+            from seedsigner.gui.components import GUIConstants as GC
+            nds.gfx_rect(nds_ui.BOTTOM, 24, self.BAR_Y, max(6, width * count // self.PREVIEW_POOL_SIZE),
+                         6, nds_ui.color_value(GC.GREEN_INDICATOR_COLOR, t["accent"]), 3)
+        nds.gfx_text(nds_ui.BOTTOM, 24 + width + 8, self.BAR_Y - 6,
+                     _("{}/{}").format(count, self.PREVIEW_POOL_SIZE), nds.FONT_BODY, t["label"])
+        nds_ui.button(nds_ui.BOTTOM, nds_ui.MARGIN, self.BUTTON_Y, nds_ui.GFX_W - 2 * nds_ui.MARGIN,
+                      nds_ui.BUTTON_H, _("Take photo"), selected=full, enabled=full)
+        nds_ui.button(nds_ui.BOTTOM, nds_ui.MARGIN, nds_ui.NAV_Y, 80, nds_ui.NAV_H, _("< Back"),
+                      font=nds.FONT_BODY_BOLD)
+        nds.gfx_present(nds_ui.BOTTOM)
+
+    def _run(self):
+        import hashlib
+        from seedsigner.hardware.camera import NdsFrame, use_front_camera
+
+        if not nds.camera_start(use_front_camera()):
+            return RET_CODE__BACK_BUTTON
+        nds.camera_decode(False)
+        pool, seen, shown = [], set(), -1
+        buf = bytearray(nds.CAMERA_FRAME_BYTES)
+        taps = nds_ui.TapTracker()
+        try:
+            while True:
+                nds.frame()
+                down = nds.keys_down()
+                tap = taps.update()
+                if down & nds.KEY_B or (tap and tap[1] >= nds_ui.NAV_Y and tap[0] < 96):
+                    nds_ui.sound("back")
+                    nds.camera_stop()
+                    return RET_CODE__BACK_BUTTON
+                nds.camera_poll()  # live image on the top screen
+                if nds.camera_grab(buf) == 1:
+                    digest = hashlib.sha256(buf).digest()
+                    if digest not in seen:
+                        seen.add(digest)
+                        if len(pool) == self.PREVIEW_POOL_SIZE:
+                            pool.pop(0)
+                        pool.append(NdsFrame(digest))
+                if len(pool) != shown:
+                    shown = len(pool)
+                    self._draw_panel(shown)
+                take = down & nds.KEY_A or (
+                    tap and self.BUTTON_Y <= tap[1] < self.BUTTON_Y + nds_ui.BUTTON_H)
+                if take and len(pool) == self.PREVIEW_POOL_SIZE:
+                    nds_ui.sound("click")
+                    nds_ui.bottom_note(self.BUTTON_Y + nds_ui.BUTTON_H + 12, _("Capturing image..."),
+                                       color=nds_ui.theme()["accent"])
+                    return pool
+        except BaseException:
+            nds.camera_stop()
+            raise
+
+
+class ToolsImageEntropyFinalImageScreen(BaseScreen):
+    """Like upstream: the final picture, to accept or reshoot (Back)."""
+
+    def _render(self):
+        nds.top_clear()
+        nds.frame_show(nds_ui.TOP, self.final_image.data)
+
+    def _run(self):
+        def cap(text):
+            return text[:1].upper() + text[1:]
+        choice = nds_ui.ButtonPanel([cap(_("accept")), cap(_("reshoot"))], show_back=False).run()
+        return RET_CODE__BACK_BUTTON if choice == 1 else None
 
 
 class ToolsAddressExplorerAddressTypeScreen(ButtonListScreen):
