@@ -117,10 +117,17 @@ SeedSigner, pero aún no se han probado; se agradecen pruebas.
 
 | Consola | ¿Funciona? |
 | :--- | :---: |
-| Nintendo DS, DS Lite | ❌ No (sin cámara, 4 MB de memoria) |
-| Nintendo DSi, DSi XL | ✅ Sí (probado en una DSi XL) |
+| Nintendo DS, DS Lite | ❌ No (4 MB de memoria: NDS-Signer necesita más de 8) |
+| Nintendo DSi, DSi XL | ✅ Sí (probado en una DSi XL); también con la cámara rota, mediante tonos |
 | Familia Nintendo 3DS / 2DS | ❓ Sin probar |
 | Emuladores | ⚠️ Solo desarrollo: nunca una semilla de verdad |
+
+**¿Sin cámara?** Los [tonos de teléfono](#tonos-de-teléfono-experimental)
+sustituyen a la cámara: una DSi con la cámara estropeada puede recibir y
+firmar PSBT igualmente. Pero no hacen funcionar la DS ni la DS Lite: tienen
+micrófono y altavoz, pero 4 MB de memoria, y NDS-Signer reserva 6 MB para
+el Python de SeedSigner (ahí viven las PSBT y las semillas), además de sus
+2 MB de código. La DSi tiene 16 MB.
 
 ## Instalar
 

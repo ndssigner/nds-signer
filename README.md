@@ -110,10 +110,17 @@ not tried yet; reports welcome.
 
 | Console | Works? |
 | :--- | :---: |
-| Nintendo DS, DS Lite | ❌ No (no camera, 4 MB RAM) |
-| Nintendo DSi, DSi XL | ✅ Yes (tested on a DSi XL) |
+| Nintendo DS, DS Lite | ❌ No (4 MB of RAM: NDS-Signer needs over 8) |
+| Nintendo DSi, DSi XL | ✅ Yes (tested on a DSi XL) — also with a broken camera, through tones |
 | Nintendo 3DS / 2DS family | ❓ Untested |
 | Emulators | ⚠️ Development only: never a real seed |
+
+**Without a camera?** The [telephone tones](#telephone-tones-experimental)
+replace the camera: a DSi whose camera does not work can still receive and
+sign PSBTs. They do not make the DS or DS Lite work, though: those have a
+microphone and a speaker, but 4 MB of RAM, and NDS-Signer reserves 6 MB for
+SeedSigner's Python (the PSBTs and the seeds live there) on top of its 2 MB
+of code. The DSi has 16 MB.
 
 ## Install
 
