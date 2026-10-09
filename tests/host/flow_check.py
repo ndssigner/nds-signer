@@ -583,7 +583,73 @@ def run_tones_flow(prefix):
     for tap in SINGLESIG_TAPS[1:]:
         events += [("call", dump), ("tap_label", tap), ("key", 0)]
     events += [("wait", 200), ("call", dump), ("call", lambda: check_signed(prefix)),
-               ("call", lambda: RESULT.__setitem__("tones_off", not nds.tones_on)), ("call", stop)]
+               ("call", lambda: RESULT.__setitem__("tones_off", not nds.tones_on)),
+               # and back as tones: Play as tones -> Start playing -> Stop
+               ("tap_label", "Play as tones (experimental)"), ("key", 0), ("wait", 2), ("call", dump),
+               ("tap_label", "Start playing"), ("key", 0), ("wait", 4), ("expect_top", "This frame"),
+               ("wait", 80), ("call", dump), ("tap_label", "Stop"), ("key", 0), ("wait", 2),
+               ("call", lambda: check_played(prefix)), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
+def check_played(prefix):
+    """The frames played as tones (by cable: 40/20/200 ms) give back the
+    signed PSBT, and playing stopped on Stop."""
+    import ur_tones
+    from seedsigner.models.decode_qr import DecodeQR
+    decoder = DecodeQR()
+    for tones, tone, gap, pause in nds.tones_played:
+        decoder.add_data(ur_tones.frame_to_ur(tones)[0])
+        if decoder.is_complete:
+            break
+    paces = {p[1:] for p in nds.tones_played}
+    ok = (decoder.is_complete and decoder.get_psbt().to_string() == read(prefix + ".signed_trimmed.txt")
+          and paces == {(40, 20, 200)} and not nds.tones_playing())
+    RESULT["tones_play"] = ok
+    print("ok  " if ok else "FAIL", "signed PSBT played as tones: %d frames, decoded %s, paces %s, stopped %s"
+          % (len(nds.tones_played), decoder.is_complete, sorted(paces), not nds.tones_playing()))
+
+
+def run_tones_export_flow(prefix):
+    """Seeds -> the seed -> Backup seed -> Export as tones: PIN typed, the
+    advice to use a cable for tape backups and the fingerprint shown; Start
+    playing: the frame read back with the PIN is the seed."""
+    import ur_tones
+    from embit import bip39
+    from seedsigner.models.seed import Seed
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    words = read(prefix + ".mnemonic.txt").split()
+    controller.storage.set_pending_seed(Seed(words))
+    controller.storage.finalize_pending_seed()
+    pin = "K7MP3XQA9RTW"
+
+    def check():
+        played = [t for t in nds.tones_played]
+        try:
+            entropy = ur_tones.ur_to_seed(ur_tones.frame_to_ur(played[-1][0])[0], pin)
+        except Exception:
+            entropy = None
+        ok = (entropy == bip39.mnemonic_to_bytes(" ".join(words)) and len(played) >= 2
+              and not nds.tones_playing())
+        RESULT["tones_export"] = ok
+        print("ok  " if ok else "FAIL", "seed exported as tones with a PIN: %d plays, seed back %s"
+              % (len(played), entropy is not None and ok))
+
+    events = []
+    for label in ("Seeds", "8b218e81", "Backup seed", "Export as tones (experimental)"):
+        events += [("call", dump), ("tap_label", label), ("key", 0), ("wait", 2)]
+    events += [("call", dump), ("expect_top", "Without a PIN"), ("expect_top", "8b218e81"),
+               ("expect_top", "for the best sound quality"),
+               ("tap_label", "PIN: none"), ("key", 0), ("wait", 2)]
+    for ch in pin:
+        events += [("tap_key", ch), ("key", 0)]
+    events += [("tap_key", "Save"), ("key", 0), ("wait", 2), ("call", dump), ("expect_top", "different seed"),
+               ("tap_label", "Start playing"), ("key", 0), ("wait", 30), ("call", dump),
+               ("expect_top", "Frames played"), ("tap_label", "Stop"), ("key", 0), ("wait", 2),
+               ("call", dump), ("call", check), ("call", stop)]
     nds.sim_script(events)
     controller.start(initial_destination=Destination(MainMenuView))
 
@@ -873,6 +939,8 @@ elif MODE == "tones":
     run_tones_flow("psbt_base64_singlesig")
 elif MODE == "tones_seed":
     run_tones_seed_flow()
+elif MODE == "tones_export":
+    run_tones_export_flow("psbt_base64_singlesig")
 elif MODE == "xpub":
     run_xpub_flow("psbt_base64_singlesig")
 elif MODE == "settings":

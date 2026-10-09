@@ -1,7 +1,8 @@
 # Taps for the unattended emulator run of ur-tones (make AUTOTEST=1 MPY_APP=1
 # AUTOPILOT=tones): the seed is typed, then Scan transaction -> Listen to
 # tones (experimental) -> Start listening, with melonDS's microphone playing
-# a WAV of the PSBT's frames (tools/dev/tones_wav.py); then it is signed.
+# a WAV of the PSBT's frames (tools/dev/tones_wav.py); then it is signed, and
+# the signed PSBT is played back as tones.
 from autopilot_script import SETTINGS, WORDS, _type
 
 EVENTS = ([("log", "start")] + SETTINGS + [("tap_label", "Seeds"), ("tap_label", "Enter 12-word seed")]
@@ -17,4 +18,7 @@ EVENTS = ([("log", "start")] + SETTINGS + [("tap_label", "Seeds"), ("tap_label",
            ("log", "listening")] +
           [("tap_label", label) for label in ("Review details", "Continue", "Review recipients",
                                               "Next recipient", "Next", "Approve transaction")] +
-          [("log", "done")])
+          # and the signed PSBT back as tones, for 30 s, then Stop
+          [("wait", 120), ("tap_label", "Play as tones (experimental)"), ("wait", 60),
+           ("tap_label", "Start playing"), ("log", "playing"), ("wait", 1800), ("tap_label", "Stop"),
+           ("log", "done")])

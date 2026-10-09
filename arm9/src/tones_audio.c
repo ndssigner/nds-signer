@@ -1,8 +1,8 @@
 /*
- * NDS-Signer - listening to ur-tones (github.com/ndssigner/ur-tones)
+ * NDS-Signer - listening to and playing ur-tones (github.com/ndssigner/ur-tones)
  * SPDX-License-Identifier: MIT
  *
- * The microphone records continuously by DMA into two alternating buffers;
+ * Listening: the microphone records continuously by DMA into two alternating buffers;
  * the interrupt only copies each full buffer into a queue, and the receiver
  * (third_party/ur-tones/c/ur_tones.c: integer Goertzel, no FPU needed) hears
  * them in the main loop, when Python polls. Experimental: the microphone and
@@ -13,7 +13,9 @@
 #include <string.h>
 
 #include "mic_entropy.h"
+#include "sfx.h"
 #include "tones_audio.h"
+#include "ui.h"
 #include "ur_tones.h"
 
 #define BUF_SAMPLES 1024   /* 1/16 s at 16 kHz */
@@ -102,6 +104,7 @@ bool tonesListenStart(int gain)
 	static const unsigned GAINS[4] = {PmMicGain_20, PmMicGain_40, PmMicGain_80, PmMicGain_160};
 	if (s_running)
 		return true;
+	tonesPlayStop();
 	micEntropyStop();                     /* one user of the microphone at a time */
 	micEnsureInit();
 	if (!micSetDmaRate(MicRate_Div2))     /* SOUND_MIXER_FREQ_HZ / 2: about 16364 Hz */
@@ -153,4 +156,116 @@ int tonesListenPoll(char *group, size_t cap, char *live, size_t livecap, int *le
 	ut_listener_live(&s_listener, live, livecap);
 	int n = ut_listener_group(&s_listener, group, cap);
 	return n > 0 ? n : 0;
+}
+
+/* ---- playing ------------------------------------------------------------
+ * The synthesiser (ut_synth) writes into a ring buffer that one sound channel
+ * plays in a loop; the main loop keeps it filled about a second ahead. The
+ * sound driver cannot say where it is playing, but its timer and calico's
+ * tick counter run from the same clock, so the time since the start says
+ * exactly which sample is playing. */
+
+#define PLAY_CH 15
+#define PLAY_RATE 16384
+#define RING 16384          /* samples: 1 s of slack */
+#define GUARD 2048          /* never write this close to what is playing: 1/8 s */
+
+static s16 s_ring[RING] __attribute__((aligned(32)));
+static char s_play[UT_MAX_FRAME + 1];
+static ut_synth s_synth;
+static u32 s_f0;
+static u64 s_written, s_end;
+static unsigned s_timer;
+static bool s_playing, s_synth_done;
+
+#define FRAME_CYCLES 560190u   /* 263 lines x 355 dots x 6 cycles */
+
+static u64 played(void)
+{
+	return (u64)(uiFrames() - s_f0) * FRAME_CYCLES / (2u * s_timer);
+}
+
+static void fill(u64 upto)
+{
+	while (s_written < upto) {
+		size_t at = (size_t)(s_written % RING);
+		size_t n = RING - at;
+		if (n > upto - s_written)
+			n = (size_t)(upto - s_written);
+		size_t got = s_synth_done ? 0 : ut_synth_read(&s_synth, s_ring + at, n);
+		if (got < n) {
+			if (!s_synth_done) {
+				s_synth_done = true;
+				s_end = s_written + got;
+			}
+			memset(s_ring + at + got, 0, (n - got) * sizeof s_ring[0]);
+		}
+		DC_FlushRange(s_ring + at, n * sizeof s_ring[0]);
+		s_written += n;
+	}
+}
+
+static void wipePlay(void)
+{
+	volatile u8 *p = (volatile u8 *)s_ring;
+	for (size_t i = 0; i < sizeof s_ring; i++) p[i] = 0;
+	DC_FlushRange(s_ring, sizeof s_ring);
+	p = (volatile u8 *)s_play;
+	for (size_t i = 0; i < sizeof s_play; i++) p[i] = 0;
+	p = (volatile u8 *)&s_synth;
+	for (size_t i = 0; i < sizeof s_synth; i++) p[i] = 0;
+}
+
+bool tonesPlayStart(const char *tones, unsigned tone_ms, unsigned gap_ms, unsigned pause_ms)
+{
+	size_t n = strlen(tones);
+	if (!n || n > UT_MAX_FRAME)
+		return false;
+	tonesPlayStop();
+	tonesListenStop();                    /* never both: the speaker would feed the microphone */
+	sfxInit();
+	memcpy(s_play, tones, n + 1);
+	s_timer = soundTimerFromHz(PLAY_RATE);
+	/* the real rate, so that the tones are exactly on their frequencies */
+	ut_synth_init(&s_synth, s_play, SOUND_CLOCK / s_timer, tone_ms, gap_ms, pause_ms);
+	s_written = s_end = 0;
+	s_synth_done = false;
+	fill(RING - GUARD);
+	soundPreparePcm(PLAY_CH | SOUND_START, 2047, 64, s_timer, SoundMode_Repeat, SoundFmt_Pcm16,
+	                s_ring, 0, sizeof s_ring / 4);
+	s_f0 = uiFrames();
+	s_playing = true;
+	return true;
+}
+
+int tonesPlayPoll(unsigned *index, unsigned *count)
+{
+	*count = (unsigned)s_synth.count;
+	*index = 0;
+	if (!s_playing)
+		return 0;
+	u64 p = played();
+	if (s_synth_done && p >= s_end) {
+		tonesPlayStop();
+		*index = *count;
+		return 0;
+	}
+	fill(p + RING - GUARD);
+	u64 step = s_synth.tone_n + s_synth.gap_n;
+	if (p > s_synth.pause_n && step)
+		*index = (unsigned)((p - s_synth.pause_n) / step);
+	if (*index > *count)
+		*index = *count;
+	return 1;
+}
+
+void tonesPlayStop(void)
+{
+	if (s_playing) {
+		soundStop(1u << PLAY_CH);
+		s_playing = false;
+	}
+	unsigned count = (unsigned)s_synth.count;
+	wipePlay();
+	s_synth.count = count;              /* for the last poll's count only */
 }

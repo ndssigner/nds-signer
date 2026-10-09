@@ -38,6 +38,8 @@ void uiDrawButtons(const UiButton *buttons, int count);
 int uiPollButtons(const UiButton *buttons, int count);
 
 /* Milliseconds since uiInit(), from the VBlank interrupt (~17 ms steps). */
+/* VBlanks since start: a DS frame is exactly 560190 bus cycles. */
+u32 uiFrames(void);
 u32 uiMillis(void);
 
 /* Prints `text` centred on `row` of the currently selected console. */

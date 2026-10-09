@@ -500,6 +500,45 @@ def tones_seed(text, pin=None):
         return (None, -9)
 
 
+def tones_seed_frame(entropy, pin=None):
+    import ur_tones
+    try:
+        return ur_tones.ur_to_frame(ur_tones.seed_to_ur(bytes(entropy), pin))
+    except (ValueError, ur_tones.DecodeError):
+        return None
+
+
+tones_played = []     # (tones, tone_ms, gap_ms, pause_ms) played, for tests
+_play = {"tones": "", "at": 0, "on": False}
+
+
+def tones_play(tones, tone_ms, gap_ms, pause_ms):
+    global tones_on
+    tones_on = False                     # stops listening, as the ROM does
+    tones_played.append((tones, tone_ms, gap_ms, pause_ms))
+    _play.update(tones=tones, at=0, on=True)
+    return True
+
+
+def tones_play_poll():
+    """TONES_PER_POLL tones per frame, as if played that fast."""
+    if not _play["on"]:
+        return (False, len(_play["tones"]), len(_play["tones"]))
+    _play["at"] += TONES_PER_POLL
+    if _play["at"] >= len(_play["tones"]):
+        _play["on"] = False
+        return (False, len(_play["tones"]), len(_play["tones"]))
+    return (True, _play["at"], len(_play["tones"]))
+
+
+def tones_play_stop():
+    _play["on"] = False
+
+
+def tones_playing():
+    return _play["on"]
+
+
 # ---- simulator controls (not part of the native API) ----
 
 def sim_script(events):

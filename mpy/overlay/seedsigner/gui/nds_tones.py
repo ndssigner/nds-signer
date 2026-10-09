@@ -419,3 +419,152 @@ def listen(decoder, pin, gain):
                 view.draw()
     finally:
         nds.tones_listen(False)
+
+
+# ---- playing tones ----------------------------------------------------------
+
+# (tone, gap, pause) in ms, as the web tool (SPEC §1.1)
+PACES = {"cable": (40, 20, 200), "air": (80, 80, 300)}
+FRAGMENT = 100  # bytes per UR part (SPEC §2.4)
+
+
+def _pace_label(pace):
+    return "%s: %s" % (_("Pace"), _("cable") if pace == "cable" else _("through the air"))
+
+
+class PlayView:
+    """The top screen while playing: frames played, the frame being played
+    (its share, its tones as they go, the time left)."""
+
+    def __init__(self, title, pace, parts=0, note=""):
+        self.t = nds_ui.theme()
+        self.title, self.pace, self.parts, self.note = title, pace, parts, note
+        self.frames = 0
+        self.tones, self.index = "", 0
+
+    def draw(self):
+        from seedsigner.gui.components import GUIConstants as GC
+        t, top, m = self.t, nds_ui.TOP, nds_ui.MARGIN
+        nds.top_clear()
+        nds.gfx_clear(top, t["bg"])
+        nds_ui._title(self.title)
+        w = nds_ui.GFX_W - 2 * m
+        left = _("Frames played: {}").format(self.frames)
+        nds.gfx_text(top, m, 32, left, nds.FONT_BODY, t["body"])
+        if self.parts > 1:
+            right = _("{} parts").format(self.parts)
+            nds.gfx_text(top, nds_ui.GFX_W - m - nds.gfx_text_width(right, nds.FONT_BODY), 32, right,
+                         nds.FONT_BODY, t["body"])
+        count = len(self.tones)
+        share = self.index / count if count else 0
+        tone, gap, pause = PACES[self.pace]
+        secs = ((count - self.index) * (tone + gap) + pause + 999) // 1000
+        nds.gfx_text(top, m, 56, _("This frame"), nds.FONT_BODY_BOLD, t["body"])
+        detail = "%d%%  %d/%d  %d s" % (int(share * 100), self.index, count, secs)
+        nds.gfx_text(top, nds_ui.GFX_W - m - nds.gfx_text_width(detail, nds.FONT_BODY), 56, detail,
+                     nds.FONT_BODY, t["body"])
+        nds.gfx_rect(top, m, 76, w, 8, t["inactive"], 3)
+        fill = int(w * share)
+        if fill >= 6:
+            nds.gfx_rect(top, m, 76, fill, 8, nds_ui._rgb(GC.SUCCESS_COLOR), 3)
+        nds.gfx_frame(top, m, 92, w, 24, t["inactive"], 4, 1)
+        nds_ui.text_centered(top, 95, self.tones[:self.index][-26:] or "...", nds.FONT_MONO_BOLD, t["accent"])
+        nds.gfx_text(top, m, 124, _pace_label(self.pace), nds.FONT_BODY, t["label"])
+        if self.note:
+            y = 146
+            for line in nds_ui.wrap_px(self.note, nds.FONT_BODY, w)[:2]:
+                nds_ui.text_centered(top, y, line, nds.FONT_BODY, t["label"])
+                y += 18
+        nds.gfx_present(top)
+
+
+def play(next_frame, view):
+    """Plays the frames next_frame() gives, one after another, until Stop
+    (or B). The bottom screen has only Stop."""
+    panel = nds_ui.ButtonPanel([_("Stop")], show_back=False)
+    panel.draw()
+    tone, gap, pause = PACES[view.pace]
+    view.tones = next_frame()
+    if not view.tones or not nds.tones_play(view.tones, tone, gap, pause):
+        return
+    view.draw()
+    tick, shown = 0, None
+    try:
+        while True:
+            nds.frame()
+            if panel.handle_frame() is not None or nds.keys_down() & nds.KEY_B:
+                return
+            playing, view.index, count = nds.tones_play_poll()
+            if not playing:                              # the next frame, at once
+                view.frames += 1
+                view.tones, view.index = next_frame(), 0
+                if not view.tones or not nds.tones_play(view.tones, tone, gap, pause):
+                    return
+            tick += 1
+            if (view.frames, view.index) != shown and tick % 6 == 0:  # 10 times a second at most
+                shown = (view.frames, view.index)
+                view.draw()
+    finally:
+        nds.tones_play_stop()
+
+
+def send_ur(ur):
+    """Plays a UR (the signed PSBT, an xpub...) as tones, in parts of
+    FRAGMENT bytes with fountain codes, in a loop until Stop: what the QR
+    code shows, for a receiver that listens (the ur-tones web tool)."""
+    from seedsigner.helpers.ur2.ur_encoder import UREncoder
+    pace = _state.get("pace", "cable")
+    while True:
+        nds_ui.top_blocks(_("Play as tones"), [
+            ("text", _("The same as the QR code, as telephone tones: for the ur-tones web tool (Listen) or another device that listens.")),
+            ("space", 4),
+            ("label", _("By cable, nothing else hears it; through the air, any microphone nearby can record it.")),
+            ("label", _("Experimental.")),
+            ("space", 4),
+            ("label", REPO)])
+        choice = nds_ui.ButtonPanel([_("Start playing"), _pace_label(pace)]).run()
+        if choice == nds_ui.BACK:
+            return
+        if choice == 1:
+            pace = _state["pace"] = "air" if pace == "cable" else "cable"
+            continue
+        encoder = UREncoder(ur, FRAGMENT)
+        parts = 1 if encoder.is_single_part() else encoder.fountain_encoder.seq_len()
+        play(lambda: nds.tones_ur_to_frame(encoder.next_part().lower()),
+             PlayView(_("Playing"), pace, parts, _("Receiver: ur-tones web tool, Listen.")))
+
+
+def send_seed(entropy, fingerprint):
+    """Plays a seed as tones (a crypto-seed UR, SPEC §4), with a PIN if
+    set, in a loop until Stop: for another device, or a backup on tape or
+    MP3. The fingerprint is shown, to compare with the receiver's."""
+    pace, pin = _state.get("pace", "cable"), ""
+    while True:
+        if not pin:
+            risk = ("text", _("Without a PIN, anything that records the tones has the seed."))
+        elif len(pin) < PIN_LENGTH:
+            risk = ("label", _("A short PIN: fine by cable; for a backup or through the air, 12 characters or more."))
+        else:
+            risk = ("label", _("With the PIN, whoever records the tones gets a different seed. Keep the PIN apart."))
+        nds_ui.top_blocks(_("Export as tones"), [
+            ("text", "%s: %s" % (_("Fingerprint"), fingerprint)),
+            ("label", _("The receiver must show the same one.")),
+            ("space", 4), risk,
+            ("label", _("For a backup on tape, connect by cable for the best sound quality.")),
+            ("space", 4),
+            ("label", REPO)])
+        labels = [_("Start playing"), "%s: %s" % (_("PIN"), pin if pin else _("none")), _pace_label(pace)]
+        choice = nds_ui.ButtonPanel(labels).run()
+        if choice == nds_ui.BACK:
+            return
+        if choice == 1:
+            new = PinScreen(pin).run()
+            if new is not None:
+                pin = new
+            continue
+        if choice == 2:
+            pace = _state["pace"] = "air" if pace == "cable" else "cable"
+            continue
+        frame = nds.tones_seed_frame(entropy, pin or None)
+        play(lambda: frame, PlayView(_("Playing"), pace, 0,
+                                     "%s: %s" % (_("Fingerprint"), fingerprint)))

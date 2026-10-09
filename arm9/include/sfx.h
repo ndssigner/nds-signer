@@ -17,6 +17,9 @@ typedef enum {
 	SFX_COUNT
 } Sfx;
 
+/* Powers up the sound hardware (once; also used by the tones player). */
+void sfxInit(void);
+
 /* Plays a sound; the first call powers up the sound hardware. */
 void sfxPlay(int sfx);
 

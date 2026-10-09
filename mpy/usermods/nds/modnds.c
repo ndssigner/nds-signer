@@ -213,6 +213,49 @@ static mp_obj_t nds_tones_loopback(mp_obj_t groups)
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(nds_tones_loopback_obj, nds_tones_loopback);
 
+/* tones_seed_frame(entropy, pin=None): the tones of a crypto-seed UR's frame
+ * with the PIN applied (SPEC §4), or None */
+static mp_obj_t nds_tones_seed_frame(size_t n_args, const mp_obj_t *args)
+{
+	static char tones[600];
+	mp_buffer_info_t e;
+	mp_get_buffer_raise(args[0], &e, MP_BUFFER_READ);
+	const char *pin = n_args > 1 && args[1] != mp_const_none ? mp_obj_str_get_str(args[1]) : NULL;
+	int n = ndsbTonesSeedToFrame(e.buf, e.len, pin, tones, sizeof tones);
+	mp_obj_t out = n >= 0 ? mp_obj_new_str(tones, (size_t)n) : mp_const_none;
+	memset(tones, 0, sizeof tones);
+	return out;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_tones_seed_frame_obj, 1, 2, nds_tones_seed_frame);
+
+/* tones_play(tones, tone_ms, gap_ms, pause_ms): starts playing them through
+ * the speaker (or headphones); True if it started */
+static mp_obj_t nds_tones_play(size_t n_args, const mp_obj_t *args)
+{
+	(void)n_args;
+	return mp_obj_new_bool(ndsbTonesPlay(mp_obj_str_get_str(args[0]), mp_obj_get_int(args[1]),
+	                                     mp_obj_get_int(args[2]), mp_obj_get_int(args[3])));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(nds_tones_play_obj, 4, 4, nds_tones_play);
+
+/* tones_play_poll(): keeps the sound fed (call it every frame):
+ * (playing, index of the tone being played, number of tones) */
+static mp_obj_t nds_tones_play_poll(void)
+{
+	unsigned index = 0, count = 0;
+	int playing = ndsbTonesPlayPoll(&index, &count);
+	mp_obj_t items[3] = {mp_obj_new_bool(playing), mp_obj_new_int(index), mp_obj_new_int(count)};
+	return mp_obj_new_tuple(3, items);
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_tones_play_poll_obj, nds_tones_play_poll);
+
+static mp_obj_t nds_tones_play_stop(void)
+{
+	ndsbTonesPlayStop();
+	return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_tones_play_stop_obj, nds_tones_play_stop);
+
 /* camera_running(): True between camera_start() and camera_stop() */
 static mp_obj_t nds_camera_running(void)
 {
@@ -535,6 +578,10 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_tones_ur_to_frame), MP_ROM_PTR(&nds_tones_ur_to_frame_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_seed), MP_ROM_PTR(&nds_tones_seed_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_loopback), MP_ROM_PTR(&nds_tones_loopback_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_tones_seed_frame), MP_ROM_PTR(&nds_tones_seed_frame_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_tones_play), MP_ROM_PTR(&nds_tones_play_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_tones_play_poll), MP_ROM_PTR(&nds_tones_play_poll_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_tones_play_stop), MP_ROM_PTR(&nds_tones_play_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_MIC_BUFFER_BYTES), MP_ROM_INT(4096 * 2) },
 	{ MP_ROM_QSTR(MP_QSTR_frame_show), MP_ROM_PTR(&nds_frame_show_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_CAMERA_FRAME_BYTES), MP_ROM_INT(640 * 480 * 2) },

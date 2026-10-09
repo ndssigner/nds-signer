@@ -58,8 +58,11 @@ momento un PIN equivocado. Mientras escucha, la pantalla superior muestra
 las tramas, el avance de cada una, los tonos según llegan y el nivel del
 sonido. Su receptor está en C, solo con enteros
 (`third_party/ur-tones/c`). Probado en una DSi: semillas al aire con y sin
-PIN, y una PSBT de Sparrow al aire a ritmo de cable. Enviar tonos desde la
-DSi (la PSBT firmada, una copia de la semilla) viene después.
+PIN, y una PSBT de Sparrow al aire a ritmo de cable. La DSi también emite
+tonos: la PSBT firmada (*Enviar como tonos*, junto a su QR) y una semilla
+con su PIN (*Copia de la semilla → Exportar como tonos*), para otro
+dispositivo o una copia en cinta o MP3 (por cable, que es como mejor
+suena).
 
 ## Seguridad
 

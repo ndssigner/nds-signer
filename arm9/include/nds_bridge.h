@@ -59,6 +59,10 @@ int ndsbTonesUrToFrame(const char *ur, char *tones, size_t cap);
 int ndsbTonesKeypadToSeed(const char *tones, const char *pin, uint8_t *entropy);
 int ndsbTonesUrToSeed(const char *ur, const char *pin, uint8_t *entropy);
 bool ndsbTonesLoopback(const char *groups);  /* developer builds only */
+int ndsbTonesSeedToFrame(const uint8_t *entropy, size_t len, const char *pin, char *tones, size_t cap);
+bool ndsbTonesPlay(const char *tones, unsigned tone_ms, unsigned gap_ms, unsigned pause_ms);
+int ndsbTonesPlayPoll(unsigned *index, unsigned *count);
+void ndsbTonesPlayStop(void);
 /* see scannerGrab(): 0 no new frame, 1 frame copied, 2 flat frame copied */
 int ndsbCameraGrab(uint8_t *dst, size_t len);
 size_t ndsbCameraFrameBytes(void);

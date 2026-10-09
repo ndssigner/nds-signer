@@ -67,7 +67,9 @@ screen shows the frames, each frame's progress, the tones as they come and
 the sound's level. Its receiver is C with integers only
 (`third_party/ur-tones/c`). Tested on a DSi: seeds through the air with and
 without a PIN, and a PSBT from Sparrow through the air at cable pace.
-Sending tones from the DSi (the signed PSBT, a seed backup) comes next.
+The DSi also plays tones: the signed PSBT (*Play as tones* next to its QR
+code), and a seed with its PIN (*Backup seed → Export as tones*), for
+another device or a backup on tape or MP3 — by cable for the best sound.
 
 ## Security model
 

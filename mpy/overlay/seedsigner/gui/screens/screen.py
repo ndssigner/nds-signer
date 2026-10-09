@@ -420,15 +420,23 @@ class QRDisplayScreen(BaseScreen):
 
         settings = Settings.get_instance()
         brightness = int(settings.get_value(SettingsConstants.SETTING__QR_BRIGHTNESS))
-        panel = nds_ui.ButtonPanel([_("Done")], show_back=False)
-        panel.draw()
-        nds_ui.bottom_note(120, _("Up/Down: QR brightness"))
+        # a UR (signed PSBT, xpub...) can also go as tones (experimental, nds_tones)
+        ur = getattr(getattr(self.qr_encoder, "ur2_encode", None), "ur", None)
+        labels = [_("Done")] + ([_("Play as tones (experimental)")] if ur is not None else [])
         psbt = getattr(self.qr_encoder, "psbt", None)
-        if nds_ui.nds_dev is not None and psbt is not None:
-            import hashlib
-            from binascii import hexlify
-            digest = hexlify(hashlib.sha256(psbt.serialize()).digest()).decode()[:8]
-            nds_ui.bottom_note(140, "check: " + digest, font=nds.FONT_MONO)
+
+        def draw_panel():
+            panel = nds_ui.ButtonPanel(labels, show_back=False)
+            panel.draw()
+            nds_ui.bottom_note(120, _("Up/Down: QR brightness"))
+            if nds_ui.nds_dev is not None and psbt is not None:
+                import hashlib
+                from binascii import hexlify
+                digest = hexlify(hashlib.sha256(psbt.serialize()).digest()).decode()[:8]
+                nds_ui.bottom_note(140, "check: " + digest, font=nds.FONT_MONO)
+            return panel
+
+        panel = draw_panel()
         next_part_at = 0
         try:
             while True:
@@ -444,8 +452,17 @@ class QRDisplayScreen(BaseScreen):
                 elif down & nds.KEY_DOWN:
                     brightness = max(31, brightness - 31)
                     next_part_at = 0
-                elif down & nds.KEY_B or panel.handle_frame() is not None:
+                elif down & nds.KEY_B:
                     return None
+                else:
+                    choice = panel.handle_frame()
+                    if choice == 0:
+                        return None
+                    if choice == 1:
+                        from seedsigner.gui import nds_tones
+                        nds_tones.send_ur(ur)
+                        panel = draw_panel()
+                        next_part_at = 0
         finally:
             settings.set_value(SettingsConstants.SETTING__QR_BRIGHTNESS, brightness)
             nds.top_clear()

@@ -29,4 +29,14 @@ int tonesListenPoll(char *group, size_t cap, char *live, size_t livecap, int *le
  * tones to DecodeQR, timed on the console or the emulator. */
 bool tonesLoopback(const char *groups);
 
+/* Plays a frame's tones (or keypad tones) through the speaker, or the
+ * headphones when plugged in: a pause, each tone and its gap, a final pause
+ * (SPEC §1.1). Stops listening first. Call tonesPlayPoll() every frame: it
+ * keeps the sound fed, returns 1 while playing and 0 at the end, with the
+ * index of the tone being played out of `count`. Stopping (or the end)
+ * clears the buffers. */
+bool tonesPlayStart(const char *tones, unsigned tone_ms, unsigned gap_ms, unsigned pause_ms);
+int tonesPlayPoll(unsigned *index, unsigned *count);
+void tonesPlayStop(void);
+
 #endif /* NDS_SIGNER_TONES_AUDIO_H */

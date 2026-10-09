@@ -119,6 +119,23 @@ int ndsbTonesKeypadToSeed(const char *tones, const char *pin, uint8_t *entropy) 
 int ndsbTonesUrToSeed(const char *ur, const char *pin, uint8_t *entropy) { return ut_ur_to_seed(ur, pin, entropy); }
 bool ndsbTonesLoopback(const char *groups) { return tonesLoopback(groups); }
 
+int ndsbTonesSeedToFrame(const uint8_t *entropy, size_t len, const char *pin, char *tones, size_t cap)
+{
+	char ur[200];
+	int n = ut_seed_to_ur(entropy, len, pin, ur, sizeof ur);
+	if (n >= 0)
+		n = ut_ur_to_frame(ur, tones, cap);
+	memset(ur, 0, sizeof ur);
+	return n;
+}
+
+bool ndsbTonesPlay(const char *tones, unsigned tone_ms, unsigned gap_ms, unsigned pause_ms)
+{
+	return tonesPlayStart(tones, tone_ms, gap_ms, pause_ms);
+}
+int ndsbTonesPlayPoll(unsigned *index, unsigned *count) { return tonesPlayPoll(index, count); }
+void ndsbTonesPlayStop(void) { tonesPlayStop(); }
+
 bool ndsbCameraRunning(void)
 {
 	return scannerStreaming();

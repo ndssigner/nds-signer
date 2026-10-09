@@ -95,7 +95,7 @@ seedsigner: frozen
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
 	@rm -rf $(TOPDIR)/build/glyph_snaps && mkdir -p $(TOPDIR)/build/glyph_snaps
 	@# every flow must print ok lines and no FAIL (a crash prints neither)
-	@fail=; for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language scan_intro tones tones_seed camera_seed scribble_mic battery donate; do \
+	@fail=; for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language scan_intro tones tones_seed tones_export camera_seed scribble_mic battery donate; do \
 		out=$$($(DOCKER_MPY_ROM) -X heapsize=6M flow_check.py /source/tests/vectors $$mode \
 			--gallery=/source/build/glyph_snaps 2>/dev/null | grep -E "^(ok|FAIL)"); \
 		echo "$$out"; \

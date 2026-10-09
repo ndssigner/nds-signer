@@ -54,6 +54,11 @@ static void onVBlank(void)
 #endif
 }
 
+u32 uiFrames(void)
+{
+	return s_frames;
+}
+
 u32 uiMillis(void)
 {
 	/* the DS refreshes at ~59.83 Hz: 16.715 ms per frame */

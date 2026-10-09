@@ -9,6 +9,10 @@
   screen shows the progress (frames, the current frame, the tones as they
   come, the level), the bottom one Cancel and the microphone's gain; a PIN
   can be made up from the microphone's noise, for the sender to type.
+- Experimental: the DSi plays tones too — the signed PSBT (*Play as tones*,
+  next to its QR code, in UR parts of 100 bytes with fountain codes, in a
+  loop until Stop) and a seed with an optional PIN (*Backup seed → Export as
+  tones*, showing its fingerprint; for a tape backup, by cable).
 
 ## v0.1.0-alpha
 
