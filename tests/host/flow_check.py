@@ -570,9 +570,15 @@ def run_tones_flow(prefix):
 
     events = [("call", dump), ("tap_label", "Scan"), ("key", 0), ("wait", 2),
               ("call", dump), ("tap_label", "Listen to tones (experimental)"), ("key", 0), ("wait", 2),
-              ("call", dump), ("tap_label", "Start listening"), ("key", 0), ("wait", 2)]
-    for f in frames:
-        events += [("tones", f), ("wait", 3)]
+              ("call", dump), ("tap_label", "Start listening"), ("key", 0), ("wait", 2),
+              ("expect_top", "Listening"), ("expect_top", "Waiting for a frame")]
+    for i, f in enumerate(frames):
+        events += [("tones", f), ("wait", 4)]
+        if i < 2:  # complete before the last frames (fountain codes): check the first ones
+            events += [("expect_top", "This frame"), ("call", dump)]
+        events += [("wait", 24), ("call", dump)]
+        if i == 0:  # the misheard tone: repaired
+            events += [("expect_top", "Frames: 1"), ("expect_top", "bytes repaired")]
     events += [("call", dump)]
     for tap in SINGLESIG_TAPS[1:]:
         events += [("call", dump), ("tap_label", tap), ("key", 0)]
@@ -600,9 +606,20 @@ def run_tones_seed_flow():
         RESULT["tones_seed"] = ok
         print("ok  " if ok else "FAIL", "tones seed flow: PIN, keypad mode, fingerprint", expected, "shown")
 
+    def check_made_up():
+        from seedsigner.gui import nds_tones
+        text = nds.sim_text(0)
+        pins = [w for w in text.split() if len(w) == nds_tones.PIN_LENGTH
+                and all(c in nds_tones.PIN_ALPHABET for c in w)]
+        RESULT["tones_pin"] = bool(pins)
+        print("ok  " if pins else "FAIL", "made-up PIN shown:", pins)
+
     events = [("call", dump), ("tap_label", "Scan"), ("key", 0), ("wait", 2),
               ("tap_label", "Listen to tones (experimental)"), ("key", 0), ("wait", 2),
-              ("call", dump), ("tap_label", "PIN: none"), ("key", 0), ("wait", 2), ("call", dump)]
+              ("call", dump), ("tap_label", "PIN: none"), ("key", 0), ("wait", 2), ("call", dump),
+              ("tap_key", "Make one up"), ("key", 0), ("wait", 70), ("call", dump),
+              ("expect_top", "Type it on the other device"), ("call", check_made_up)]
+    events += [("tap_key", "Del"), ("key", 0)] * 8
     for ch in "ABC12345":
         events += [("tap_key", ch), ("key", 0)]
     events += [("call", dump), ("tap_key", "Save"), ("key", 0), ("wait", 2), ("call", dump),

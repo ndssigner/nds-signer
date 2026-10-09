@@ -5,7 +5,10 @@
 - Experimental: *Scan → Listen to tones* hears PSBTs, seeds (with an
   optional PIN) and other URs sent as telephone tones
   ([ur-tones](https://github.com/ndssigner/ur-tones)), by cable or through
-  the air; the receiver is ur-tones' C library (integers only).
+  the air; the receiver is ur-tones' C library (integers only). The top
+  screen shows the progress (frames, the current frame, the tones as they
+  come, the level), the bottom one Cancel and the microphone's gain; a PIN
+  can be made up from the microphone's noise, for the sender to type.
 
 ## v0.1.0-alpha
 

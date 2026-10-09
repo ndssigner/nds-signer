@@ -84,8 +84,7 @@ class ScanScreen(BaseScreen):
                 if chosen is None:          # Back: the scan preparation again
                     how = self._intro(settings)
                     continue
-                self._render()
-                return None if nds_tones.listen(self.decoder, chosen[0], chosen[1], self._progress) else False
+                return None if nds_tones.listen(self.decoder, chosen[0], chosen[1]) else False
             if not how:
                 return RET_CODE__BACK_BUTTON
             self._render()

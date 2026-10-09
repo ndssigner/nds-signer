@@ -51,10 +51,15 @@ tonos DTMF, por cable o al aire, en vez de un QR: el formato
 [herramienta web](https://ndssigner.github.io/ur-tones/) reproduce como
 tonos una PSBT de Sparrow (o una semilla de prueba). Una semilla puede ir
 con PIN, para que quien escuche o grabe los tonos obtenga otra semilla; al
-aire, cualquier micrófono cercano puede grabarlos. Su receptor está en C,
-solo con enteros (`third_party/ur-tones/c`). Aún sin probar en una DSi de
-verdad; enviar tonos desde la DSi (la PSBT firmada, una copia de la
-semilla) viene después.
+aire, cualquier micrófono cercano puede grabarlos. Cualquiera de los dos
+lados puede inventar el PIN (la DSi, con el ruido de su micrófono) para que
+el otro lo escriba, y la huella de la semilla, en los dos, delata al
+momento un PIN equivocado. Mientras escucha, la pantalla superior muestra
+las tramas, el avance de cada una, los tonos según llegan y el nivel del
+sonido. Su receptor está en C, solo con enteros
+(`third_party/ur-tones/c`). Probado en una DSi: semillas al aire con y sin
+PIN, y una PSBT de Sparrow al aire a ritmo de cable. Enviar tonos desde la
+DSi (la PSBT firmada, una copia de la semilla) viene después.
 
 ## Seguridad
 

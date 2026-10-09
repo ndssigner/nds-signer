@@ -443,7 +443,9 @@ def version():
 # (third_party/ur-tones/reference/python) stands in for the C library ----
 
 _tones_queue = []
+_tones_sent = [0]     # keys of the first queued group already heard
 tones_on = False
+TONES_PER_POLL = 32   # keys heard per frame: faster than real life, for short tests
 
 
 def tones_listen(on, gain=1):
@@ -451,13 +453,20 @@ def tones_listen(on, gain=1):
     tones_on = bool(on)
     if not on:
         del _tones_queue[:]
+        _tones_sent[0] = 0
     return True
 
 
 def tones_poll():
+    """The first queued group's keys a few at a time, then the group."""
     if tones_on and _tones_queue:
-        group = _tones_queue.pop(0)
-        return (group, group[:8], -200, 1, 0)
+        group, at = _tones_queue[0], _tones_sent[0]
+        if at < len(group):
+            _tones_sent[0] = at + TONES_PER_POLL
+            return (None, group[at:at + TONES_PER_POLL], -200, 1, 0)
+        _tones_queue.pop(0)
+        _tones_sent[0] = 0
+        return (group, "", -200, 1, 0)
     return (None, "", -990, 0, 0)
 
 

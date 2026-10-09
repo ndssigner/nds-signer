@@ -11,7 +11,13 @@ from seedsigner.gui import nds_keyboard, nds_ui
 
 REPO = "github.com/ndssigner/ur-tones"
 GAINS = ("20", "40", "80", "160")
+KEYS = "0123456789ABCD*#"
+# A made-up PIN: 8 characters without 0/O, 1/I (40 bits), easy to type by hand
+PIN_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+PIN_LENGTH = 8
 _state = {"gain": 1}  # this session only
+UT_PARITY = 32  # Reed-Solomon parity bytes per frame
+_last = {"parts": 0}  # the multi-part UR's length, from the last frame
 
 
 def seedqr_digits(entropy):
@@ -33,6 +39,12 @@ def feed(decoder, group, pin):
     ur, fixed = nds.tones_frame_to_ur(group)
     if ur is None:
         return None, fixed
+    seq = ur.split("/")
+    if len(seq) == 3 and "-" in seq[1]:              # ur:<type>/<n>-<parts>/<body>
+        try:
+            _last["parts"] = int(seq[1].split("-")[1])
+        except ValueError:
+            pass
     if ur.startswith("ur:crypto-seed/") or ur.startswith("ur:seed/"):
         entropy, err = nds.tones_seed(ur, pin or None)
         if entropy is None:
@@ -41,31 +53,103 @@ def feed(decoder, group, pin):
     return decoder.add_data(ur.encode()), fixed
 
 
+def frame_length(tones):
+    """A frame's length in tones after its sync, from its first 12 tones
+    (SPEC §2.1-2.2: the header gives the body's length); None until then, or
+    if they do not read."""
+    if len(tones) < 12:
+        return None
+    prev, value = KEYS.index("D"), 0
+    for k in tones[:12]:
+        if k not in KEYS:
+            return None
+        i = KEYS.index(k)
+        d = (i - prev - 1) % 16
+        if d == 15:                                  # a tone twice: an echo
+            return None
+        prev, value = i, value * 15 + d
+    # 3 groups of 4 digits: 3 x 15 bits, the first 5 bytes and 5 bits more
+    chunks = []
+    for g in range(3):
+        chunks.append(value % 50625)
+        value //= 50625
+    if any(c > 32767 for c in chunks):
+        return None
+    bits = (chunks[2] << 30) | (chunks[1] << 15) | chunks[0]
+    header = [(bits >> (37 - 8 * b)) & 0xFF for b in range(5)]
+    if header[0] >> 4:                               # version 0 only
+        return None
+    n = 3 + header[2] + UT_PARITY
+    if header[1] == 0:                               # a named type
+        n += 1 + header[3]
+    groups = (8 * n + 14) // 15
+    if 15 * groups - 8 * n >= 8:                     # the padding byte
+        groups = (8 * (n + 1) + 14) // 15
+    return 4 * groups
+
+
+def make_pin():
+    """A PIN made up from the microphone's noise (about a second of it,
+    hashed with SHA-256: no pseudo-random generator). None if the microphone
+    is not available."""
+    import hashlib
+    import struct
+    if not nds.mic_start():
+        return None
+    h = hashlib.sha256(b"NDS-Signer ur-tones PIN v1")
+    buf = bytearray(nds.MIC_BUFFER_BYTES)
+    buffers = 0
+    try:
+        while buffers < 4:
+            nds.frame()
+            n, peak = nds.mic_take(buf)
+            if n:
+                h.update(buf)
+                h.update(struct.pack("<I", nds.ticks_ms()))
+                buffers += 1
+    finally:
+        nds.mic_stop()
+    digest = h.digest()
+    return "".join(PIN_ALPHABET[b % len(PIN_ALPHABET)] for b in digest[:PIN_LENGTH])
+
+
 class PinScreen:
-    """A PIN on the touch keyboard: letters and digits (SPEC §4). Returns it,
-    or None for Back."""
+    """A PIN on the touch keyboard: letters and digits (SPEC §4), typed, or
+    made up here for the other device. Returns it, or None for Back."""
     ROWS = ("1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")
 
     def __init__(self, pin=""):
         self.pin = pin
+        self.made_up = False
         self.keys = []
         for r, row in enumerate(self.ROWS):
             col = (nds_ui.COLS - len(row) * 3) // 2
             for i, ch in enumerate(row):
                 self.keys.append(nds_keyboard.Key(ch, 3 + r * 3, col + i * 3))
+        self.make_key = nds_keyboard.Key(_("Make one up"), 15, 1, width=16, action="make")
         self.del_key = nds_keyboard.Key(_("Del"), 15, 19, width=6, action="del")
         self.back_key = nds_keyboard.Key(_("< Back"), 20, 1, width=10, action="back")
         self.save_key = nds_keyboard.Key(_("Save"), 20, 21, width=10, action="save")
 
+    def _all(self):
+        return self.keys + [self.make_key, self.del_key, self.back_key, self.save_key]
+
+    def _top(self):
+        if self.made_up:
+            notes = [("label", _("Made up from the microphone's noise.")),
+                     ("text", _("Type it on the other device, then Save."))]
+        else:
+            notes = [("label", _("The same PIN as the other device. Letters and digits.")),
+                     ("label", _("Or make one up here, and type it there.")),
+                     ("label", _("A wrong PIN gives a different seed, without an error."))]
+        nds_ui.top_blocks(_("PIN"), [("large", self.pin or " "), ("space", 6)] + notes)
+
     def _draw(self):
-        nds_ui.top_blocks(_("PIN"), [
-            ("large", self.pin or " "), ("space", 6),
-            ("label", _("The same PIN the sender used. Letters and digits.")),
-            ("label", _("A wrong PIN gives a different seed, without an error."))])
+        self._top()
         nds.bottom_clear()
-        for key in self.keys + [self.del_key, self.back_key, self.save_key]:
+        for key in self._all():
             nds_keyboard.draw_key(key)
-        nds_keyboard.set_active(self.keys + [self.del_key, self.back_key, self.save_key])
+        nds_keyboard.set_active(self._all())
 
     def run(self):
         self._draw()
@@ -84,10 +168,20 @@ class PinScreen:
                 return None
             if key.action == "save":
                 return self.pin
-            if key.action == "del":
+            if key.action == "make":
+                nds_ui.top_blocks(_("PIN"), [("text", _("Listening to the room's noise..."))])
+                pin = make_pin()
+                if pin is None:
+                    nds_ui.sound("error")
+                else:
+                    self.pin, self.made_up = pin, True
+                    nds_ui.sound("success")
+            elif key.action == "del":
                 self.pin = self.pin[:-1]
+                self.made_up = False
             elif len(self.pin) < 32:
                 self.pin += key.action
+                self.made_up = False
             self._draw()
 
 
@@ -104,7 +198,7 @@ def intro():
             ("space", 4),
             ("label", REPO)])
         labels = [_("Start listening"),
-                  "%s: %s" % (_("PIN"), _("set") if pin else _("none")),
+                  "%s: %s" % (_("PIN"), pin if pin else _("none")),
                   "%s: %s" % (_("Microphone gain"), GAINS[_state["gain"]])]
         choice = nds_ui.ButtonPanel(labels).run()
         if choice == nds_ui.BACK:
@@ -119,51 +213,205 @@ def intro():
             _state["gain"] = (_state["gain"] + 1) % len(GAINS)
 
 
-def listen(decoder, pin, gain, progress):
-    """Listens until the decoder is complete (True), or Cancel (False).
-    progress(text) shows a line below the Cancel button."""
+class ListenView:
+    """The top screen while listening: frames heard, the message's progress,
+    the frame being heard (its share and its tones as they come) and the
+    sound's level. The bottom screen is left for the controls."""
+    DB_MIN = -60          # the level bar's range, dBFS
+    SILENCE_FRAMES = 30   # half a second without tones ends a frame
+
+    def __init__(self, pin):
+        from seedsigner.gui.components import GUIConstants as GC
+        self.t = nds_ui.theme()
+        self.ok = nds_ui._rgb(GC.SUCCESS_COLOR)
+        self.warn = nds_ui._rgb(GC.WARNING_COLOR)
+        self.bad = nds_ui._rgb(GC.ERROR_COLOR)
+        self.pin = pin
+        self.heard = ""         # the latest keys, for the scrolling line
+        self.mode = None        # None between frames, "frame" or "keypad"
+        self.current = ""       # this frame's tones after the sync
+        self.total = None       # and how many it will have
+        self.quiet = 0
+        self.frames = self.bad_frames = 0
+        self.history = []       # True / False per frame heard, the latest last
+        self.last = ""
+        self.percent = 0
+        self.level = -990
+        self.dirty = True
+        self.urgent = False     # a frame starts: shown at once
+
+    def keys(self, live):
+        """Follows the keys heard, as they come (a rough view: the frame
+        itself comes later, whole, from the receiver)."""
+        if not live:
+            self.quiet += 1
+            if self.quiet == self.SILENCE_FRAMES and self.mode:
+                self.mode, self.current, self.total = None, "", None
+                self.dirty = True
+            return
+        self.quiet = 0
+        self.dirty = True
+        self.heard = (self.heard + live)[-40:]
+        for k in live:
+            if self.mode == "frame":
+                if self.current and self.current[-1] == k:
+                    continue                         # an echo: tones never repeat
+                self.current += k
+                if self.total is None:
+                    self.total = frame_length(self.current)
+            elif self.mode == "keypad":
+                self.current += k
+                if k == "#":
+                    self.mode = None
+            elif k == "*":
+                self.mode, self.current, self.total = "keypad", "", None
+                self.urgent = True
+            else:
+                self.current = (self.current + k)[-2:]
+                if self.current == "AD":
+                    self.mode, self.current, self.total = "frame", "", None
+                    self.urgent = True
+
+    def frame_done(self, ok, text):
+        if ok:
+            self.frames += 1
+        else:
+            self.bad_frames += 1
+        self.history = (self.history + [ok])[-16:]
+        self.last = text
+        self.mode, self.current, self.total = None, "", None
+        self.dirty = True
+
+    def _bar(self, y, fraction, color, h=8):
+        x, w = nds_ui.MARGIN, nds_ui.GFX_W - 2 * nds_ui.MARGIN
+        nds.gfx_rect(nds_ui.TOP, x, y, w, h, self.t["inactive"], 3)
+        fill = max(0, min(w, int(w * fraction)))
+        if fill >= 6:
+            nds.gfx_rect(nds_ui.TOP, x, y, fill, h, color, 3)
+
+    def _row(self, y, left, right, font=None, color=None):
+        font = nds.FONT_BODY if font is None else font
+        color = self.t["body"] if color is None else color
+        nds.gfx_text(nds_ui.TOP, nds_ui.MARGIN, y, left, font, color)
+        if right:
+            w = nds.gfx_text_width(right, font)
+            nds.gfx_text(nds_ui.TOP, nds_ui.GFX_W - nds_ui.MARGIN - w, y, right, font, color)
+
+    def draw(self):
+        t, top = self.t, nds_ui.TOP
+        nds.top_clear()
+        nds.gfx_clear(top, t["bg"])
+        nds_ui._title(_("Listening"))
+        # frames heard, and a light per frame (green: read, red: discarded)
+        parts = _last["parts"]
+        right = (_("{} parts").format(parts) if parts > 1 else "") + ("  PIN" if self.pin else "")
+        self._row(32, _("Frames: {}").format(self.frames), right)
+        x = nds_ui.MARGIN + nds.gfx_text_width(_("Frames: {}").format(self.frames), nds.FONT_BODY) + 8
+        for ok in self.history:
+            if x > 170:
+                break
+            nds.gfx_rect(top, x, 37, 7, 7, self.ok if ok else self.bad, 2)
+            x += 10
+        # the message
+        self._row(52, _("Message"), "%d%%" % self.percent, nds.FONT_BODY_BOLD)
+        self._bar(70, self.percent / 100, t["accent"])
+        # the frame being heard
+        n = len(self.current)
+        if self.mode == "keypad":
+            total = 48 if n <= 49 else 96             # 12 or 24 words, 4 digits each
+            label, share = _("Seed (keypad)"), min(n, total) / total
+            detail = "%d/%d" % (min(n, total), total)
+        elif self.mode == "frame":
+            total = self.total
+            label = _("This frame")
+            share = min(n / total, 0.99) if total else 0
+            detail = "%d%%  %d/%s" % (int(share * 100), n, total if total else "?")
+        else:
+            label, share, detail = _("Waiting for a frame..."), 0, ""
+        self._row(84, label, detail)
+        self._bar(102, share, self.ok)
+        # the tones as they come
+        nds.gfx_frame(top, nds_ui.MARGIN, 116, nds_ui.GFX_W - 2 * nds_ui.MARGIN, 24, t["inactive"], 4, 1)
+        nds_ui.text_centered(top, 119, self.heard[-26:] or "...", nds.FONT_MONO_BOLD, t["accent"])
+        # the level
+        db = self.level // 10
+        if self.level <= -900:
+            text, share, color = _("Level: -"), 0, t["inactive"]
+        else:
+            share = (db - self.DB_MIN) / -self.DB_MIN
+            color = self.bad if db > -3 else self.warn if db < -45 else self.ok
+            text = "%s %d dB" % (_("Level:"), db)
+        nds.gfx_text(top, nds_ui.MARGIN, 148, text, nds.FONT_BODY, t["body"])
+        x0 = nds_ui.MARGIN + 92
+        w = nds_ui.GFX_W - nds_ui.MARGIN - x0
+        for i in range(20):                          # 3 dB per segment
+            on = i < int(share * 20 + 0.5)
+            seg = self.bad if i >= 19 else self.warn if i < 5 else self.ok
+            nds.gfx_rect(top, x0 + i * w // 20, 152, w // 20 - 2, 10, seg if on else t["inactive"], 1)
+        # the last frame's outcome
+        if self.last:
+            nds_ui.text_centered(top, 170, self.last, nds.FONT_BODY, t["label"])
+        nds.gfx_present(top)
+        self.dirty = self.urgent = False
+
+
+def listen(decoder, pin, gain):
+    """Listens until the decoder is complete (True), or Cancel (False). The
+    top screen shows the progress (ListenView); the bottom one, Cancel and the
+    microphone's gain, which can be changed while listening."""
     from seedsigner.models.decode_qr import DecodeQRStatus
 
-    panel = nds_ui.ButtonPanel([_("Cancel")], show_back=False)
-    panel.draw()
+    def panel_for(g):
+        p = nds_ui.ButtonPanel([_("Cancel"), "%s: %s" % (_("Microphone gain"), GAINS[g])],
+                               show_back=False)
+        p.draw()
+        return p
+
+    _last["parts"] = 0
+    view = ListenView(pin)
+    view.draw()
+    panel = panel_for(gain)
     if not nds.tones_listen(True, gain):
         return False
-    heard, frames, bad, shown, tick = "", 0, 0, None, 0
+    tick = 0
     try:
         while True:
             nds.frame()
-            if panel.handle_frame() is not None or nds.keys_down() & nds.KEY_B:
+            choice = panel.handle_frame()
+            if choice == 0 or nds.keys_down() & nds.KEY_B:
                 return False
+            if choice == 1:                          # restarts the microphone
+                gain = _state["gain"] = (gain + 1) % len(GAINS)
+                nds.tones_listen(False)
+                if not nds.tones_listen(True, gain):
+                    return False
+                panel = panel_for(gain)
+                view.mode, view.current, view.total = None, "", None
             group, live, level, buffers, dropped = nds.tones_poll()
-            if live:
-                heard = (heard + live)[-28:]
+            view.keys(live)
+            if level != view.level and tick % 15 == 0:  # twice a second: enough to set the volume
+                view.level, view.dirty = level, True
             tick += 1
-            if live or tick % 15 == 0:  # the level twice a second: enough to set the volume
-                line = "%s  %s %s" % (heard[-14:] or "...", "%d dB" % (level // 10) if level > -900 else "-",
-                                       _("{} frames").format(frames) if frames else "")
-                if nds_ui.nds_dev is not None:
-                    line += " b%d d%d" % (buffers, dropped)
-                if line != shown:
-                    progress(line)
-                    shown = line
-            if group is None:
-                continue
-            status, fixed = feed(decoder, group, pin)
-            if status is None:
-                bad += 1
-                nds_ui.sound("error")
-                continue
-            frames += 1
-            if status == DecodeQRStatus.COMPLETE:
-                nds_ui.sound("success")
-                return True
-            if status == DecodeQRStatus.INVALID:
-                nds_ui.sound("error")
-                return True
-            nds_ui.sound("scan")
-            percent = decoder.get_percent_complete()
-            if percent:
-                progress("%s %d%%" % (_("Progress:"), percent))
-                shown = None
+            if group is not None:
+                status, fixed = feed(decoder, group, pin)
+                if status is None:
+                    nds_ui.sound("error")
+                    view.frame_done(False, _("Discarded: too many errors"))
+                elif status in (DecodeQRStatus.COMPLETE, DecodeQRStatus.INVALID):
+                    view.percent = 100 if status == DecodeQRStatus.COMPLETE else view.percent
+                    view.frame_done(True, "")
+                    view.draw()
+                    nds_ui.sound("success" if status == DecodeQRStatus.COMPLETE else "error")
+                    return True
+                else:
+                    nds_ui.sound("scan")
+                    view.percent = decoder.get_percent_complete() or view.percent
+                    view.frame_done(True, _("Read, {} bytes repaired").format(fixed) if fixed
+                                    else _("Frame read"))
+            if nds_ui.nds_dev is not None and tick % 30 == 0:
+                view.last = "b%d d%d" % (buffers, dropped)
+                view.dirty = True
+            if view.urgent or view.dirty and tick % 6 == 0:  # 10 times a second at most
+                view.draw()
     finally:
         nds.tones_listen(False)

@@ -193,20 +193,65 @@ msgstr "Empezar a escuchar"
 msgid "PIN"
 msgstr "PIN"
 
-msgid "set"
-msgstr "puesto"
-
 msgid "none"
 msgstr "ninguno"
 
 msgid "Microphone gain"
 msgstr "Ganancia del micro"
 
-msgid "{} frames"
-msgstr "{} tramas"
-
-msgid "The same PIN the sender used. Letters and digits."
-msgstr "El mismo PIN que usó el emisor. Letras y cifras."
-
 msgid "A wrong PIN gives a different seed, without an error."
 msgstr "Un PIN equivocado da otra semilla, sin dar error."
+
+msgid "The same PIN as the other device. Letters and digits."
+msgstr "El mismo PIN que en el otro dispositivo. Letras y cifras."
+
+msgid "Or make one up here, and type it there."
+msgstr "O invéntalo aquí y escríbelo allí."
+
+msgid "Make one up"
+msgstr "Inventar uno"
+
+msgid "Made up from the microphone's noise."
+msgstr "Inventado con el ruido del micrófono."
+
+msgid "Type it on the other device, then Save."
+msgstr "Escríbelo en el otro dispositivo y pulsa Guardar."
+
+msgid "Listening to the room's noise..."
+msgstr "Escuchando el ruido de la sala..."
+
+msgid "Listening"
+msgstr "Escuchando"
+
+msgid "{} parts"
+msgstr "{} partes"
+
+msgid "Frames: {}"
+msgstr "Tramas: {}"
+
+msgid "Message"
+msgstr "Mensaje"
+
+msgid "Seed (keypad)"
+msgstr "Semilla (teclado)"
+
+msgid "This frame"
+msgstr "Esta trama"
+
+msgid "Waiting for a frame..."
+msgstr "Esperando una trama..."
+
+msgid "Level: -"
+msgstr "Nivel: -"
+
+msgid "Level:"
+msgstr "Nivel:"
+
+msgid "Discarded: too many errors"
+msgstr "Descartada: demasiados errores"
+
+msgid "Read, {} bytes repaired"
+msgstr "Leída, {} bytes reparados"
+
+msgid "Frame read"
+msgstr "Trama leída"
