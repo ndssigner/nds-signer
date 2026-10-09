@@ -85,7 +85,9 @@ Tres niveles, del más rápido al más real:
 Hitos en la consola: primera firma (etiqueta `hw-first-signature`), primera
 transacción real de Signet creada en Sparrow y emitida
 (`hw-first-signet-tx`), todos los menús comprobados (`hw-menus-verified`),
-la interfaz gráfica (`hw-ui-style-a`).
+la interfaz gráfica (`hw-ui-style-a`), y los tonos de teléfono en los dos
+sentidos —una PSBT de Sparrow y semillas con PIN, al aire— en la
+v0.2.0-alpha.
 
 ## Qué significa para ti
 

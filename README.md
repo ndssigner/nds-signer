@@ -7,7 +7,7 @@
 
 *[Leer en español](docs/es/LEEME.md)*
 
-> ⚠️ **Alpha software (v0.1.0-alpha).** It has not been audited. Try it on
+> ⚠️ **Alpha software (v0.2.0-alpha).** It has not been audited. Try it on
 > testnet/signet or with amounts you can afford to lose. Read the
 > [disclaimer](#disclaimer).
 
@@ -25,6 +25,7 @@ host simulator (`tools/dev/readme_screenshots.sh`):
 <table>
 <tr><td align="center"><img src="docs/images/home.png" width="190" alt="Home"><br><sub>Home</sub></td><td align="center"><img src="docs/images/review.png" width="190" alt="Review the transaction"><br><sub>Review the transaction</sub></td><td align="center"><img src="docs/images/recipient.png" width="190" alt="Each recipient's address"><br><sub>Each recipient's address</sub></td><td align="center"><img src="docs/images/math.png" width="190" alt="The amounts add up"><br><sub>The amounts add up</sub></td></tr>
 <tr><td align="center"><img src="docs/images/signed-qr.png" width="190" alt="Signed PSBT, animated QR"><br><sub>Signed PSBT, animated QR</sub></td><td align="center"><img src="docs/images/addresses.png" width="190" alt="Address explorer with QR"><br><sub>Address explorer with QR</sub></td><td align="center"><img src="docs/images/seedqr-map.png" width="190" alt="SeedQR backup with a map"><br><sub>SeedQR backup with a map</sub></td><td align="center"><img src="docs/images/new-seed.png" width="190" alt="New seed: scribble + mic"><br><sub>New seed: scribble + mic</sub></td></tr>
+<tr><td align="center"><img src="docs/images/tones-listen.png" width="190" alt="Tones: listening"><br><sub>Tones: listening to a PSBT</sub></td><td align="center"><img src="docs/images/tones-pin.png" width="190" alt="Tones: a made-up PIN"><br><sub>Tones: a PIN made up by the DSi</sub></td><td align="center"><img src="docs/images/tones-play.png" width="190" alt="Tones: playing the signed PSBT"><br><sub>Tones: playing the signed PSBT</sub></td><td align="center"><img src="docs/images/tones-export.png" width="190" alt="Tones: a seed with its PIN"><br><sub>Tones: a seed with its PIN</sub></td></tr>
 </table>
 
 ## What it does
@@ -53,45 +54,37 @@ touch interface, the DSi cameras, QR decoding and display.
 Tested on a real DSi XL: signing a Signet transaction created in Sparrow,
 and exporting the xpub to Sparrow.
 
-**Experimental: telephone tones.** *Scan → Listen to tones (experimental)*
-hears a transaction, a seed or an xpub sent as DTMF tones, by cable or
-through the air, instead of a QR code: the
-[ur-tones](https://github.com/ndssigner/ur-tones) format, whose
-[web tool](https://ndssigner.github.io/ur-tones/) plays a PSBT from Sparrow
-(or a test seed) as tones. A seed can come with a PIN, so that whoever
-overhears or records the tones gets a different seed; through the air, any
-microphone nearby can record them. Either side can make the PIN up (the DSi
-from its microphone's noise) for the other to type, and the seed's
-fingerprint, on both, tells a wrong PIN at once. While listening, the top
-screen shows the frames, each frame's progress, the tones as they come and
-the sound's level. Its receiver is C with integers only
-(`third_party/ur-tones/c`). Tested on a DSi: seeds through the air with and
-without a PIN, and a PSBT from Sparrow through the air at cable pace.
-The DSi also plays tones: the signed PSBT (*Play as tones* next to its QR
-code), and a seed with its PIN (*Backup seed → Export as tones*), for
-another device or a backup on tape or MP3 — by cable for the best sound.
+### Telephone tones (experimental)
 
-## Security model
+Besides QR codes, NDS-Signer can exchange data as **telephone tones
+(DTMF)**, by an audio cable or through the air: the
+[ur-tones](https://github.com/ndssigner/ur-tones) format. No camera is
+needed on either side, and the same UR parts as animated QR codes travel,
+with error correction (two misheard tones per frame are always repaired)
+and fountain codes (a lost frame costs one frame).
 
-- **No network.** The ARM7 (the DSi's second CPU, which owns the wireless
-  chips) is built without the wireless driver, and powers both wireless chips
-  and the wireless LED down at start.
-- **Stateless.** Nothing is written to the SD card or the internal memory:
-  the storage driver is not even linked. Seeds, passphrases and PSBTs live in
-  RAM only.
-- **Lid closed = wiped.** Closing the lid (or pressing the power button)
-  overwrites the memory that may hold secrets and switches the console off.
-  It never goes to sleep with a seed loaded.
-- **No hardware RNG.** New seeds come only from what you provide: dice,
-  camera images, scribbles and microphone noise.
-- **Microphone and camera** are off except on the screens that use them.
-- **Reproducible build.** The ROM is built in a pinned Docker image; anyone
-  can rebuild it and compare its SHA-256 with the released file.
+- **Receive a PSBT:** in Sparrow, *Copy as Base64*; paste it into the
+  [ur-tones web tool](https://ndssigner.github.io/ur-tones/) (*Send*) and
+  play it. On the DSi: *Scan → Listen to tones (experimental) → Start
+  listening* — start listening first, then the sender. The top screen
+  shows the frames, the current frame's progress, the tones as they come
+  and the level in dB; the bottom one, Cancel and the microphone's gain.
+- **Send the signed PSBT back:** *Play as tones (experimental)*, next to its
+  animated QR code; the web tool listens (*Listen*) and gives the PSBT to
+  copy back into Sparrow.
+- **Seeds, with a PIN:** a seed can be received (*Listen to tones*), or
+  exported (*Backup seed → Export as tones*) to another device or as a
+  backup on tape or MP3 — by cable for the best sound. With a PIN, whoever
+  overhears or records the tones gets a different, empty wallet. Either
+  side can make the PIN up (the DSi from its microphone's noise: 12
+  characters, in groups of four) for the other to type; both show the
+  seed's fingerprint, so a wrong PIN shows at once.
 
-What it does **not** protect against: a compromised SD card or launcher
-(they run before NDS-Signer), someone watching your screen, or a console
-modified to record what it displays. Keep the SeedSigner advice: verify
-addresses, and keep your seed words offline.
+Through the air, any microphone in the room can record what is played: send
+seeds by cable, or with a PIN of 12 characters or more. The receiver is
+ur-tones' C library, with integers only (`third_party/ur-tones/c`).
+Tested on a DSi XL: seeds through the air with and without a PIN, and a
+Sparrow PSBT through the air at cable pace, both ways, in a noisy room.
 
 ## Compatible wallets
 
@@ -108,7 +101,9 @@ with SeedSigner should work:
 | [BlueWallet](https://bluewallet.io) | | ✅ | |
 
 Plus any wallet that reads and shows PSBTs as QR codes (animated UR or
-static). Blank in the last column: expected to work, as with SeedSigner, but
+static). Without a camera, any of them through the
+[ur-tones web tool](https://ndssigner.github.io/ur-tones/) and telephone
+tones (copy and paste the PSBT; experimental). Blank in the last column: expected to work, as with SeedSigner, but
 not tried yet; reports welcome.
 
 ## Which consoles work
@@ -148,6 +143,9 @@ In short:
 - **Scanning bright screens is slow:** lower the screen's brightness
   ([help wanted](docs/help-wanted.md)).
 - **3DS family:** untested.
+- **Telephone tones are experimental:** the ur-tones format is a draft and
+  may still change. In a noisy room, or with the DSi's small speaker far
+  from the receiver, use the slower air pace.
 
 ## Build
 

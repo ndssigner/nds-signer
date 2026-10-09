@@ -467,7 +467,8 @@ def tones_poll():
         _tones_queue.pop(0)
         _tones_sent[0] = 0
         return (group, "", -200, 1, 0)
-    return (None, "", -990, 0, 0)
+    # listening: a steady level, as a microphone in a room would give
+    return (None, "", -230 if tones_on else -990, 0, 0)
 
 
 def tones_loopback(groups):

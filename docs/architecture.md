@@ -2,7 +2,7 @@
 
 Status: **implemented.** Proposed on 2026-09-26; the MicroPython spike (end
 of this document) succeeded in the emulator and then on a real DSi XL, and
-NDS-Signer v0.1.0-alpha is built this way. Sections below keep the reasoning
+NDS-Signer v0.2.0-alpha is built this way. Sections below keep the reasoning
 as it was written; [how-it-was-built.md](how-it-was-built.md) tells the rest.
 
 ## Goal
@@ -59,6 +59,7 @@ Raspberry Pi and a 240x240 screen.
 | Translations, BIP-39 wordlist, settings definitions | **Build-time generators**: upstream data files (`.po`, JSON, wordlists) turned into tables automatically |
 | Camera, QR decoding (quirc), display, touch | **Native C** (phases 1-3) |
 | Cryptography (libsecp256k1) | **Native C**, through the MicroPython binding embit already supports (Specter-DIY) |
+| Telephone tones ([ur-tones](https://github.com/ndssigner/ur-tones), experimental) | **Native C**: ur-tones' C library (submodule `third_party/ur-tones/c`: frames, Reed-Solomon, PIN, synthesis, an integer-only receiver) fed by the microphone's DMA and played through a sound channel (`arm9/src/tones_audio.c`); the UR text it hears goes to upstream's `DecodeQR` as if scanned. Screens in `gui/nds_tones.py` |
 | `hardware/`, `version.py`, CI tooling | Not applicable |
 
 ### Staying in sync with upstream

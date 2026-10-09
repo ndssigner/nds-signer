@@ -8,7 +8,7 @@ para la Nintendo DSi, que ejecuta el propio código de
 
 *[Read in English](../../README.md)*
 
-> ⚠️ **Versión alfa (v0.1.0-alpha).** Nadie la ha auditado. Pruébala en
+> ⚠️ **Versión alfa (v0.2.0-alpha).** Nadie la ha auditado. Pruébala en
 > testnet/signet o con cantidades que puedas permitirte perder.
 
 Una Nintendo DSi ya tiene lo que necesita un SeedSigner: cámara, dos
@@ -26,6 +26,7 @@ idioma):
 <table>
 <tr><td align="center"><img src="../images/home.png" width="190" alt="Inicio"><br><sub>Inicio</sub></td><td align="center"><img src="../images/review.png" width="190" alt="Revisar la transacción"><br><sub>Revisar la transacción</sub></td><td align="center"><img src="../images/recipient.png" width="190" alt="Dirección de cada destinatario"><br><sub>Dirección de cada destinatario</sub></td><td align="center"><img src="../images/math.png" width="190" alt="Las cuentas cuadran"><br><sub>Las cuentas cuadran</sub></td></tr>
 <tr><td align="center"><img src="../images/signed-qr.png" width="190" alt="Transacción firmada, QR animado"><br><sub>Transacción firmada, QR animado</sub></td><td align="center"><img src="../images/addresses.png" width="190" alt="Direcciones con su QR"><br><sub>Direcciones con su QR</sub></td><td align="center"><img src="../images/seedqr-map.png" width="190" alt="Copia del SeedQR con mapa"><br><sub>Copia del SeedQR con mapa</sub></td><td align="center"><img src="../images/new-seed.png" width="190" alt="Nueva semilla: garabato + micro"><br><sub>Nueva semilla: garabato + micro</sub></td></tr>
+<tr><td align="center"><img src="../images/tones-listen.png" width="190" alt="Tonos: escuchando"><br><sub>Tonos: escuchando una PSBT</sub></td><td align="center"><img src="../images/tones-pin.png" width="190" alt="Tonos: un PIN inventado"><br><sub>Tonos: un PIN inventado por la DSi</sub></td><td align="center"><img src="../images/tones-play.png" width="190" alt="Tonos: enviando la PSBT firmada"><br><sub>Tonos: enviando la PSBT firmada</sub></td><td align="center"><img src="../images/tones-export.png" width="190" alt="Tonos: una semilla con su PIN"><br><sub>Tonos: una semilla con su PIN</sub></td></tr>
 </table>
 
 ## Qué hace
@@ -44,25 +45,40 @@ idioma):
 - **Ajustes:** red (mainnet, testnet/signet, regtest), unidades, 16 idiomas
   (el de la consola por defecto), sonidos, cámara trasera o frontal.
 
-**Experimental: tonos de teléfono.** *Escanear → Escuchar tonos
-(experimental)* oye una transacción, una semilla o una xpub enviadas como
-tonos DTMF, por cable o al aire, en vez de un QR: el formato
-[ur-tones](https://github.com/ndssigner/ur-tones), cuya
-[herramienta web](https://ndssigner.github.io/ur-tones/) reproduce como
-tonos una PSBT de Sparrow (o una semilla de prueba). Una semilla puede ir
-con PIN, para que quien escuche o grabe los tonos obtenga otra semilla; al
-aire, cualquier micrófono cercano puede grabarlos. Cualquiera de los dos
-lados puede inventar el PIN (la DSi, con el ruido de su micrófono) para que
-el otro lo escriba, y la huella de la semilla, en los dos, delata al
-momento un PIN equivocado. Mientras escucha, la pantalla superior muestra
-las tramas, el avance de cada una, los tonos según llegan y el nivel del
-sonido. Su receptor está en C, solo con enteros
-(`third_party/ur-tones/c`). Probado en una DSi: semillas al aire con y sin
-PIN, y una PSBT de Sparrow al aire a ritmo de cable. La DSi también emite
-tonos: la PSBT firmada (*Enviar como tonos*, junto a su QR) y una semilla
-con su PIN (*Copia de la semilla → Exportar como tonos*), para otro
-dispositivo o una copia en cinta o MP3 (por cable, que es como mejor
-suena).
+### Tonos de teléfono (experimental)
+
+Además de con códigos QR, NDS-Signer puede intercambiar datos como **tonos
+de teléfono (DTMF)**, por un cable de audio o al aire: el formato
+[ur-tones](https://github.com/ndssigner/ur-tones). No hace falta cámara en
+ningún lado, y viajan las mismas partes UR que en los QR animados, con
+corrección de errores (dos tonos mal oídos por trama se reparan siempre) y
+códigos fountain (una trama perdida cuesta una trama).
+
+- **Recibir una PSBT:** en Sparrow, *Copy as Base64*; pégala en la
+  [herramienta web de ur-tones](https://ndssigner.github.io/ur-tones/)
+  (*Enviar*) y reprodúcela. En la DSi: *Escanear → Escuchar tonos
+  (experimental) → Empezar a escuchar*; primero escucha y después pon en
+  marcha el emisor. La pantalla superior muestra las tramas, el avance de
+  la trama actual, los tonos según llegan y el nivel en dB; la inferior,
+  Cancelar y la ganancia del micrófono.
+- **Devolver la PSBT firmada:** *Enviar como tonos (experimental)*, junto a
+  su QR animado; la herramienta web escucha (*Escuchar*) y da la PSBT para
+  copiarla de vuelta en Sparrow.
+- **Semillas, con PIN:** una semilla se puede recibir (*Escuchar tonos*) o
+  exportar (*Respaldar semilla → Exportar como tonos*) a otro dispositivo o
+  como copia en cinta o MP3 (por cable, que es como mejor suena). Con PIN,
+  quien escuche o grabe los tonos obtiene otra cartera, vacía. Cualquiera de
+  los dos lados puede inventar el PIN (la DSi, con el ruido de su
+  micrófono: 12 caracteres, en grupos de cuatro) para que el otro lo
+  escriba; los dos muestran la huella de la semilla, así que un PIN
+  equivocado se nota al momento.
+
+Al aire, cualquier micrófono de la habitación puede grabar lo que suena:
+envía las semillas por cable, o con un PIN de 12 caracteres o más. El
+receptor es la librería en C de ur-tones, solo con enteros
+(`third_party/ur-tones/c`). Probado en una DSi XL: semillas al aire con y
+sin PIN, y una PSBT de Sparrow al aire a ritmo de cable, en los dos
+sentidos, en una habitación con ruido.
 
 ## Seguridad
 
@@ -92,7 +108,9 @@ Cualquier cartera que funcione con SeedSigner debería funcionar:
 | [BlueWallet](https://bluewallet.io) | | ✅ | |
 
 Y cualquier cartera que lea y muestre transacciones PSBT como QR (animados UR
-o estáticos). En blanco en la última columna: deberían funcionar, como con
+o estáticos). Sin cámara, cualquiera de ellas a través de la
+[herramienta web de ur-tones](https://ndssigner.github.io/ur-tones/) y tonos
+de teléfono (copiando y pegando la PSBT; experimental). En blanco en la última columna: deberían funcionar, como con
 SeedSigner, pero aún no se han probado; se agradecen pruebas.
 
 ## Qué consolas sirven
@@ -133,6 +151,10 @@ En resumen:
 - **Escanear pantallas muy brillantes es lento:** baja el brillo de la
   pantalla.
 - **Familia 3DS:** sin probar.
+- **Los tonos de teléfono son experimentales:** el formato ur-tones es un
+  borrador y aún puede cambiar. En una habitación con ruido, o con el
+  altavoz pequeño de la DSi lejos del receptor, usa el ritmo de aire, más
+  lento.
 
 ## Guías
 
