@@ -345,9 +345,8 @@ class ListenView:
         x0 = nds_ui.MARGIN + 92
         w = nds_ui.GFX_W - nds_ui.MARGIN - x0
         for i in range(20):                          # 3 dB per segment
-            on = i < int(share * 20 + 0.5)
-            seg = self.bad if i >= 19 else self.warn if i < 5 else self.ok
-            nds.gfx_rect(top, x0 + i * w // 20, 152, w // 20 - 2, 10, seg if on else t["inactive"], 1)
+            on = i < int(share * 20 + 0.5)            # lit in the level's colour: quiet, good, too loud
+            nds.gfx_rect(top, x0 + i * w // 20, 152, w // 20 - 2, 10, color if on else t["inactive"], 1)
         # the last frame's outcome
         if self.last:
             nds_ui.text_centered(top, 170, self.last, nds.FONT_BODY, t["label"])
