@@ -28,15 +28,22 @@ static void onBuffer(void *user, void *buf, size_t size)
 	s_haveReady = true;
 }
 
-bool micEntropyStart(void)
+/* micInit() once, for whichever user of the microphone comes first (this
+ * file, or tones_audio.c) */
+void micEnsureInit(void)
 {
 	static bool initialized;
-	if (s_running)
-		return true;
 	if (!initialized) {
 		micInit();
 		initialized = true;
 	}
+}
+
+bool micEntropyStart(void)
+{
+	if (s_running)
+		return true;
+	micEnsureInit();
 	if (!micSetDmaRate(MicRate_Div2))
 		return false;
 	micSetCallback(onBuffer, NULL);

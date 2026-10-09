@@ -44,6 +44,18 @@ idioma):
 - **Ajustes:** red (mainnet, testnet/signet, regtest), unidades, 16 idiomas
   (el de la consola por defecto), sonidos, cámara trasera o frontal.
 
+**Experimental: tonos de teléfono.** *Escanear → Escuchar tonos
+(experimental)* oye una transacción, una semilla o una xpub enviadas como
+tonos DTMF, por cable o al aire, en vez de un QR: el formato
+[ur-tones](https://github.com/ndssigner/ur-tones), cuya
+[herramienta web](https://ndssigner.github.io/ur-tones/) reproduce como
+tonos una PSBT de Sparrow (o una semilla de prueba). Una semilla puede ir
+con PIN, para que quien escuche o grabe los tonos obtenga otra semilla; al
+aire, cualquier micrófono cercano puede grabarlos. Su receptor está en C,
+solo con enteros (`third_party/ur-tones/c`). Aún sin probar en una DSi de
+verdad; enviar tonos desde la DSi (la PSBT firmada, una copia de la
+semilla) viene después.
+
 ## Seguridad
 
 - **Sin red:** el código del wifi ni siquiera está incluido, y los chips

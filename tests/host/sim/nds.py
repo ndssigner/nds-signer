@@ -148,6 +148,8 @@ def frame():
             _events.insert(0, ("wait", ev[1] - 1))
     elif kind == "camera":
         _camera_queue.append(ev[1])
+    elif kind == "tones":  # a group of tones the microphone hears
+        _tones_queue.append(ev[1])
     elif kind == "expect_top":
         if ev[1] not in sim_text(0):
             raise AssertionError("expected %r on the top screen:\n%s" % (ev[1], sim_text(0)))
@@ -435,6 +437,58 @@ version_string = "sim"  # e.g. a release name for README screenshots
 
 def version():
     return version_string
+
+
+# ---- ur-tones (experimental): the reference implementation
+# (third_party/ur-tones/reference/python) stands in for the C library ----
+
+_tones_queue = []
+tones_on = False
+
+
+def tones_listen(on, gain=1):
+    global tones_on
+    tones_on = bool(on)
+    if not on:
+        del _tones_queue[:]
+    return True
+
+
+def tones_poll():
+    if tones_on and _tones_queue:
+        group = _tones_queue.pop(0)
+        return (group, group[:8], -200, 1, 0)
+    return (None, "", -990, 0, 0)
+
+
+def tones_loopback(groups):
+    return False
+
+
+def tones_frame_to_ur(tones):
+    import ur_tones
+    try:
+        return ur_tones.frame_to_ur(tones)
+    except ur_tones.DecodeError:
+        return (None, -7)
+
+
+def tones_ur_to_frame(ur):
+    import ur_tones
+    try:
+        return ur_tones.ur_to_frame(ur)
+    except (ValueError, ur_tones.DecodeError):
+        return None
+
+
+def tones_seed(text, pin=None):
+    import ur_tones
+    try:
+        if text.startswith("*"):
+            return (ur_tones.keypad_to_seed(text, pin), 0)
+        return (ur_tones.ur_to_seed(text, pin), 0)
+    except (ValueError, ur_tones.DecodeError):
+        return (None, -9)
 
 
 # ---- simulator controls (not part of the native API) ----

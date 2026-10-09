@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Experimental: *Scan → Listen to tones* hears PSBTs, seeds (with an
+  optional PIN) and other URs sent as telephone tones
+  ([ur-tones](https://github.com/ndssigner/ur-tones)), by cable or through
+  the air; the receiver is ur-tones' C library (integers only).
+
 ## v0.1.0-alpha
 
 First public version. Runs SeedSigner (pinned at `cfaf443`) and embit 0.8.0

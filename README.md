@@ -53,6 +53,17 @@ touch interface, the DSi cameras, QR decoding and display.
 Tested on a real DSi XL: signing a Signet transaction created in Sparrow,
 and exporting the xpub to Sparrow.
 
+**Experimental: telephone tones.** *Scan → Listen to tones (experimental)*
+hears a transaction, a seed or an xpub sent as DTMF tones, by cable or
+through the air, instead of a QR code: the
+[ur-tones](https://github.com/ndssigner/ur-tones) format, whose
+[web tool](https://ndssigner.github.io/ur-tones/) plays a PSBT from Sparrow
+(or a test seed) as tones. A seed can come with a PIN, so that whoever
+overhears or records the tones gets a different seed; through the air, any
+microphone nearby can record them. Its receiver is C with integers only
+(`third_party/ur-tones/c`). Not yet tested on a real DSi; sending tones
+from the DSi (the signed PSBT, a seed backup) comes next.
+
 ## Security model
 
 - **No network.** The ARM7 (the DSi's second CPU, which owns the wireless

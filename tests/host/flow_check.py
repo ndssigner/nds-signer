@@ -549,6 +549,69 @@ def run_scan_intro_flow(prefix):
     controller.start(initial_destination=Destination(MainMenuView))
 
 
+def run_tones_flow(prefix):
+    """Scan -> Listen to tones (experimental) -> Start listening: the PSBT's UR
+    parts arrive as ur-tones frames (made by the reference implementation),
+    one with a misheard tone; then the usual review and signing, and the
+    signed PSBT is shown as a QR code."""
+    import ur_tones
+    from seedsigner.models.seed import Seed
+    from seedsigner.models.settings import Settings, SettingsConstants
+    from seedsigner.views.view import Destination, MainMenuView
+
+    controller = Controller.get_instance()
+    Settings.get_instance().set_value(SettingsConstants.SETTING__NETWORK, SettingsConstants.TESTNET)
+    controller.storage.set_pending_seed(Seed(read(prefix + ".mnemonic.txt").split()))
+    controller.storage.finalize_pending_seed()
+    parts = [line for line in read(prefix + ".ur.txt").split() if line]
+    frames = [ur_tones.ur_to_frame(part) for part in parts]
+    k = frames[0][20]
+    frames[0] = frames[0][:20] + ur_tones.KEYS[(ur_tones.KEYS.index(k) + 5) % 16] + frames[0][21:]
+
+    events = [("call", dump), ("tap_label", "Scan"), ("key", 0), ("wait", 2),
+              ("call", dump), ("tap_label", "Listen to tones (experimental)"), ("key", 0), ("wait", 2),
+              ("call", dump), ("tap_label", "Start listening"), ("key", 0), ("wait", 2)]
+    for f in frames:
+        events += [("tones", f), ("wait", 3)]
+    events += [("call", dump)]
+    for tap in SINGLESIG_TAPS[1:]:
+        events += [("call", dump), ("tap_label", tap), ("key", 0)]
+    events += [("wait", 200), ("call", dump), ("call", lambda: check_signed(prefix)),
+               ("call", lambda: RESULT.__setitem__("tones_off", not nds.tones_on)), ("call", stop)]
+    nds.sim_script(events)
+    controller.start(initial_destination=Destination(MainMenuView))
+
+
+def run_tones_seed_flow():
+    """Scan -> tones -> PIN (typed on the keyboard) -> Start listening: a seed
+    in keypad mode, scrambled with that PIN, arrives; the seed loaded (its
+    fingerprint on Finalize) must be the original one."""
+    import ur_tones
+    from seedsigner.models.seed import Seed
+    from seedsigner.views.view import Destination, MainMenuView
+    from embit import bip39
+
+    mnemonic = "height demise useless trap grow lion found off key clown transfer enroll"
+    keypad = ur_tones.seed_to_keypad(bip39.mnemonic_to_bytes(mnemonic), "ABC12345")
+    expected = Seed(mnemonic.split()).get_fingerprint()
+
+    def check():
+        ok = expected in nds.sim_text(0) and not nds.tones_on
+        RESULT["tones_seed"] = ok
+        print("ok  " if ok else "FAIL", "tones seed flow: PIN, keypad mode, fingerprint", expected, "shown")
+
+    events = [("call", dump), ("tap_label", "Scan"), ("key", 0), ("wait", 2),
+              ("tap_label", "Listen to tones (experimental)"), ("key", 0), ("wait", 2),
+              ("call", dump), ("tap_label", "PIN: none"), ("key", 0), ("wait", 2), ("call", dump)]
+    for ch in "ABC12345":
+        events += [("tap_key", ch), ("key", 0)]
+    events += [("call", dump), ("tap_key", "Save"), ("key", 0), ("wait", 2), ("call", dump),
+               ("tap_label", "Start listening"), ("key", 0), ("wait", 2),
+               ("tones", keypad), ("wait", 10), ("call", dump), ("call", check), ("call", stop)]
+    nds.sim_script(events)
+    Controller.get_instance().start(initial_destination=Destination(MainMenuView))
+
+
 def run_camera_seed_flow():
     """Tools -> New seed -> Camera: 50 distinct frames (two flat ones skipped),
     Take photo, Accept, 12 words: a valid new 12-word mnemonic is shown, and
@@ -781,7 +844,7 @@ SINGLESIG_TAPS = ["Scan", "8b218e81", "Review details", "Continue", "Review reci
                   "Next recipient", "Next", "Approve transaction"]
 
 MODE = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith("-") else "preloaded"
-if MODE != "scan_intro":  # the flows below scan straight away
+if MODE not in ("scan_intro", "tones", "tones_seed"):  # the flows below scan straight away
     from seedsigner.gui import SETTING__NDS_SCAN_INTRO
     from seedsigner.models.settings import Settings, SettingsConstants
     Settings.get_instance().set_value(SETTING__NDS_SCAN_INTRO, SettingsConstants.OPTION__DISABLED)
@@ -789,6 +852,10 @@ if MODE == "typed":
     run_typed_seed_flow("psbt_base64_singlesig")
 elif MODE == "seedqr":
     run_seedqr_flow()
+elif MODE == "tones":
+    run_tones_flow("psbt_base64_singlesig")
+elif MODE == "tones_seed":
+    run_tones_seed_flow()
 elif MODE == "xpub":
     run_xpub_flow("psbt_base64_singlesig")
 elif MODE == "settings":

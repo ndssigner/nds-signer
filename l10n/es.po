@@ -170,3 +170,43 @@ msgstr "NDS-Signer está hecho sobre SeedSigner."
 
 msgid "Support it too: seedsigner.com"
 msgstr "Apóyalo también: seedsigner.com"
+
+# ur-tones (experimental): Scan -> Listen to tones
+msgid "Listen to tones (experimental)"
+msgstr "Escuchar tonos (experimental)"
+
+msgid "Tones (experimental)"
+msgstr "Tonos (experimental)"
+
+msgid "Listen to a transaction, a seed or an xpub sent as telephone tones."
+msgstr "Escucha una transacción, una semilla o una xpub enviadas como tonos de teléfono."
+
+msgid "Through the air, any microphone nearby can record a seed: send it by cable, or with a PIN."
+msgstr "Al aire, cualquier micrófono cercano puede grabar una semilla: envíala por cable, o con un PIN."
+
+msgid "Experimental: try it with test seeds first."
+msgstr "Experimental: pruébalo antes con semillas de prueba."
+
+msgid "Start listening"
+msgstr "Empezar a escuchar"
+
+msgid "PIN"
+msgstr "PIN"
+
+msgid "set"
+msgstr "puesto"
+
+msgid "none"
+msgstr "ninguno"
+
+msgid "Microphone gain"
+msgstr "Ganancia del micro"
+
+msgid "{} frames"
+msgstr "{} tramas"
+
+msgid "The same PIN the sender used. Letters and digits."
+msgstr "El mismo PIN que usó el emisor. Letras y cifras."
+
+msgid "A wrong PIN gives a different seed, without an error."
+msgstr "Un PIN equivocado da otra semilla, sin dar error."

@@ -122,5 +122,8 @@ if _os.environ.get("NDS_AUTOTEST"):
     module("autopilot.py", base_path="$(PORT_DIR)/frozen/autotest")
     if _os.environ.get("NDS_AUTOPILOT") == "dev":
         module("autopilot_dev.py", base_path="$(PORT_DIR)/../tests/host")
+    elif _os.environ.get("NDS_AUTOPILOT") == "tones":  # the PSBT heard as tones
+        module("autopilot_tones.py", base_path="$(PORT_DIR)/../tests/host")
+        module("autopilot_script.py", base_path="$(PORT_DIR)/../tests/host")  # it reuses its steps
     else:
         module("autopilot_script.py", base_path="$(PORT_DIR)/../tests/host")

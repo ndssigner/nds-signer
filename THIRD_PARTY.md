@@ -17,6 +17,7 @@ their code; NDS-Signer's own code is MIT ([LICENSE](LICENSE)).
 | [secp256k1-embedded](https://github.com/diybitcoinhardware/secp256k1-embedded) and [f469-disco](https://github.com/diybitcoinhardware/f469-disco) MicroPython modules (`lib/mpy-usermods`) | libsecp256k1 and hashlib bindings for MicroPython | MIT; crypto files from trezor-crypto: MIT/BSD-3-Clause (see headers) |
 | [utf8proc](https://github.com/JuliaStrings/utf8proc) (`third_party/utf8proc`) | Unicode normalisation (BIP-39 passphrases) | MIT |
 | [quirc](https://github.com/dlbeer/quirc) (`lib/quirc`) | QR code decoding from the camera | ISC |
+| [ur-tones](https://github.com/ndssigner/ur-tones) (`third_party/ur-tones`) | Tones (experimental): frames, repairs, seed PIN, receiver (`c/ur_tones.c`); its bytewords list is Blockchain Commons' | MIT |
 | [QR Code generator](https://github.com/nayuki/QR-Code-generator) (`lib/qrcodegen`) | QR code generation | MIT |
 | [Spleen](https://github.com/fcambus/spleen) 5x8 (`lib/fonts`) | Console font for error screens | BSD-2-Clause |
 | [dsi-camera](https://github.com/Epicpkmn11/dsi-camera) | Basis of the DSi camera driver (`arm7/src/aptina*.c`, `arm9/src/camera.c`) | Unlicense (public domain) |
