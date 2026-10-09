@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## v0.2.0-alpha
+
+Telephone tones ([ur-tones](https://github.com/ndssigner/ur-tones) v0.1.0),
+experimental: PSBTs and seeds without a camera, by cable or through the air.
+Tested on a DSi XL with Sparrow and the ur-tones web tool, both ways.
 
 - Experimental: *Scan → Listen to tones* hears PSBTs, seeds (with an
   optional PIN) and other URs sent as telephone tones
@@ -13,6 +17,10 @@
   next to its QR code, in UR parts of 100 bytes with fountain codes, in a
   loop until Stop) and a seed with an optional PIN (*Backup seed → Export as
   tones*, showing its fingerprint; for a tape backup, by cable).
+- A made-up PIN has 12 characters (60 bits), shown in groups of four; a
+  shorter PIN is accepted, with a warning.
+- README and LEEME: a section on the tones, and screenshots of their
+  screens (`tools/dev/readme_screenshots.sh`, now with the tone flows).
 
 ## v0.1.0-alpha
 

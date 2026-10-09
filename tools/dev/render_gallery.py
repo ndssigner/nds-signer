@@ -4,7 +4,7 @@
 the same fonts and sizes as the ROM (tools/ttf_to_ndsfont.py), plus an HTML
 index. Needs Pillow and qrcode (the tests' CPython venv).
 
-    render_gallery.py <snapshot dir> <out dir>
+    render_gallery.py <snapshot dir> <out dir> [--all]   (--all: every snapshot, not 2 per screen)
 
 Approximations: text in the old console font is drawn in a small fixed-width
 font on a dark blue box (to spot what is not graphical yet); the camera
@@ -96,7 +96,7 @@ def render(ops):
             f = _fonts[font]
             ascent = f.getmetrics()[0]
             if max_w:
-                while text and f.getlength(text) > max_w:
+                while text and round(f.getlength(text)) > max_w:  # whole pixels, as the ROM
                     text = text[:-1]
             d.text((x, y + ascent), text, font=f, fill=rgb(color), anchor="ls")
         elif kind == "console":
@@ -145,7 +145,7 @@ def main():
     for path in sorted(src.glob("*.json")):
         view = path.stem.rsplit("_", 1)[1]
         per_view[view] = per_view.get(view, 0) + 1
-        if per_view[view] > 2:  # e.g. the 69 settings entries: 2 are enough
+        if per_view[view] > 2 and "--all" not in sys.argv:  # e.g. the 69 settings entries: 2 are enough
             continue
         snap = json.loads(path.read_text())
         both = Image.new("RGB", (W, 2 * H + 6), (60, 60, 60))

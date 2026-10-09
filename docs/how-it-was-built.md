@@ -80,7 +80,8 @@ Three layers, from fastest to most real:
 Milestones on real hardware: first signature (tag `hw-first-signature`),
 first real Signet transaction created in Sparrow and broadcast
 (`hw-first-signet-tx`), every menu verified (`hw-menus-verified`), the
-graphical interface (`hw-ui-style-a`).
+graphical interface (`hw-ui-style-a`), and telephone tones both ways —
+a PSBT from Sparrow and seeds with a PIN, through the air — in v0.2.0-alpha.
 
 ## What this means for you
 
