@@ -16,6 +16,8 @@
 #include "ui.h"
 #include "wipe.h"
 #include "mic_entropy.h"
+#include "tones_audio.h"
+#include "ur_tones.h"
 
 void ndsbPrint(int screen, int row, int col, const char *text, size_t len)
 {
@@ -98,6 +100,41 @@ int ndsbCameraGrab(uint8_t *dst, size_t len)
 bool ndsbMicStart(void) { return micEntropyStart(); }
 void ndsbMicStop(void) { micEntropyStop(); }
 size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak) { return micEntropyTake(dst, len, peak); }
+
+bool ndsbTonesListen(bool on, int gain)
+{
+	if (on)
+		return tonesListenStart(gain);
+	tonesListenStop();
+	return true;
+}
+int ndsbTonesPoll(char *group, size_t cap, char *live, size_t livecap, int *level, unsigned *buffers,
+                  unsigned *dropped)
+{
+	return tonesListenPoll(group, cap, live, livecap, level, buffers, dropped);
+}
+int ndsbTonesFrameToUr(const char *tones, char *ur, size_t cap, int *corrected) { return ut_frame_to_ur(tones, ur, cap, corrected); }
+int ndsbTonesUrToFrame(const char *ur, char *tones, size_t cap) { return ut_ur_to_frame(ur, tones, cap); }
+int ndsbTonesKeypadToSeed(const char *tones, const char *pin, uint8_t *entropy) { return ut_keypad_to_seed(tones, pin, entropy); }
+int ndsbTonesUrToSeed(const char *ur, const char *pin, uint8_t *entropy) { return ut_ur_to_seed(ur, pin, entropy); }
+bool ndsbTonesLoopback(const char *groups) { return tonesLoopback(groups); }
+
+int ndsbTonesSeedToFrame(const uint8_t *entropy, size_t len, const char *pin, char *tones, size_t cap)
+{
+	char ur[200];
+	int n = ut_seed_to_ur(entropy, len, pin, ur, sizeof ur);
+	if (n >= 0)
+		n = ut_ur_to_frame(ur, tones, cap);
+	memset(ur, 0, sizeof ur);
+	return n;
+}
+
+bool ndsbTonesPlay(const char *tones, unsigned tone_ms, unsigned gap_ms, unsigned pause_ms)
+{
+	return tonesPlayStart(tones, tone_ms, gap_ms, pause_ms);
+}
+int ndsbTonesPlayPoll(unsigned *index, unsigned *count) { return tonesPlayPoll(index, count); }
+void ndsbTonesPlayStop(void) { tonesPlayStop(); }
 
 bool ndsbCameraRunning(void)
 {

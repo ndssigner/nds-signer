@@ -170,3 +170,148 @@ msgstr "NDS-Signer está hecho sobre SeedSigner."
 
 msgid "Support it too: seedsigner.com"
 msgstr "Apóyalo también: seedsigner.com"
+
+# ur-tones (experimental): Scan -> Listen to tones
+msgid "Listen to tones (experimental)"
+msgstr "Escuchar tonos (experimental)"
+
+msgid "Tones (experimental)"
+msgstr "Tonos (experimental)"
+
+msgid "Listen to a transaction, a seed or an xpub sent as telephone tones."
+msgstr "Escucha una transacción, una semilla o una xpub enviadas como tonos de teléfono."
+
+msgid "Through the air, any microphone nearby can record a seed: send it by cable, or with a PIN."
+msgstr "Al aire, cualquier micrófono cercano puede grabar una semilla: envíala por cable, o con un PIN."
+
+msgid "Experimental: try it with test seeds first."
+msgstr "Experimental: pruébalo antes con semillas de prueba."
+
+msgid "Start listening"
+msgstr "Empezar a escuchar"
+
+msgid "PIN"
+msgstr "PIN"
+
+msgid "none"
+msgstr "ninguno"
+
+msgid "Microphone gain"
+msgstr "Ganancia del micro"
+
+msgid "A wrong PIN gives a different seed, without an error."
+msgstr "Un PIN equivocado da otra semilla, sin dar error."
+
+msgid "The same PIN as the other device. Letters and digits."
+msgstr "El mismo PIN que en el otro dispositivo. Letras y cifras."
+
+msgid "Or make one up here, and type it there."
+msgstr "O invéntalo aquí y escríbelo allí."
+
+msgid "Make one up"
+msgstr "Inventar uno"
+
+msgid "Made up from the microphone's noise."
+msgstr "Inventado con el ruido del micrófono."
+
+msgid "Type it on the other device, without the spaces, then Save."
+msgstr "Escríbelo en el otro dispositivo, sin los espacios, y pulsa Guardar."
+
+msgid "Listening to the room's noise..."
+msgstr "Escuchando el ruido de la sala..."
+
+msgid "Listening"
+msgstr "Escuchando"
+
+msgid "{} parts"
+msgstr "{} partes"
+
+msgid "Frames: {}"
+msgstr "Tramas: {}"
+
+msgid "Message"
+msgstr "Mensaje"
+
+msgid "Seed (keypad)"
+msgstr "Semilla (teclado)"
+
+msgid "This frame"
+msgstr "Esta trama"
+
+msgid "Waiting for a frame..."
+msgstr "Esperando una trama..."
+
+msgid "Level: -"
+msgstr "Nivel: -"
+
+msgid "Level:"
+msgstr "Nivel:"
+
+msgid "Discarded: too many errors"
+msgstr "Descartada: demasiados errores"
+
+msgid "Read, {} bytes repaired"
+msgstr "Leída, {} bytes reparados"
+
+msgid "Frame read"
+msgstr "Trama leída"
+
+msgid "A short PIN: fine by cable; for a backup or through the air, 12 characters or more."
+msgstr "PIN corto: vale por cable; para una copia de seguridad o al aire, 12 caracteres o más."
+
+msgid "Pace"
+msgstr "Ritmo"
+
+msgid "cable"
+msgstr "cable"
+
+msgid "through the air"
+msgstr "al aire"
+
+msgid "Frames played: {}"
+msgstr "Tramas enviadas: {}"
+
+msgid "Stop"
+msgstr "Parar"
+
+msgid "Play as tones"
+msgstr "Enviar como tonos"
+
+msgid "Play as tones (experimental)"
+msgstr "Enviar como tonos (experimental)"
+
+msgid "The same as the QR code, as telephone tones: for the ur-tones web tool (Listen) or another device that listens."
+msgstr "Lo mismo que el código QR, como tonos de teléfono: para la herramienta web de ur-tones (Escuchar) u otro dispositivo que escuche."
+
+msgid "By cable, nothing else hears it; through the air, any microphone nearby can record it."
+msgstr "Por cable no lo oye nadie más; al aire, cualquier micrófono cercano puede grabarlo."
+
+msgid "Experimental."
+msgstr "Experimental."
+
+msgid "Start playing"
+msgstr "Empezar a sonar"
+
+msgid "Playing"
+msgstr "Sonando"
+
+msgid "Receiver: ur-tones web tool, Listen."
+msgstr "Receptor: herramienta web de ur-tones, Escuchar."
+
+msgid "Without a PIN, anything that records the tones has the seed."
+msgstr "Sin PIN, cualquier cosa que grabe los tonos tiene la semilla."
+
+msgid "With the PIN, whoever records the tones gets a different seed. Keep the PIN apart."
+msgstr "Con el PIN, quien grabe los tonos obtiene otra semilla. Guarda el PIN aparte."
+
+msgid "Export as tones"
+msgstr "Exportar como tonos"
+
+msgid "Export as tones (experimental)"
+msgstr "Exportar como tonos (experimental)"
+
+msgid "The receiver must show the same one."
+msgstr "El receptor debe mostrar la misma."
+
+msgid "For a backup on tape, connect by cable for the best sound quality."
+msgstr "Para una copia en cinta, conecta por cable: es como mejor suena."

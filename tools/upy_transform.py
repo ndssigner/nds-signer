@@ -178,6 +178,7 @@ IMPORT_REPLACEMENTS = {
 UI_OVERRIDES = {
     "seedsigner/views/tools_views.py": ("seedsigner.views.nds_tools_views", ["ToolsMenuView"]),
     "seedsigner/views/view.py": ("seedsigner.views.nds_views", ["MainMenuView"]),
+    "seedsigner/views/seed_views.py": ("seedsigner.views.nds_seed_views", ["SeedBackupView"]),
 }
 
 

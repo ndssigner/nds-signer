@@ -48,6 +48,21 @@ bool ndsbCameraStart(bool inner);
 bool ndsbMicStart(void);
 void ndsbMicStop(void);
 size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak);
+/* ur-tones (experimental, github.com/ndssigner/ur-tones): listening (see
+ * tones_audio.h) and the conversions of third_party/ur-tones/c/ur_tones.h,
+ * which return a length or a negative UT_ERR_* */
+bool ndsbTonesListen(bool on, int gain);
+int ndsbTonesPoll(char *group, size_t cap, char *live, size_t livecap, int *level, unsigned *buffers,
+                  unsigned *dropped);
+int ndsbTonesFrameToUr(const char *tones, char *ur, size_t cap, int *corrected);
+int ndsbTonesUrToFrame(const char *ur, char *tones, size_t cap);
+int ndsbTonesKeypadToSeed(const char *tones, const char *pin, uint8_t *entropy);
+int ndsbTonesUrToSeed(const char *ur, const char *pin, uint8_t *entropy);
+bool ndsbTonesLoopback(const char *groups);  /* developer builds only */
+int ndsbTonesSeedToFrame(const uint8_t *entropy, size_t len, const char *pin, char *tones, size_t cap);
+bool ndsbTonesPlay(const char *tones, unsigned tone_ms, unsigned gap_ms, unsigned pause_ms);
+int ndsbTonesPlayPoll(unsigned *index, unsigned *count);
+void ndsbTonesPlayStop(void);
 /* see scannerGrab(): 0 no new frame, 1 frame copied, 2 flat frame copied */
 int ndsbCameraGrab(uint8_t *dst, size_t len);
 size_t ndsbCameraFrameBytes(void);

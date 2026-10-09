@@ -64,8 +64,10 @@ static void render(int id)
 	s_words[id] = samples / 4;
 }
 
-static void init(void)
+void sfxInit(void)
 {
+	if (s_ready)
+		return;
 	soundInit();
 	soundPowerOn();
 	soundSetMixerVolume(127);
@@ -79,7 +81,7 @@ void sfxPlay(int sfx)
 	if ((unsigned)sfx >= SFX_COUNT)
 		return;
 	if (!s_ready)
-		init();
+		sfxInit();
 	if (!s_pcm[sfx])
 		return;
 	s_channel = (s_channel + 1) % CHANNELS;

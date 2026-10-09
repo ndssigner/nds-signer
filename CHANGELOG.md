@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- Experimental: *Scan → Listen to tones* hears PSBTs, seeds (with an
+  optional PIN) and other URs sent as telephone tones
+  ([ur-tones](https://github.com/ndssigner/ur-tones)), by cable or through
+  the air; the receiver is ur-tones' C library (integers only). The top
+  screen shows the progress (frames, the current frame, the tones as they
+  come, the level), the bottom one Cancel and the microphone's gain; a PIN
+  can be made up from the microphone's noise, for the sender to type.
+- Experimental: the DSi plays tones too — the signed PSBT (*Play as tones*,
+  next to its QR code, in UR parts of 100 bytes with fountain codes, in a
+  loop until Stop) and a seed with an optional PIN (*Backup seed → Export as
+  tones*, showing its fingerprint; for a tape backup, by cable).
+
 ## v0.1.0-alpha
 
 First public version. Runs SeedSigner (pinned at `cfaf443`) and embit 0.8.0

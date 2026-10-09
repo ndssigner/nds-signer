@@ -44,6 +44,26 @@ idioma):
 - **Ajustes:** red (mainnet, testnet/signet, regtest), unidades, 16 idiomas
   (el de la consola por defecto), sonidos, cámara trasera o frontal.
 
+**Experimental: tonos de teléfono.** *Escanear → Escuchar tonos
+(experimental)* oye una transacción, una semilla o una xpub enviadas como
+tonos DTMF, por cable o al aire, en vez de un QR: el formato
+[ur-tones](https://github.com/ndssigner/ur-tones), cuya
+[herramienta web](https://ndssigner.github.io/ur-tones/) reproduce como
+tonos una PSBT de Sparrow (o una semilla de prueba). Una semilla puede ir
+con PIN, para que quien escuche o grabe los tonos obtenga otra semilla; al
+aire, cualquier micrófono cercano puede grabarlos. Cualquiera de los dos
+lados puede inventar el PIN (la DSi, con el ruido de su micrófono) para que
+el otro lo escriba, y la huella de la semilla, en los dos, delata al
+momento un PIN equivocado. Mientras escucha, la pantalla superior muestra
+las tramas, el avance de cada una, los tonos según llegan y el nivel del
+sonido. Su receptor está en C, solo con enteros
+(`third_party/ur-tones/c`). Probado en una DSi: semillas al aire con y sin
+PIN, y una PSBT de Sparrow al aire a ritmo de cable. La DSi también emite
+tonos: la PSBT firmada (*Enviar como tonos*, junto a su QR) y una semilla
+con su PIN (*Copia de la semilla → Exportar como tonos*), para otro
+dispositivo o una copia en cinta o MP3 (por cable, que es como mejor
+suena).
+
 ## Seguridad
 
 - **Sin red:** el código del wifi ni siquiera está incluido, y los chips

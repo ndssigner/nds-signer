@@ -24,8 +24,9 @@ class ScanScreen(BaseScreen):
 
     def _intro(self, settings):
         """"Scan preparation" (if enabled in Settings), before the camera
-        starts: tips, the camera to use (rear by default) and Start.
-        Returns False for Back."""
+        starts: tips, the camera to use (rear by default) and Start; or
+        tones instead of the camera (experimental, nds_tones).
+        Returns False for Back, "tones" for tones."""
         from seedsigner.gui import CAMERA__FRONT, CAMERA__REAR, SETTING__NDS_CAMERA
         from seedsigner.gui.components import SeedSignerIconConstants as Icons
         while True:
@@ -37,11 +38,14 @@ class ScanScreen(BaseScreen):
                 ("label", _("The DSi camera is slow: hold still, a scan can take several "
                             "seconds."))])
             camera = _("Front camera") if front else _("Rear camera")
-            choice = nds_ui.ButtonPanel([_("Start scanning"), "%s: %s" % (_("Camera"), camera)]).run()
+            choice = nds_ui.ButtonPanel([_("Start scanning"), "%s: %s" % (_("Camera"), camera),
+                                         _("Listen to tones (experimental)")]).run()
             if choice == nds_ui.BACK:
                 return False
             if choice == 0:
                 return True
+            if choice == 2:
+                return "tones"
             settings.set_value(SETTING__NDS_CAMERA, CAMERA__REAR if front else CAMERA__FRONT)
 
     def _countdown(self, panel):
@@ -73,7 +77,15 @@ class ScanScreen(BaseScreen):
         settings = Settings.get_instance()
         intro = settings.get_value(SETTING__NDS_SCAN_INTRO) == SettingsConstants.OPTION__ENABLED
         if intro:
-            if not self._intro(settings):
+            how = self._intro(settings)
+            while how == "tones":
+                from seedsigner.gui import nds_tones
+                chosen = nds_tones.intro()
+                if chosen is None:          # Back: the scan preparation again
+                    how = self._intro(settings)
+                    continue
+                return None if nds_tones.listen(self.decoder, chosen[0], chosen[1]) else False
+            if not how:
                 return RET_CODE__BACK_BUTTON
             self._render()
         panel = nds_ui.ButtonPanel([_("Cancel")], show_back=False)

@@ -9,6 +9,9 @@
 
 #define MIC_ENTROPY_SAMPLES 4096  /* 16-bit samples per buffer: 1/4 s at 16 kHz */
 
+/* calico's micInit(), once (shared with tones_audio.c) */
+void micEnsureInit(void);
+
 /* Starts / stops recording (the microphone is off otherwise). Stopping
  * clears the buffers. */
 bool micEntropyStart(void);

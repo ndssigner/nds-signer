@@ -7,7 +7,10 @@
 try:
     import autopilot_dev as autopilot_script
 except ImportError:
-    import autopilot_script
+    try:
+        import autopilot_tones as autopilot_script
+    except ImportError:
+        import autopilot_script
 
 COLS, ROWS = 32, 24
 

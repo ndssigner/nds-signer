@@ -19,3 +19,6 @@
 	path = third_party/utf8proc
 	url = https://github.com/JuliaStrings/utf8proc
 	ignore = untracked
+[submodule "third_party/ur-tones"]
+	path = third_party/ur-tones
+	url = https://github.com/ndssigner/ur-tones.git

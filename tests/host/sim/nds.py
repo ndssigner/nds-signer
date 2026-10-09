@@ -148,6 +148,8 @@ def frame():
             _events.insert(0, ("wait", ev[1] - 1))
     elif kind == "camera":
         _camera_queue.append(ev[1])
+    elif kind == "tones":  # a group of tones the microphone hears
+        _tones_queue.append(ev[1])
     elif kind == "expect_top":
         if ev[1] not in sim_text(0):
             raise AssertionError("expected %r on the top screen:\n%s" % (ev[1], sim_text(0)))
@@ -435,6 +437,106 @@ version_string = "sim"  # e.g. a release name for README screenshots
 
 def version():
     return version_string
+
+
+# ---- ur-tones (experimental): the reference implementation
+# (third_party/ur-tones/reference/python) stands in for the C library ----
+
+_tones_queue = []
+_tones_sent = [0]     # keys of the first queued group already heard
+tones_on = False
+TONES_PER_POLL = 32   # keys heard per frame: faster than real life, for short tests
+
+
+def tones_listen(on, gain=1):
+    global tones_on
+    tones_on = bool(on)
+    if not on:
+        del _tones_queue[:]
+        _tones_sent[0] = 0
+    return True
+
+
+def tones_poll():
+    """The first queued group's keys a few at a time, then the group."""
+    if tones_on and _tones_queue:
+        group, at = _tones_queue[0], _tones_sent[0]
+        if at < len(group):
+            _tones_sent[0] = at + TONES_PER_POLL
+            return (None, group[at:at + TONES_PER_POLL], -200, 1, 0)
+        _tones_queue.pop(0)
+        _tones_sent[0] = 0
+        return (group, "", -200, 1, 0)
+    return (None, "", -990, 0, 0)
+
+
+def tones_loopback(groups):
+    return False
+
+
+def tones_frame_to_ur(tones):
+    import ur_tones
+    try:
+        return ur_tones.frame_to_ur(tones)
+    except ur_tones.DecodeError:
+        return (None, -7)
+
+
+def tones_ur_to_frame(ur):
+    import ur_tones
+    try:
+        return ur_tones.ur_to_frame(ur)
+    except (ValueError, ur_tones.DecodeError):
+        return None
+
+
+def tones_seed(text, pin=None):
+    import ur_tones
+    try:
+        if text.startswith("*"):
+            return (ur_tones.keypad_to_seed(text, pin), 0)
+        return (ur_tones.ur_to_seed(text, pin), 0)
+    except (ValueError, ur_tones.DecodeError):
+        return (None, -9)
+
+
+def tones_seed_frame(entropy, pin=None):
+    import ur_tones
+    try:
+        return ur_tones.ur_to_frame(ur_tones.seed_to_ur(bytes(entropy), pin))
+    except (ValueError, ur_tones.DecodeError):
+        return None
+
+
+tones_played = []     # (tones, tone_ms, gap_ms, pause_ms) played, for tests
+_play = {"tones": "", "at": 0, "on": False}
+
+
+def tones_play(tones, tone_ms, gap_ms, pause_ms):
+    global tones_on
+    tones_on = False                     # stops listening, as the ROM does
+    tones_played.append((tones, tone_ms, gap_ms, pause_ms))
+    _play.update(tones=tones, at=0, on=True)
+    return True
+
+
+def tones_play_poll():
+    """TONES_PER_POLL tones per frame, as if played that fast."""
+    if not _play["on"]:
+        return (False, len(_play["tones"]), len(_play["tones"]))
+    _play["at"] += TONES_PER_POLL
+    if _play["at"] >= len(_play["tones"]):
+        _play["on"] = False
+        return (False, len(_play["tones"]), len(_play["tones"]))
+    return (True, _play["at"], len(_play["tones"]))
+
+
+def tones_play_stop():
+    _play["on"] = False
+
+
+def tones_playing():
+    return _play["on"]
 
 
 # ---- simulator controls (not part of the native API) ----

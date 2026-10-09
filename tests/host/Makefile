@@ -20,7 +20,7 @@ DOCKER_MPY = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
 
 # Same module search path as the frozen ROM contents (see mpy/manifest.py)
 MPY_LIB = /source/third_party/micropython/lib/micropython-lib/python-stdlib
-MPY_ROM_PATH = /source/tests/host/sim:/source/mpy/frozen/compat:/source/mpy/frozen/hwstubs:/source/mpy/frozen:/source/build/frozen_py:/source/third_party/embit/src:/source/third_party/urtypes/src:$(MPY_LIB)/logging:$(MPY_LIB)/base64:$(MPY_LIB)/zlib:$(MPY_LIB)/datetime:/source/tests/vectors:/source/tests/host
+MPY_ROM_PATH = /source/third_party/ur-tones/reference/python:/source/tests/host/sim:/source/mpy/frozen/compat:/source/mpy/frozen/hwstubs:/source/mpy/frozen:/source/build/frozen_py:/source/third_party/embit/src:/source/third_party/urtypes/src:$(MPY_LIB)/logging:$(MPY_LIB)/base64:$(MPY_LIB)/zlib:$(MPY_LIB)/datetime:/source/tests/vectors:/source/tests/host
 DOCKER_MPY_ROM = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
              -e MICROPYPATH=$(MPY_ROM_PATH) nds-signer-builder /source/build/mpy-unix/micropython
 
@@ -95,7 +95,7 @@ seedsigner: frozen
 		&& echo "ok   DecodeQR ($$(wc -l < $(TOPDIR)/build/decode_qr.cpython.txt | tr -d ' ') payloads identical)"
 	@rm -rf $(TOPDIR)/build/glyph_snaps && mkdir -p $(TOPDIR)/build/glyph_snaps
 	@# every flow must print ok lines and no FAIL (a crash prints neither)
-	@fail=; for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language scan_intro camera_seed scribble_mic battery donate; do \
+	@fail=; for mode in preloaded typed seedqr passphrase settings xpub address address_foreign backup transcribe transcribe_compact explorer dice final_word sound language scan_intro tones tones_seed tones_export camera_seed scribble_mic battery donate; do \
 		out=$$($(DOCKER_MPY_ROM) -X heapsize=6M flow_check.py /source/tests/vectors $$mode \
 			--gallery=/source/build/glyph_snaps 2>/dev/null | grep -E "^(ok|FAIL)"); \
 		echo "$$out"; \
