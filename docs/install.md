@@ -6,16 +6,16 @@
 
 | Console | Works? | Notes |
 | :--- | :---: | :--- |
-| Nintendo DS (2004) | ❌ No | No camera, 4 MB of RAM. |
-| Nintendo DS Lite | ❌ No | No camera, 4 MB of RAM. |
+| Nintendo DS (2004) | ❌ No | 4 MB of RAM: NDS-Signer needs over 8 (6 MB of Python heap, 2 MB of code). Telephone tones would replace its missing camera, not its memory. |
+| Nintendo DS Lite | ❌ No | The same: 4 MB of RAM. |
 | Nintendo DSi | ✅ Yes | Same hardware as the DSi XL. |
 | Nintendo DSi XL (DSi LL in Japan) | ✅ Yes | The console NDS-Signer is tested on. |
 | Nintendo 3DS, 3DS XL, 2DS, New 3DS, New 3DS XL, New 2DS XL | ❓ Untested | They run DSi software, but the camera, the lid and the power button have not been tried with NDS-Signer. Reports welcome ([help wanted](help-wanted.md)). |
 | Emulators (melonDS…) | ⚠️ Development only | A computer is not air-gapped: never use a real seed in an emulator. |
 
-Any region. The console needs a working camera to scan QR codes; without
-one you can still type seeds and show QR codes, but not sign (signing starts
-by scanning the transaction).
+Any region. A working camera scans QR codes; without one (or with a broken
+one), PSBTs and seeds can come in as [telephone tones](../README.md#telephone-tones-experimental)
+(experimental), by cable or through the air, so a DSi can still sign.
 
 ## What you need
 

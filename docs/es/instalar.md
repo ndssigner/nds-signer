@@ -6,16 +6,17 @@
 
 | Consola | ¿Funciona? | Notas |
 | :--- | :---: | :--- |
-| Nintendo DS (2004) | ❌ No | Sin cámara y con 4 MB de memoria. |
-| Nintendo DS Lite | ❌ No | Sin cámara y con 4 MB de memoria. |
+| Nintendo DS (2004) | ❌ No | 4 MB de memoria: NDS-Signer necesita más de 8 (6 MB para Python y 2 MB de código). Los tonos de teléfono sustituirían a la cámara que le falta, no a la memoria. |
+| Nintendo DS Lite | ❌ No | Lo mismo: 4 MB de memoria. |
 | Nintendo DSi | ✅ Sí | El mismo hardware que la DSi XL. |
 | Nintendo DSi XL (DSi LL en Japón) | ✅ Sí | La consola en la que se prueba NDS-Signer. |
 | Nintendo 3DS, 3DS XL, 2DS, New 3DS, New 3DS XL, New 2DS XL | ❓ Sin probar | Ejecutan programas de DSi, pero la cámara, la tapa y el botón de encendido no se han probado con NDS-Signer. Se agradecen pruebas ([help wanted](../help-wanted.md)). |
 | Emuladores (melonDS…) | ⚠️ Solo para desarrollo | Un ordenador no está aislado: nunca uses una semilla de verdad en un emulador. |
 
-Cualquier región. Para escanear QR hace falta que la cámara funcione; sin
-ella se pueden escribir semillas y mostrar QR, pero no firmar (firmar
-empieza escaneando la transacción).
+Cualquier región. Una cámara que funcione escanea los QR; sin ella (o con
+ella estropeada), las PSBT y las semillas pueden llegar como
+[tonos de teléfono](LEEME.md#tonos-de-teléfono-experimental) (experimental),
+por cable o al aire, así que una DSi puede firmar igualmente.
 
 ## Qué necesitas
 
