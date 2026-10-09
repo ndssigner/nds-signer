@@ -609,8 +609,8 @@ def run_tones_seed_flow():
     def check_made_up():
         from seedsigner.gui import nds_tones
         text = nds.sim_text(0)
-        pins = [w for w in text.split() if len(w) == nds_tones.PIN_LENGTH
-                and all(c in nds_tones.PIN_ALPHABET for c in w)]
+        pins = [line.strip("| ").replace(" ", "") for line in text.split("\n")]
+        pins = [p for p in pins if len(p) == nds_tones.PIN_LENGTH and all(c in nds_tones.PIN_ALPHABET for c in p)]
         RESULT["tones_pin"] = bool(pins)
         print("ok  " if pins else "FAIL", "made-up PIN shown:", pins)
 
@@ -619,10 +619,10 @@ def run_tones_seed_flow():
               ("call", dump), ("tap_label", "PIN: none"), ("key", 0), ("wait", 2), ("call", dump),
               ("tap_key", "Make one up"), ("key", 0), ("wait", 70), ("call", dump),
               ("expect_top", "Type it on the other device"), ("call", check_made_up)]
-    events += [("tap_key", "Del"), ("key", 0)] * 8
+    events += [("tap_key", "Del"), ("key", 0)] * 12
     for ch in "ABC12345":
         events += [("tap_key", ch), ("key", 0)]
-    events += [("call", dump), ("tap_key", "Save"), ("key", 0), ("wait", 2), ("call", dump),
+    events += [("call", dump), ("expect_top", "A short PIN"), ("tap_key", "Save"), ("key", 0), ("wait", 2), ("call", dump),
                ("tap_label", "Start listening"), ("key", 0), ("wait", 2),
                ("tones", keypad), ("wait", 10), ("call", dump), ("call", check), ("call", stop)]
     nds.sim_script(events)

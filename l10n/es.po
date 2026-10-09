@@ -214,8 +214,8 @@ msgstr "Inventar uno"
 msgid "Made up from the microphone's noise."
 msgstr "Inventado con el ruido del micrófono."
 
-msgid "Type it on the other device, then Save."
-msgstr "Escríbelo en el otro dispositivo y pulsa Guardar."
+msgid "Type it on the other device, without the spaces, then Save."
+msgstr "Escríbelo en el otro dispositivo, sin los espacios, y pulsa Guardar."
 
 msgid "Listening to the room's noise..."
 msgstr "Escuchando el ruido de la sala..."
@@ -255,3 +255,6 @@ msgstr "Leída, {} bytes reparados"
 
 msgid "Frame read"
 msgstr "Trama leída"
+
+msgid "A short PIN: fine by cable; for a backup or through the air, 12 characters or more."
+msgstr "PIN corto: vale por cable; para una copia de seguridad o al aire, 12 caracteres o más."

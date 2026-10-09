@@ -12,9 +12,10 @@ from seedsigner.gui import nds_keyboard, nds_ui
 REPO = "github.com/ndssigner/ur-tones"
 GAINS = ("20", "40", "80", "160")
 KEYS = "0123456789ABCD*#"
-# A made-up PIN: 8 characters without 0/O, 1/I (40 bits), easy to type by hand
+# A made-up PIN (SPEC §4): 12 characters without 0/O, 1/I (60 bits), shown
+# in groups of four; shorter PINs are accepted, with a warning
 PIN_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
-PIN_LENGTH = 8
+PIN_LENGTH = 12
 _state = {"gain": 1}  # this session only
 UT_PARITY = 32  # Reed-Solomon parity bytes per frame
 _last = {"parts": 0}  # the multi-part UR's length, from the last frame
@@ -137,12 +138,16 @@ class PinScreen:
     def _top(self):
         if self.made_up:
             notes = [("label", _("Made up from the microphone's noise.")),
-                     ("text", _("Type it on the other device, then Save."))]
+                     ("text", _("Type it on the other device, without the spaces, then Save."))]
+        elif self.pin and len(self.pin) < PIN_LENGTH:
+            notes = [("text", _("A short PIN: fine by cable; for a backup or through the air, 12 characters or more.")),
+                     ("label", _("Or make one up here, and type it there."))]
         else:
             notes = [("label", _("The same PIN as the other device. Letters and digits.")),
                      ("label", _("Or make one up here, and type it there.")),
                      ("label", _("A wrong PIN gives a different seed, without an error."))]
-        nds_ui.top_blocks(_("PIN"), [("large", self.pin or " "), ("space", 6)] + notes)
+        shown = " ".join(self.pin[i:i + 4] for i in range(0, len(self.pin), 4))  # groups of four
+        nds_ui.top_blocks(_("PIN"), [("large", shown or " "), ("space", 6)] + notes)
 
     def _draw(self):
         self._top()
