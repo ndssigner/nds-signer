@@ -426,6 +426,7 @@ def listen(decoder, pin, gain):
 # (tone, gap, pause) in ms, as the web tool (SPEC §1.1)
 PACES = {"cable": (40, 20, 200), "air": (80, 80, 300)}
 FRAGMENT = 100  # bytes per UR part (SPEC §2.4)
+FIRST_PAUSE = 1000  # ms of silence before the first frame
 
 
 def _pace_label(pace):
@@ -485,7 +486,9 @@ def play(next_frame, view):
     panel.draw()
     tone, gap, pause = PACES[view.pace]
     view.tones = next_frame()
-    if not view.tones or not nds.tones_play(view.tones, tone, gap, pause):
+    # a second of silence first: a receiver started at the same moment
+    # (a browser takes a while to open its microphone) hears the whole frame
+    if not view.tones or not nds.tones_play(view.tones, tone, gap, FIRST_PAUSE):
         return
     view.draw()
     tick, shown = 0, None

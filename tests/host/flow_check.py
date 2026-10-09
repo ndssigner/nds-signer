@@ -603,9 +603,10 @@ def check_played(prefix):
         decoder.add_data(ur_tones.frame_to_ur(tones)[0])
         if decoder.is_complete:
             break
-    paces = {p[1:] for p in nds.tones_played}
+    paces = {p[1:] for p in nds.tones_played[1:]}   # the first frame waits a second longer
     ok = (decoder.is_complete and decoder.get_psbt().to_string() == read(prefix + ".signed_trimmed.txt")
-          and paces == {(40, 20, 200)} and not nds.tones_playing())
+          and paces == {(40, 20, 200)} and nds.tones_played[0][1:] == (40, 20, 1000)
+          and not nds.tones_playing())
     RESULT["tones_play"] = ok
     print("ok  " if ok else "FAIL", "signed PSBT played as tones: %d frames, decoded %s, paces %s, stopped %s"
           % (len(nds.tones_played), decoder.is_complete, sorted(paces), not nds.tones_playing()))
