@@ -7,6 +7,12 @@ of this repository) rather than a public issue.
 Useful to include: what an attacker can do, the steps to reproduce it, and
 the NDS-Signer version (shown on the Home screen).
 
+## Auditing
+
+Where to start, the critical files and the pinned dependencies:
+[AUDIT.md](AUDIT.md). What is protected and from whom:
+[docs/threat-model.md](docs/threat-model.md).
+
 ## Scope
 
 - **NDS-Signer's own code:** the DSi layer (`arm7/`, `arm9/`, `mpy/`),
