@@ -10,6 +10,7 @@
 #include "port/micropython_embed.h"
 #include "py/cstack.h"
 #include "ui.h"
+#include "wipe.h"
 
 #define MPY_HEAP_SIZE (6 * 1024 * 1024)
 
@@ -26,6 +27,9 @@ void mpyRunApp(void)
 		printf("Python heap alloc failed\n");
 		return;
 	}
+	/* The launcher, or a session that ended without the wipe (battery
+	 * pulled, crash), may have left data here: start from zeros */
+	secureZero(heap, MPY_HEAP_SIZE);
 
 	int stackTop;
 	mp_embed_init(heap, MPY_HEAP_SIZE, &stackTop);

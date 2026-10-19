@@ -23,7 +23,7 @@ extern void *g_mpyHeap;
 extern size_t g_mpyHeapSize;
 
 /* volatile: the stores must not be dropped as dead before the power off */
-static void secureZero(void *p, size_t len)
+void secureZero(void *p, size_t len)
 {
 	volatile u32 *w = (volatile u32 *)p;
 	for (size_t i = 0; i < len / 4; i++)
