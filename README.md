@@ -189,6 +189,9 @@ make -C tests/host all seedsigner PYTHON=$(pwd)/build/venv/bin/python
 - [docs/architecture.md](docs/architecture.md): how SeedSigner's code runs
   on the DSi.
 - [docs/help-wanted.md](docs/help-wanted.md): open problems.
+- [AUDIT.md](AUDIT.md), [docs/threat-model.md](docs/threat-model.md),
+  [docs/entropy.md](docs/entropy.md): for security reviewers — critical
+  files, threat model, how new seeds are made.
 - [docs/es/](docs/es/LEEME.md): the documentation in Spanish.
 - [THIRD_PARTY.md](THIRD_PARTY.md): the projects NDS-Signer is built on.
 

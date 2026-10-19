@@ -93,6 +93,10 @@ sentidos, en una habitación con ruido.
 - **Compilación reproducible:** cualquiera puede compilar la ROM y comprobar
   que su huella SHA-256 coincide con la publicada.
 
+Para quien quiera auditarlo (en inglés): [AUDIT.md](../../AUDIT.md) con los
+archivos críticos, el [modelo de amenazas](../threat-model.md) y [cómo se
+generan las semillas nuevas](../entropy.md).
+
 ## Carteras compatibles
 
 NDS-Signer firma para una cartera de solo lectura ("coordinador") en tu
