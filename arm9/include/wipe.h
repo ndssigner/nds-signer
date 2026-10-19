@@ -5,9 +5,15 @@
 #ifndef NDS_SIGNER_WIPE_H
 #define NDS_SIGNER_WIPE_H
 
+#include <stddef.h>
+
 /* Clears all memory that may hold secrets (the Python heap with seeds and
  * PSBTs, camera and QR buffers, both screens) and turns the console off.
  * Called when the lid is closed or the power button is pressed. */
 void wipeAndPowerOff(void) __attribute__((noreturn));
+
+/* Overwrites len bytes at p with zeros (len a multiple of 4); the stores
+ * are never optimised away. */
+void secureZero(void *p, size_t len);
 
 #endif /* NDS_SIGNER_WIPE_H */
