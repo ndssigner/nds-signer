@@ -220,6 +220,10 @@ the open problems in [docs/help-wanted.md](docs/help-wanted.md).
   embit's, run unmodified, so fixes belong upstream; NDS-Signer then updates
   its pinned versions.
 
+## Thanks
+
+- [shadowbip](https://njump.me/npub1yag9ggwzdrekxput74qq66p88wv8r68r2f3lm3znycqqyh408ufs7htp3e) (nostr), for the security advice.
+
 ## Donate
 
 NDS-Signer is free and has no funding. Donations help keep it going:
