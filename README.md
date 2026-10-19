@@ -182,26 +182,43 @@ make -C tests/host all seedsigner PYTHON=$(pwd)/build/venv/bin/python
 
 ## Documentation
 
-- [docs/install.md](docs/install.md): compatible consoles and installation.
+**Using it**
+
+- [docs/install.md](docs/install.md): compatible consoles and step-by-step
+  installation.
 - [docs/why.md](docs/why.md): why NDS-Signer exists.
-- [docs/how-it-was-built.md](docs/how-it-was-built.md): how it was made
-  (with AI), the decisions along the way, and how it was tested.
+
+**Reviewing its security**
+
+- [AUDIT.md](AUDIT.md): where to start, the critical files and the pinned
+  dependencies.
+- [docs/threat-model.md](docs/threat-model.md): what is protected, what is
+  trusted, where an attacker could get in.
+- [docs/entropy.md](docs/entropy.md): how new seeds are made from scribbles
+  and microphone noise.
+
+**How it works**
+
 - [docs/architecture.md](docs/architecture.md): how SeedSigner's code runs
   on the DSi.
-- [docs/help-wanted.md](docs/help-wanted.md): open problems.
-- [AUDIT.md](AUDIT.md), [docs/threat-model.md](docs/threat-model.md),
-  [docs/entropy.md](docs/entropy.md): for security reviewers — critical
-  files, threat model, how new seeds are made.
-- [docs/es/](docs/es/LEEME.md): the documentation in Spanish.
+- [docs/how-it-was-built.md](docs/how-it-was-built.md): how it was made
+  (with AI), the decisions along the way, and how it was tested.
 - [THIRD_PARTY.md](THIRD_PARTY.md): the projects NDS-Signer is built on.
+
+In Spanish: [docs/es/](docs/es/LEEME.md).
 
 ## Contributing
 
 Issues and pull requests are welcome, especially from people with a DSi to
-test on. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first; security
-problems: see [SECURITY.md](SECURITY.md). NDS-Signer's
-interface is its own, but its core is SeedSigner's: fixes to PSBT
-verification, seeds or signing belong upstream, in SeedSigner or embit.
+test on. Before opening one, read [CONTRIBUTING.md](CONTRIBUTING.md): the
+rules are strict because NDS-Signer handles seeds. Good places to start are
+the open problems in [docs/help-wanted.md](docs/help-wanted.md).
+
+- **Security problems:** report them privately, as in
+  [SECURITY.md](SECURITY.md), never in a public issue.
+- **PSBT verification, seeds or signing:** that code is SeedSigner's and
+  embit's, run unmodified, so fixes belong upstream; NDS-Signer then updates
+  its pinned versions.
 
 ## Donate
 
