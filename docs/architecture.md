@@ -2,7 +2,7 @@
 
 Status: **implemented.** Proposed on 2026-09-26; the MicroPython spike (end
 of this document) succeeded in the emulator and then on a real DSi XL, and
-NDS-Signer v0.2.0-alpha is built this way. Sections below keep the reasoning
+NDS-Signer v0.2.1-alpha is built this way. Sections below keep the reasoning
 as it was written; [how-it-was-built.md](how-it-was-built.md) tells the rest.
 
 ## Goal
