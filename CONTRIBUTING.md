@@ -18,8 +18,13 @@ public issues.
 ## Rules: changes that are always rejected
 
 1. **Networking.** Anything that initialises, links or talks to the wireless
-   hardware, or adds any other way to send data out (besides showing QR
-   codes on the screen).
+   hardware, or adds any other way to send data out. The only outputs are
+   QR codes on the screen and the experimental telephone tones (DTMF,
+   through the speaker or headphone jack, `arm9/src/tones_audio.c`). Tones
+   play only when the user asks, and sending a seed without a PIN, or with
+   a short one, always shows a warning first. Changes that play tones on
+   their own, drop those warnings, or send anything else as sound are
+   rejected too.
 2. **Storage.** Anything that writes to the SD card or the internal memory,
    or links a storage driver. Seeds, passphrases, keys and PSBTs live in RAM
    only.
