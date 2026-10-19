@@ -173,6 +173,10 @@ En resumen:
 - [Cómo se hizo](como-se-hizo.md) y [Desarrollo con el
   emulador](desarrollo-emulador.md).
 
+## Agradecimientos
+
+- [shadowbip](https://njump.me/npub1yag9ggwzdrekxput74qq66p88wv8r68r2f3lm3znycqqyh408ufs7htp3e) (nostr), por sus consejos de seguridad.
+
 ## Donar
 
 NDS-Signer es gratis y no tiene financiación. Los donativos ayudan a que
