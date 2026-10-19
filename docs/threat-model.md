@@ -34,6 +34,13 @@ can write to the SD card can replace the ROM. Users are expected to check
 the ROM's hash against the release (see [install.md](install.md)) — the
 check happens on another computer, not on the console.
 
+The launcher also hands over the hardware in whatever state it leaves it.
+NDS-Signer powers the wireless hardware off at start and links no network
+or SD/NAND driver (`arm7/src/main.c`), but resets nothing else to a known
+state: registers, other peripherals, memory contents. What an honest
+launcher leaves behind has not been inventoried yet
+([#12](https://github.com/ndssigner/nds-signer/issues/12)).
+
 ## Attack surfaces
 
 ### 1. New seed generation
@@ -107,3 +114,5 @@ emulators, which are for development only.
   ([entropy.md](entropy.md))
 - Has the C QR path (quirc + NDS glue) been fuzzed? Not yet.
 - Has anyone other than the maintainer reproduced a release build?
+- What state does the launcher leave the hardware in, and what should
+  NDS-Signer reset at start? ([#12](https://github.com/ndssigner/nds-signer/issues/12))
