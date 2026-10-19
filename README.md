@@ -7,7 +7,7 @@
 
 *[Leer en español](docs/es/LEEME.md)*
 
-> ⚠️ **Alpha software (v0.2.0-alpha).** It has not been audited. Try it on
+> ⚠️ **Alpha software (v0.2.1-alpha).** It has not been audited. Try it on
 > testnet/signet or with amounts you can afford to lose. Read the
 > [disclaimer](#disclaimer).
 

@@ -8,7 +8,7 @@ para la Nintendo DSi, que ejecuta el propio código de
 
 *[Read in English](../../README.md)*
 
-> ⚠️ **Versión alfa (v0.2.0-alpha).** Nadie la ha auditado. Pruébala en
+> ⚠️ **Versión alfa (v0.2.1-alpha).** Nadie la ha auditado. Pruébala en
 > testnet/signet o con cantidades que puedas permitirte perder.
 
 Una Nintendo DSi ya tiene lo que necesita un SeedSigner: cámara, dos

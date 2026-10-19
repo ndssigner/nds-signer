@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.1-alpha
+
+Security hardening and documentation for reviewers. No new features.
+
+- Security: the Python heap, where seeds, passphrases and PSBTs live, is
+  now wiped at start-up too, not only on lid close or power off. Data left
+  by the launcher, or by a session that ended without the wipe (battery
+  pulled, crash), no longer survives into the next one. Tested in melonDS
+  over GDB and on a real DSi; start-up time unchanged.
+- Docs for auditors: a [threat model](docs/threat-model.md) (including what
+  the launcher leaves behind), an [audit guide](AUDIT.md) with the critical
+  files by priority (now with the restore path and the no-network
+  guarantee), an [entropy spec](docs/entropy.md), and issues labelled
+  [`audit`](https://github.com/ndssigner/nds-signer/labels/audit).
+- README and LEEME: documentation grouped by reader; thanks to shadowbip.
+
 ## v0.2.0-alpha
 
 Telephone tones ([ur-tones](https://github.com/ndssigner/ur-tones) v0.1.0),
