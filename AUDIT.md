@@ -28,9 +28,22 @@ nobody else has looked at it.
 | `arm9/src/mic_entropy.c` | Microphone recording for entropy |
 | `arm9/src/wipe.c`, `arm7/src/main.c` | Wiping RAM and powering off on lid close / power button |
 | `mpy/overlay/seedsigner/hardware/microsd.py` | Guarantees no SD card access |
+| `arm7/src/main.c`, `arm7/Makefile` | No network: the wireless driver is not linked and the wireless chips are powered off at start |
 | `lib/mpy-usermods/` | libsecp256k1 and hashlib bindings, **modified** from upstream (see [lib/README.md](lib/README.md)) |
 
-### 2. Untrusted input (camera → QR → Python)
+### 2. Restoring a seed
+
+A restore that reads a seed wrongly, or accepts one that should be refused,
+loads a wallet other than the user's backup.
+
+| Path | What it does |
+| :--- | :--- |
+| `mpy/overlay/seedsigner/gui/screens/seed_screens.py` (`SeedMnemonicEntryScreen`), `mpy/overlay/seedsigner/gui/nds_keyboard.py` | Typing the words on the touch screen |
+| `mpy/overlay/seedsigner/gui/screens/seed_screens.py` (`SeedAddPassphraseScreen`, `SeedReviewPassphraseScreen`) | Entering and reviewing the BIP-39 passphrase |
+| `arm9/src/qr_type.c` | Recognising Standard and Compact SeedQR before Python decodes them |
+| `mpy/overlay/seedsigner/gui/nds_tones.py`, `third_party/ur-tones/c/` | A seed received as tones (experimental), its PIN undone, handed over as a Standard SeedQR |
+
+### 3. Untrusted input (camera → QR → Python)
 
 | Path | What it does |
 | :--- | :--- |
@@ -39,7 +52,7 @@ nobody else has looked at it.
 | `mpy/usermods/nds/modnds.c`, `arm9/src/nds_bridge.c` | Boundary between C and Python: buffer lengths, types |
 | `mpy/overlay/seedsigner/helpers/qr.py`, `mpy/overlay/seedsigner/helpers/ur2/` | QR output: drawn natively instead of SeedSigner's image helpers; UR (animated QR) parts |
 
-### 3. What the user sees
+### 4. What the user sees
 
 | Path | What it does |
 | :--- | :--- |
@@ -47,12 +60,12 @@ nobody else has looked at it.
 | `mpy/overlay/seedsigner/gui/screens/seed_screens.py` | Seed words, SeedQR, backup check |
 | `mpy/overlay/seedsigner/gui/` (rest), `arm9/src/gfx.c`, `arm9/src/qr_display.c` | Drawing on two screens; QR output |
 
-### 4. Experimental: tones
+### 5. Experimental: tones
 
 `arm9/src/tones_audio.c`, `mpy/overlay/seedsigner/gui/nds_tones.py`,
 `third_party/ur-tones` (its protocol and the seed PIN are specified there).
 
-### 5. Port compatibility
+### 6. Port compatibility
 
 `mpy/frozen/compat/`, `mpy/frozen/hwstubs/`: stand-ins for CPython and
 Raspberry Pi modules that SeedSigner expects. A difference in behaviour here
