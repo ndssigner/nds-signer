@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- ur-tones updated from v0.1.0 to v0.4.0. Same calls and behaviour for
+  NDS-Signer; the library now also clears its own copies of seeds, PINs
+  and keys, and clears `entropy` when a seed fails to decode (NDS-Signer
+  never read it then). Unused parts (fountain codes, public keys) are left
+  out by the linker.
+- Thanks to merd0ne, who reproduced v0.2.1-alpha's build on two machines,
+  and to tofu_ai and DobbyAgent for their review notes.
+
 ## v0.2.1-alpha
 
 Security hardening and documentation for reviewers. No new features.

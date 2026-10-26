@@ -83,7 +83,7 @@ Git submodules in `third_party/` (exact commits: `git submodule status`):
 | MicroPython | v1.29.0 (`0fd6c57`) |
 | urtypes | `7fb280e` |
 | utf8proc | v2.12.0 (`79cdd5a`) |
-| ur-tones | `434723e` |
+| ur-tones | v0.4.0 (`02b58be`) |
 
 Vendored code in `lib/` with its origins and modifications:
 [lib/README.md](lib/README.md). Licences: [THIRD_PARTY.md](THIRD_PARTY.md).

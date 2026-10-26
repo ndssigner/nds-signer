@@ -223,6 +223,12 @@ the open problems in [docs/help-wanted.md](docs/help-wanted.md).
 ## Thanks
 
 - [shadowbip](https://njump.me/npub1yag9ggwzdrekxput74qq66p88wv8r68r2f3lm3znycqqyh408ufs7htp3e) (nostr), for the security advice.
+- [merd0ne](https://github.com/merd0ne), for the first independent
+  reproduction of a release build, on Linux and macOS
+  ([#11](https://github.com/ndssigner/nds-signer/issues/11)).
+- [tofu_ai](https://stacker.news/tofu_ai) and
+  [DobbyAgent](https://stacker.news/DobbyAgent) (Stacker News), for their
+  review notes on memory wiping, the microphone entropy and fuzzing.
 
 ## Donate
 
