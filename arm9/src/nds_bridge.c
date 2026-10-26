@@ -99,7 +99,11 @@ int ndsbCameraGrab(uint8_t *dst, size_t len)
 
 bool ndsbMicStart(void) { return micEntropyStart(); }
 void ndsbMicStop(void) { micEntropyStop(); }
-size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak) { return micEntropyTake(dst, len, peak); }
+size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak, int *health)
+{
+	return micEntropyTake(dst, len, peak, health);
+}
+unsigned ndsbMicDropped(void) { return micEntropyDropped(); }
 
 bool ndsbTonesListen(bool on, int gain)
 {
@@ -118,6 +122,7 @@ int ndsbTonesUrToFrame(const char *ur, char *tones, size_t cap) { return ut_ur_t
 int ndsbTonesKeypadToSeed(const char *tones, const char *pin, uint8_t *entropy) { return ut_keypad_to_seed(tones, pin, entropy); }
 int ndsbTonesUrToSeed(const char *ur, const char *pin, uint8_t *entropy) { return ut_ur_to_seed(ur, pin, entropy); }
 bool ndsbTonesLoopback(const char *groups) { return tonesLoopback(groups); }
+bool ndsbTonesBenchmark(uint32_t us[3], bool ok[3]) { return tonesBenchmark(us, ok); }
 
 int ndsbTonesSeedToFrame(const uint8_t *entropy, size_t len, const char *pin, char *tones, size_t cap)
 {

@@ -22,3 +22,18 @@ Check: `make -C tests/host quirc` decodes seeded synthetic camera frames
 and with the ROM's configuration. It fails if the ROM build loses any frame
 that upstream decodes, or decodes a wrong payload. It runs under ASan and
 UBSan, so an integer overflow in the fixed-point code fails the check.
+
+## Fixes found by fuzzing (`tests/fuzz`)
+
+Applied whatever the options; behaviour is otherwise upstream's.
+
+- `quirc_resize()`: on the first resize `q->image` is NULL and was passed
+  to `memcpy` with a length of 0 (undefined behaviour, harmless in
+  practice). The copy is now skipped when there is nothing to copy.
+- `fitness_all()`: the version table entry was addressed before the
+  version was range-checked, so a grid measured smaller than 21 cells
+  formed `&quirc_version_db[-1]` (undefined behaviour; it was not read).
+  Found by `fuzz_image`. The entry is now taken after the check.
+- `quirc_extract()`: `index > q->num_grids` let `index == num_grids`
+  through; now `>=`, and the grid is looked up after the check. NDS-Signer
+  never passes such an index.

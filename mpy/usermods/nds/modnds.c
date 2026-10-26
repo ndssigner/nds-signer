@@ -129,18 +129,26 @@ static mp_obj_t nds_mic_stop(void)
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_mic_stop_obj, nds_mic_stop);
 
 /* mic_take(buf): the last recorded buffer (16-bit samples, MIC_BUFFER_BYTES)
- * into `buf`, once: (bytes copied, peak magnitude); (0, 0) if none yet,
- * peak 0 for a flat buffer */
+ * into `buf`, once: (bytes copied, peak magnitude, health); (0, 0, 0) if none
+ * yet, peak 0 for a flat buffer, health 0 if it passed the SP 800-90B health
+ * tests (mic_health.h) */
 static mp_obj_t nds_mic_take(mp_obj_t buf_in)
 {
 	mp_buffer_info_t buf;
 	mp_get_buffer_raise(buf_in, &buf, MP_BUFFER_WRITE);
-	int peak = 0;
-	size_t n = ndsbMicTake(buf.buf, buf.len, &peak);
-	mp_obj_t items[2] = {mp_obj_new_int(n), mp_obj_new_int(peak)};
-	return mp_obj_new_tuple(2, items);
+	int peak = 0, health = 0;
+	size_t n = ndsbMicTake(buf.buf, buf.len, &peak, &health);
+	mp_obj_t items[3] = {mp_obj_new_int(n), mp_obj_new_int(peak), mp_obj_new_int(health)};
+	return mp_obj_new_tuple(3, items);
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(nds_mic_take_obj, nds_mic_take);
+
+/* mic_dropped(): buffers recorded since mic_start() but never taken */
+static mp_obj_t nds_mic_dropped(void)
+{
+	return mp_obj_new_int_from_uint(ndsbMicDropped());
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_mic_dropped_obj, nds_mic_dropped);
 
 /* ---- ur-tones (experimental, github.com/ndssigner/ur-tones) ---- */
 
@@ -340,6 +348,23 @@ static mp_obj_t nds_scan_benchmark(mp_obj_t text_in, mp_obj_t pixels_in)
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(nds_scan_benchmark_obj, nds_scan_benchmark);
 
+/* tones_benchmark(): developer builds only, else None. ur-tones' bench:
+ * ((pin_us, ok), (receiver_us_per_s, ok), (repair_us, ok)) */
+static mp_obj_t nds_tones_benchmark(void)
+{
+	uint32_t us[3];
+	bool ok[3];
+	if (!ndsbTonesBenchmark(us, ok))
+		return mp_const_none;
+	mp_obj_t t[3];
+	for (int i = 0; i < 3; i++) {
+		mp_obj_t pair[2] = {mp_obj_new_int_from_uint(us[i]), mp_obj_new_bool(ok[i])};
+		t[i] = mp_obj_new_tuple(2, pair);
+	}
+	return mp_obj_new_tuple(3, t);
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_tones_benchmark_obj, nds_tones_benchmark);
+
 /* qr_show(text, border=2, background=255): QR code on the top screen.
  * Returns its size in modules (0 if the text does not fit). */
 static mp_obj_t nds_qr_show(size_t n_args, const mp_obj_t *args)
@@ -532,6 +557,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_camera_stop), MP_ROM_PTR(&nds_camera_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_camera_stats), MP_ROM_PTR(&nds_camera_stats_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_scan_benchmark), MP_ROM_PTR(&nds_scan_benchmark_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_tones_benchmark), MP_ROM_PTR(&nds_tones_benchmark_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_qr_show), MP_ROM_PTR(&nds_qr_show_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_gfx_clear), MP_ROM_PTR(&nds_gfx_clear_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_gfx_rect), MP_ROM_PTR(&nds_gfx_rect_obj) },
@@ -572,6 +598,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_mic_start), MP_ROM_PTR(&nds_mic_start_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_mic_stop), MP_ROM_PTR(&nds_mic_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_mic_take), MP_ROM_PTR(&nds_mic_take_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_mic_dropped), MP_ROM_PTR(&nds_mic_dropped_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_listen), MP_ROM_PTR(&nds_tones_listen_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_poll), MP_ROM_PTR(&nds_tones_poll_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_frame_to_ur), MP_ROM_PTR(&nds_tones_frame_to_ur_obj) },

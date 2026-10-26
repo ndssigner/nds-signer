@@ -1,5 +1,42 @@
 # Changelog
 
+## v0.2.2-alpha
+
+Security fixes promised to reviewers. No new features. Tested on a DSi XL.
+
+- Security: closing the lid now also clears the app thread's whole stack,
+  where C code that handles keys (libsecp256k1, hashlib, the seed PIN)
+  leaves its locals, and the tones' buffers (a seed heard or played as
+  tones). `secureZero` clears any length, not only multiples of 4
+  ([#12](https://github.com/ndssigner/nds-signer/issues/12), tofu_ai).
+  Checked in melonDS over GDB: 6,841 non-zero stack bytes before, none
+  after, and the console then powers off.
+- Security: microphone entropy now goes through NIST SP 800-90B's
+  Repetition Count and Adaptive Proportion health tests, in C, on every
+  buffer; only buffers that pass count towards Done (a stuck or
+  near-silent microphone never gets there). A PIN made up for tones uses
+  the same tests: before, a dead microphone was accepted. Dropped buffers
+  are counted, and [docs/entropy.md](docs/entropy.md) says what "16
+  buffers" means ([#8](https://github.com/ndssigner/nds-signer/issues/8),
+  tofu_ai).
+- Security: the C QR path (quirc as the ROM builds it, and the QR type
+  detection) is fuzzed with libFuzzer, ASan and UBSan (`tests/fuzz`,
+  [AUDIT.md](AUDIT.md#fuzzing)). It found undefined behaviour in quirc,
+  now fixed: a version table entry addressed before its range check, and
+  a `memcpy` from NULL on the first resize; neither read or wrote out of
+  bounds ([#7](https://github.com/ndssigner/nds-signer/issues/7),
+  DobbyAgent).
+- ur-tones updated from v0.1.0 to v0.4.0. Same calls and behaviour for
+  NDS-Signer; the library now also clears its own copies of seeds, PINs
+  and keys, and clears `entropy` when a seed fails to decode (NDS-Signer
+  never read it then). Unused parts (fountain codes, public keys) are left
+  out by the linker.
+- Developer builds: *Diagnostics → Benchmark* also runs ur-tones' own
+  bench (the PIN, the receiver's CPU, a repair); its figures went into
+  ur-tones' DSi port.
+- Thanks to merd0ne, who reproduced v0.2.1-alpha's build on two machines,
+  and to tofu_ai and DobbyAgent for their review notes.
+
 ## v0.2.1-alpha
 
 Security hardening and documentation for reviewers. No new features.

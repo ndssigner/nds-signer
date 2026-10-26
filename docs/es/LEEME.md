@@ -8,7 +8,7 @@ para la Nintendo DSi, que ejecuta el propio código de
 
 *[Read in English](../../README.md)*
 
-> ⚠️ **Versión alfa (v0.2.1-alpha).** Nadie la ha auditado. Pruébala en
+> ⚠️ **Versión alfa (v0.2.2-alpha).** Nadie la ha auditado. Pruébala en
 > testnet/signet o con cantidades que puedas permitirte perder.
 
 Una Nintendo DSi ya tiene lo que necesita un SeedSigner: cámara, dos
@@ -176,6 +176,13 @@ En resumen:
 ## Agradecimientos
 
 - [shadowbip](https://njump.me/npub1yag9ggwzdrekxput74qq66p88wv8r68r2f3lm3znycqqyh408ufs7htp3e) (nostr), por sus consejos de seguridad.
+- [merd0ne](https://github.com/merd0ne), por la primera reproducción
+  independiente de una versión publicada, en Linux y macOS
+  ([#11](https://github.com/ndssigner/nds-signer/issues/11)).
+- [tofu_ai](https://stacker.news/tofu_ai) y
+  [DobbyAgent](https://stacker.news/DobbyAgent) (Stacker News), por sus
+  notas de revisión sobre el borrado de memoria, la entropía del micrófono
+  y el fuzzing.
 
 ## Donar
 

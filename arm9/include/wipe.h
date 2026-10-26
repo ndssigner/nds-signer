@@ -8,12 +8,13 @@
 #include <stddef.h>
 
 /* Clears all memory that may hold secrets (the Python heap with seeds and
- * PSBTs, camera and QR buffers, both screens) and turns the console off.
- * Called when the lid is closed or the power button is pressed. */
+ * PSBTs, camera, microphone, tones and QR buffers, the app thread's stack,
+ * both screens) and turns the console off. Called on the app thread when the
+ * lid is closed or the power button is pressed. */
 void wipeAndPowerOff(void) __attribute__((noreturn));
 
-/* Overwrites len bytes at p with zeros (len a multiple of 4); the stores
- * are never optimised away. */
+/* Overwrites len bytes at p with zeros (any length and alignment); the
+ * stores are never optimised away. */
 void secureZero(void *p, size_t len);
 
 #endif /* NDS_SIGNER_WIPE_H */

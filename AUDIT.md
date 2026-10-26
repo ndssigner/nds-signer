@@ -25,7 +25,7 @@ nobody else has looked at it.
 | Path | What it does |
 | :--- | :--- |
 | `mpy/overlay/seedsigner/gui/screens/tools_screens.py`, `mpy/overlay/seedsigner/views/nds_tools_views.py` | Scribble + microphone seed generation ([docs/entropy.md](docs/entropy.md)) |
-| `arm9/src/mic_entropy.c` | Microphone recording for entropy |
+| `arm9/src/mic_entropy.c`, `arm9/src/mic_health.c` | Microphone recording for entropy, and its SP 800-90B health tests |
 | `arm9/src/wipe.c`, `arm7/src/main.c` | Wiping RAM and powering off on lid close / power button |
 | `mpy/overlay/seedsigner/hardware/microsd.py` | Guarantees no SD card access |
 | `arm7/src/main.c`, `arm7/Makefile` | No network: the wireless driver is not linked and the wireless chips are powered off at start |
@@ -83,7 +83,7 @@ Git submodules in `third_party/` (exact commits: `git submodule status`):
 | MicroPython | v1.29.0 (`0fd6c57`) |
 | urtypes | `7fb280e` |
 | utf8proc | v2.12.0 (`79cdd5a`) |
-| ur-tones | `434723e` |
+| ur-tones | v0.4.0 (`02b58be`) |
 
 Vendored code in `lib/` with its origins and modifications:
 [lib/README.md](lib/README.md). Licences: [THIRD_PARTY.md](THIRD_PARTY.md).
@@ -93,4 +93,28 @@ Vendored code in `lib/` with its origins and modifications:
 - No independent audit.
 - The scribble + microphone source has no measured entropy figure
   ([docs/entropy.md](docs/entropy.md)).
-- The C QR path has not been fuzzed.
+- The C QR path has been fuzzed for 30 minutes per harness only (see
+  below); longer runs, especially of `fuzz_image`, are welcome.
+
+## Fuzzing
+
+`tests/fuzz` fuzzes the ROM's C QR path with libFuzzer, ASan and UBSan, in
+a container (Docker; Apple's clang has no libFuzzer), with quirc built as
+the ROM builds it (`QUIRC_FIXED_POINT_GRID`, `QUIRC_LAZY_JIGGLE`):
+
+- `fuzz_image`: a small grayscale image → quirc_end → every grid extracted,
+  decoded (mirrored retry), refined, as `qr_scanner.c` does;
+- `fuzz_decode`: an arbitrary cell grid → quirc_decode;
+- `fuzz_qr_type`: the ROM's QR type detection (`arm9/src/qr_type.c`);
+  the two above also pass what decodes through it.
+
+```bash
+make -C tests/fuzz run FUZZ_TIME=1800                   # each harness, 30 min
+make -C tests/fuzz run FUZZ_TIME=3600 HARNESS=fuzz_image
+```
+
+Seeds come from `tests/vectors` (`make_corpus.py`); crashes are written to
+`tests/fuzz/build/`. First run (2026-10-26, 30 min each, in parallel):
+357 M inputs for `fuzz_qr_type`, 1.27 M for `fuzz_decode`, 73,000 for
+`fuzz_image`, none failing after three small quirc fixes it led to
+([lib/quirc/NDS-CHANGES.md](lib/quirc/NDS-CHANGES.md)).

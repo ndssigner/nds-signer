@@ -25,11 +25,15 @@ DOCKER_MPY_ROM = docker run --rm -v "$(TOPDIR)":/source -w /source/tests/host \
              -e MICROPYPATH=$(MPY_ROM_PATH) nds-signer-builder /source/build/mpy-unix/micropython
 
 .PHONY: all clean re-compat seedsigner qrdecode unicode frozen quirc crawl
-all: test_qr_type
+all: test_qr_type test_mic_health
 	./test_qr_type
+	./test_mic_health
 
 test_qr_type: test_qr_type.c ../../arm9/src/qr_type.c ../../arm9/include/qr_type.h
 	$(CC) $(CFLAGS) -o $@ test_qr_type.c ../../arm9/src/qr_type.c
+
+test_mic_health: test_mic_health.c ../../arm9/src/mic_health.c ../../arm9/include/mic_health.h
+	$(CC) $(CFLAGS) -o $@ test_mic_health.c ../../arm9/src/mic_health.c -lm
 
 # quirc: the ROM's build (QUIRC_FIXED_POINT_GRID, QUIRC_LAZY_JIGGLE) must
 # decode every frame the unmodified quirc decodes, on seeded synthetic frames
@@ -119,4 +123,4 @@ qrdecode: ../../build/qrdecode
 	$(CC) -O2 -I../../lib/quirc -o $@ qrdecode.c ../../lib/quirc/*.c -lm
 
 clean:
-	rm -rf test_qr_type test_qr_type.dSYM
+	rm -rf test_qr_type test_qr_type.dSYM test_mic_health test_mic_health.dSYM

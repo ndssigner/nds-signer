@@ -269,3 +269,72 @@ void tonesPlayStop(void)
 	wipePlay();
 	s_synth.count = count;              /* for the last poll's count only */
 }
+
+void tonesWipe(void)
+{
+	tonesListenStop();
+	tonesPlayStop();
+	s_synth.count = 0;
+#ifdef NDS_SIGNER_DEVBUILD
+	volatile char *p = s_loop;
+	for (size_t i = 0; i < sizeof s_loop; i++) p[i] = 0;
+	p = s_loop_group;
+	for (size_t i = 0; i < sizeof s_loop_group; i++) p[i] = 0;
+	s_loop_len = s_loop_at = 0;
+#endif
+}
+
+#ifdef NDS_SIGNER_DEVBUILD
+static const char BENCH_UR[] =
+	"ur:bytes/hdfmkpjpdpjyjljtihjkftcxhsjtkkcxidkkjyihjkdwcxjkkpiaiscxhsjkcxhscxkthsjzjzihjycxiyinjzihcxjljp"
+	"cxhscxjnkpjzjyinjkiniocxjkihjykpjowyfwiadt";
+
+bool tonesBenchmark(uint32_t us[3], bool ok[3])
+{
+	static char tones[UT_MAX_FRAME + 1], ur[UT_MAX_UR], group[UT_GROUP + 1];
+	static ut_listener l;
+	static ut_synth s;
+	static s16 block[160];
+	const uint32_t rate = SOUND_MIXER_FREQ_HZ / 2;   /* the microphone's, as tonesListenStart */
+	uint8_t entropy[16] = {0};
+
+	if (s_running || s_playing)
+		return false;
+	cpuStartTiming(0);
+	int32_t r = ut_seed_to_keypad(entropy, sizeof entropy, "ABC123", tones, sizeof tones);
+	us[0] = timerTicks2usec(cpuEndTiming());
+	ok[0] = r > 0;
+
+	r = ut_ur_to_frame(BENCH_UR, tones, sizeof tones);
+	ut_listener_init(&l, rate);
+	ut_synth_init(&s, tones, rate, 40, 20, 400);
+	u64 busy = 0, samples = 0;
+	size_t n;
+	while ((n = ut_synth_read(&s, block, sizeof block / sizeof block[0]))) {
+		cpuStartTiming(0);
+		ut_listener_push(&l, block, n);
+		busy += timerTicks2usec(cpuEndTiming());
+		samples += n;
+	}
+	ut_listener_flush(&l);
+	ok[1] = ut_listener_group(&l, group, sizeof group) == r && !strcmp(group, tones);
+	us[1] = samples ? (uint32_t)(busy * rate / samples) : 0;
+
+	for (size_t i = 8; i < (size_t)r; i += 40)      /* 5 tones misheard, far apart */
+		tones[i] = tones[i] == '0' ? '1' : '0';
+	int fixed = 0;
+	cpuStartTiming(0);
+	r = ut_frame_to_ur(tones, ur, sizeof ur, &fixed);
+	us[2] = timerTicks2usec(cpuEndTiming());
+	ok[2] = r > 0 && !strcmp(ur, BENCH_UR);
+	ut_listener_init(&l, rate);                      /* clears what it heard */
+	return true;
+}
+#else
+bool tonesBenchmark(uint32_t us[3], bool ok[3])
+{
+	(void)us;
+	(void)ok;
+	return false;
+}
+#endif

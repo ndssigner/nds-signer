@@ -69,7 +69,22 @@ def _run_benchmark():
     t3 = nds.ticks_ms()
     del _benchmark[:]
     _benchmark.append("pbkdf2 %dms derive %dms sign %dms" % (t1 - t0, t2 - t1, (t3 - t2) // 10))
+    _benchmark.extend(_tones_benchmark())
     _benchmark.extend(_scan_benchmark())
+
+
+def _tones_benchmark():
+    """ur-tones' own bench (its examples/pico), for its port notes: the PIN,
+    the receiver's CPU per second of audio, a repair of 5 misheard tones."""
+    r = nds.tones_benchmark()
+    if r is None:
+        return ["tones n/a"]
+    (pin, pin_ok), (rx, rx_ok), (fix, fix_ok) = r
+    line = "tones pin %dms%s rx %dms/s%s repair %dms%s" % (
+        pin // 1000, "" if pin_ok else " FAIL", rx // 1000, "" if rx_ok else " FAIL",
+        fix // 1000, "" if fix_ok else " FAIL")
+    print("bench:", line)
+    return [line]
 
 
 def _scan_benchmark():

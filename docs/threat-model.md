@@ -18,7 +18,12 @@ NDS-Signer never writes to the SD card or any other non-volatile memory
 (`mpy/overlay/seedsigner/hardware/microsd.py` always reports no card).
 Closing the lid or pressing power overwrites everything that may hold a
 secret and switches the console off instead of sleeping
-(`arm9/src/wipe.c`, `arm7/src/main.c`).
+(`arm9/src/wipe.c`, `arm7/src/main.c`): the Python heap, the camera,
+microphone, tones and QR buffers, both screens, and the whole 128 KB stack
+of the app thread, where every C function that handles keys (libsecp256k1,
+hashlib, the tones' seed PIN) runs. The last steps run on a separate 1 KB
+stack, so the frames that led to the wipe are cleared too. The app stack is
+in `.bss`, zeroed at start-up like the heap.
 
 ## Trust chain
 
@@ -112,7 +117,12 @@ emulators, which are for development only.
 
 - How much entropy does the scribble + microphone source really contribute?
   ([entropy.md](entropy.md))
-- Has the C QR path (quirc + NDS glue) been fuzzed? Not yet.
-- Has anyone other than the maintainer reproduced a release build?
+- Has the C QR path (quirc + NDS glue) been fuzzed? For 30 minutes per
+  harness so far ([AUDIT.md](../AUDIT.md#fuzzing)); it found undefined
+  behaviour in quirc, fixed, none of it exploitable. Longer runs are wanted.
+- Has anyone other than the maintainer reproduced a release build? One
+  person so far: v0.2.1-alpha on Linux x86_64 and macOS arm64, both
+  matching ([#11](https://github.com/ndssigner/nds-signer/issues/11)); a
+  second is still wanted.
 - What state does the launcher leave the hardware in, and what should
   NDS-Signer reset at start? ([#12](https://github.com/ndssigner/nds-signer/issues/12))

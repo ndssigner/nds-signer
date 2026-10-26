@@ -217,6 +217,7 @@ MIC_BUFFER_BYTES = 4096 * 2
 mic_on = False
 mic_buffers = [0]     # buffers handed out by mic_take, for tests
 sim_mic_silent = 0    # the next n buffers are flat (a dead microphone)
+sim_mic_stuck = 0     # the next n fail the health tests (a stuck ADC)
 _mic_frames = [0]
 
 
@@ -232,23 +233,33 @@ def mic_stop():
 
 
 def mic_take(buf):
-    """A new noise buffer every 15 frames (1/4 s at 60 fps) while on."""
-    global sim_mic_silent
+    """A new noise buffer every 15 frames (1/4 s at 60 fps) while on:
+    (bytes, peak, health) as the ROM's."""
+    global sim_mic_silent, sim_mic_stuck
     if not mic_on:
-        return (0, 0)
+        return (0, 0, 0)
     _mic_frames[0] += 1
     if _mic_frames[0] % 15:
-        return (0, 0)
+        return (0, 0, 0)
     mic_buffers[0] += 1
     if sim_mic_silent:
         sim_mic_silent -= 1
         for i in range(len(buf)):
             buf[i] = 0
-        return (len(buf), 0)
+        return (len(buf), 0, 1)         # MIC_HEALTH_FLAT
+    if sim_mic_stuck:
+        sim_mic_stuck -= 1
+        for i in range(0, len(buf), 2):
+            buf[i] = 0x40 if i & 2 else 0x20
+        return (len(buf), 1200, 3)      # MIC_HEALTH_APT
     n = mic_buffers[0]
     for i in range(0, len(buf), 64):
         buf[i] = (n * 37 + i * 11) & 255
-    return (len(buf), 300 + (n * 997) % 3000)
+    return (len(buf), 300 + (n * 997) % 3000, 0)
+
+
+def mic_dropped():
+    return 0
 
 
 battery_state = (15, False)  # (level 0-15, charging), set by tests
@@ -469,6 +480,10 @@ def tones_poll():
         return (group, "", -200, 1, 0)
     # listening: a steady level, as a microphone in a room would give
     return (None, "", -230 if tones_on else -990, 0, 0)
+
+
+def tones_benchmark():
+    return None   # developer builds of the ROM only
 
 
 def tones_loopback(groups):

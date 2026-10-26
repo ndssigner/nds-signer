@@ -162,6 +162,12 @@ msgstr "Sigue garabateando"
 msgid "Make some noise"
 msgstr "Haz algo de ruido"
 
+msgid "Too quiet or too regular: make some noise"
+msgstr "Demasiado silencio o ruido muy regular: haz algo de ruido"
+
+msgid "Too quiet or too regular: make some noise and try again, or type a PIN."
+msgstr "Demasiado silencio o ruido muy regular: haz algo de ruido y vuelve a intentarlo, o escribe un PIN."
+
 msgid "Low battery: plug in the charger"
 msgstr "Batería baja: conecta el cargador"
 

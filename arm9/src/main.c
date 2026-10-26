@@ -188,7 +188,9 @@ static Screen resultScreen(void)
 #define APP_STACK_SIZE (128 * 1024)
 
 static Thread s_appThread;
-alignas(8) static u8 s_appStack[APP_STACK_SIZE];
+/* in .bss, so zeroed at start-up; wipe.c clears it on the way out */
+alignas(8) u8 g_appStack[APP_STACK_SIZE];
+const size_t g_appStackSize = APP_STACK_SIZE;
 
 static int appMain(void *arg)
 {
@@ -232,7 +234,7 @@ static int appMain(void *arg)
 
 int main(void)
 {
-	threadPrepare(&s_appThread, appMain, NULL, &s_appStack[APP_STACK_SIZE], MAIN_THREAD_PRIO);
+	threadPrepare(&s_appThread, appMain, NULL, &g_appStack[APP_STACK_SIZE], MAIN_THREAD_PRIO);
 	threadStart(&s_appThread);
 	return threadJoin(&s_appThread);
 }

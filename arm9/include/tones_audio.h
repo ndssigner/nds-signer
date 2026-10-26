@@ -29,6 +29,13 @@ int tonesListenPoll(char *group, size_t cap, char *live, size_t livecap, int *le
  * tones to DecodeQR, timed on the console or the emulator. */
 bool tonesLoopback(const char *groups);
 
+/* Developer builds only (elsewhere returns false): what ur-tones' own bench
+ * (examples/pico) measures, for its port notes: the PIN (PBKDF2, keypad
+ * mode), the receiver's CPU per second of audio at the microphone's rate,
+ * and a repair of 5 misheard tones, in microseconds; ok[] says each result
+ * was right (the frame heard, the UR back). */
+bool tonesBenchmark(uint32_t us[3], bool ok[3]);
+
 /* Plays a frame's tones (or keypad tones) through the speaker, or the
  * headphones when plugged in: a pause, each tone and its gap, a final pause
  * (SPEC §1.1). Stops listening first. Call tonesPlayPoll() every frame: it
@@ -38,5 +45,9 @@ bool tonesLoopback(const char *groups);
 bool tonesPlayStart(const char *tones, unsigned tone_ms, unsigned gap_ms, unsigned pause_ms);
 int tonesPlayPoll(unsigned *index, unsigned *count);
 void tonesPlayStop(void);
+
+/* Stops listening and playing and clears every buffer that held tones (a
+ * seed's among them): for the wipe on lid close. */
+void tonesWipe(void);
 
 #endif /* NDS_SIGNER_TONES_AUDIO_H */

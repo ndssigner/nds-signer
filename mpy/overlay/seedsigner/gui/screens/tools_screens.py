@@ -111,8 +111,9 @@ class ToolsScribbleMicEntropyScreen(BaseScreen):
     on the bottom screen while the microphone records. Every stylus reading
     (position and time) and every microphone buffer goes into one SHA-256.
     Done is enabled once there are TOUCH_POINTS distinct stylus positions
-    and MIC_BUFFERS microphone buffers that are not flat (a dead microphone
-    gives identical samples). Returns the 32-byte digest, or
+    and MIC_BUFFERS microphone buffers that pass the health tests (SP
+    800-90B's Repetition Count and Adaptive Proportion, in C: a dead, stuck
+    or near-silent microphone fails them). Returns the 32-byte digest, or
     RET_CODE__BACK_BUTTON. The microphone is on only on this screen."""
 
     TOUCH_POINTS = 256
@@ -120,7 +121,7 @@ class ToolsScribbleMicEntropyScreen(BaseScreen):
     LEVEL_FULL = 4000      # sample magnitude shown as a full level bar
     BUTTON_W = 80
 
-    def _top(self, points, buffers, level):
+    def _top(self, points, buffers, level, unhealthy=False):
         """One progress bar for both sources (each counts half), a line
         saying what is missing, and the sound level in colour."""
         from seedsigner.gui.components import GUIConstants as GC
@@ -134,6 +135,8 @@ class ToolsScribbleMicEntropyScreen(BaseScreen):
             hint = _("Keep scribbling")
         else:
             hint = _("Make some noise")
+        if mic < 1 and unhealthy:
+            hint = _("Too quiet or too regular: make some noise")
         loud = level / self.LEVEL_FULL
         color = (GC.SUCCESS_COLOR if loud < 0.4 else GC.WARNING_COLOR if loud < 0.75
                  else GC.ERROR_COLOR)
@@ -172,8 +175,8 @@ class ToolsScribbleMicEntropyScreen(BaseScreen):
             raise Exception(_("Microphone not available"))
         h = hashlib.sha256(b"NDS-Signer scribble + mic entropy v1")
         buf = bytearray(nds.MIC_BUFFER_BYTES)
-        points, buffers, level, last = set(), 0, 0, None
-        shown = (0, 0, 0)
+        points, buffers, level, last, unhealthy = set(), 0, 0, None, False
+        shown = (0, 0, 0, False)
         complete = False
         taps = nds_ui.TapTracker()
         try:
@@ -189,14 +192,15 @@ class ToolsScribbleMicEntropyScreen(BaseScreen):
                         nds.gfx_rect(nds_ui.BOTTOM, max(1, xy[0] - 1), max(1, xy[1] - 1), 3, 3,
                                      t["accent"], 0)
                         nds.gfx_present(nds_ui.BOTTOM)
-                n, peak = nds.mic_take(buf)
+                n, peak, health = nds.mic_take(buf)
                 if n:
-                    h.update(buf)
-                    if peak:
+                    h.update(buf)           # every buffer is hashed; only healthy ones count
+                    unhealthy = health != 0
+                    if not unhealthy:
                         buffers += 1
                     level = peak
                 progress = (min(len(points), self.TOUCH_POINTS), min(buffers, self.MIC_BUFFERS),
-                            level)
+                            level, unhealthy)
                 if progress != shown:
                     shown = progress
                     self._top(*progress)
