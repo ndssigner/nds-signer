@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Security: the C QR path (quirc as the ROM builds it, and the QR type
+  detection) is fuzzed with libFuzzer, ASan and UBSan (`tests/fuzz`,
+  [AUDIT.md](AUDIT.md#fuzzing)). It found undefined behaviour in quirc,
+  now fixed: a version table entry addressed before its range check, and
+  a `memcpy` from NULL on the first resize; neither read or wrote out of
+  bounds ([#7](https://github.com/ndssigner/nds-signer/issues/7),
+  DobbyAgent).
 - Security: microphone entropy now goes through NIST SP 800-90B's
   Repetition Count and Adaptive Proportion health tests, in C, on every
   buffer; only buffers that pass count towards Done (a stuck or

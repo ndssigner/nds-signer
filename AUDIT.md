@@ -93,4 +93,28 @@ Vendored code in `lib/` with its origins and modifications:
 - No independent audit.
 - The scribble + microphone source has no measured entropy figure
   ([docs/entropy.md](docs/entropy.md)).
-- The C QR path has not been fuzzed.
+- The C QR path has been fuzzed for 30 minutes per harness only (see
+  below); longer runs, especially of `fuzz_image`, are welcome.
+
+## Fuzzing
+
+`tests/fuzz` fuzzes the ROM's C QR path with libFuzzer, ASan and UBSan, in
+a container (Docker; Apple's clang has no libFuzzer), with quirc built as
+the ROM builds it (`QUIRC_FIXED_POINT_GRID`, `QUIRC_LAZY_JIGGLE`):
+
+- `fuzz_image`: a small grayscale image → quirc_end → every grid extracted,
+  decoded (mirrored retry), refined, as `qr_scanner.c` does;
+- `fuzz_decode`: an arbitrary cell grid → quirc_decode;
+- `fuzz_qr_type`: the ROM's QR type detection (`arm9/src/qr_type.c`);
+  the two above also pass what decodes through it.
+
+```bash
+make -C tests/fuzz run FUZZ_TIME=1800                   # each harness, 30 min
+make -C tests/fuzz run FUZZ_TIME=3600 HARNESS=fuzz_image
+```
+
+Seeds come from `tests/vectors` (`make_corpus.py`); crashes are written to
+`tests/fuzz/build/`. First run (2026-10-26, 30 min each, in parallel):
+357 M inputs for `fuzz_qr_type`, 1.27 M for `fuzz_decode`, 73,000 for
+`fuzz_image`, none failing after three small quirc fixes it led to
+([lib/quirc/NDS-CHANGES.md](lib/quirc/NDS-CHANGES.md)).

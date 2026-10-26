@@ -847,7 +847,7 @@ static int fitness_all(const struct quirc *q, int index)
 {
 	const struct quirc_grid *qr = &q->grids[index];
 	int version = (qr->grid_size - 17) / 4;
-	const struct quirc_version_info *info = &quirc_version_db[version];
+	const struct quirc_version_info *info;  /* NDS-Signer: set once version is checked */
 	int score = 0;
 	int i, j;
 	int ap_count;
@@ -867,6 +867,7 @@ static int fitness_all(const struct quirc *q, int index)
 
 	if (version < 0 || version > QUIRC_MAX_VERSION)
 		return score;
+	info = &quirc_version_db[version];
 
 	/* Check alignment patterns */
 	ap_count = 0;
@@ -1248,14 +1249,15 @@ int quirc_refine(struct quirc *q, int index)
 void quirc_extract(const struct quirc *q, int index,
 		   struct quirc_code *code)
 {
-	const struct quirc_grid *qr = &q->grids[index];
+	const struct quirc_grid *qr;
 	int y;
 	int i = 0;
 
 	memset(code, 0, sizeof(*code));
 
-	if (index < 0 || index > q->num_grids)
+	if (index < 0 || index >= q->num_grids)  /* NDS-Signer: was > */
 		return;
+	qr = &q->grids[index];
 
 	perspective_map(qr->c, 0.0, 0.0, &code->corners[0]);
 	perspective_map(qr->c, qr->grid_size, 0.0, &code->corners[1]);

@@ -5,7 +5,7 @@ line that ends up in the binary is reviewable in this repository.
 
 | Directory | Project | License | Upstream commit |
 | :--- | :--- | :--- | :--- |
-| `quirc/` | [dlbeer/quirc](https://github.com/dlbeer/quirc) (`lib/` + `LICENSE`) | ISC | `927d680904dc95fdff4cd9d022eb374b438ff8f2` |
+| `quirc/` | [dlbeer/quirc](https://github.com/dlbeer/quirc) (`lib/` + `LICENSE`) | ISC | `927d680904dc95fdff4cd9d022eb374b438ff8f2` — **modified**, see below |
 | `fonts/spleen-5x8.bdf` | [fcambus/spleen](https://github.com/fcambus/spleen) (console font; converted at build time by `tools/bdf_to_ndsfont.py`, which also adds box-drawing glyphs) | BSD-2-Clause (`fonts/LICENSE.spleen`) | `2.2.0` |
 | `qrcodegen/` | [nayuki/QR-Code-generator](https://github.com/nayuki/QR-Code-generator) (`c/qrcodegen.[ch]`) | MIT | `3c6d0b3cefb4e049dc337e82237c9644399716a8` |
 | `mpy-usermods/uhashlib/` | `usermods/uhashlib` from [diybitcoinhardware/f469-disco](https://github.com/diybitcoinhardware/f469-disco) (hashlib with sha512/ripemd160/pbkdf2, hmac); crypto from trezor-crypto | MIT (f469-disco), MIT/BSD-3 (crypto files, see headers) | `9dd8515` — **modified**, see below |
@@ -19,6 +19,9 @@ normalization for `unicodedata`, MIT), MicroPython `v1.29.0`, embit
 
 ### Modifications to vendored code
 
+- `quirc/`: the ROM's compile-time options (integer grid mapping, lazy
+  perspective refinement) and three small fixes found by fuzzing
+  (`tests/fuzz`), all listed in [quirc/NDS-CHANGES.md](quirc/NDS-CHANGES.md).
 - `mpy-usermods/*/*.c`: adapted from the MicroPython ~v1.19 C API to v1.29 by
   `tools/port_mpy_usermod.py` (mechanical, re-runnable after re-vendoring).
 - `mpy-usermods/secp256k1/libsecp256k1.c`: ported to the libsecp256k1 v0.8 API

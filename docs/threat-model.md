@@ -117,7 +117,9 @@ emulators, which are for development only.
 
 - How much entropy does the scribble + microphone source really contribute?
   ([entropy.md](entropy.md))
-- Has the C QR path (quirc + NDS glue) been fuzzed? Not yet.
+- Has the C QR path (quirc + NDS glue) been fuzzed? For 30 minutes per
+  harness so far ([AUDIT.md](../AUDIT.md#fuzzing)); it found undefined
+  behaviour in quirc, fixed, none of it exploitable. Longer runs are wanted.
 - Has anyone other than the maintainer reproduced a release build? One
   person so far: v0.2.1-alpha on Linux x86_64 and macOS arm64, both
   matching ([#11](https://github.com/ndssigner/nds-signer/issues/11)); a
