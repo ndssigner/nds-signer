@@ -673,6 +673,9 @@ def run_tones_seed_flow():
         RESULT["tones_seed"] = ok
         print("ok  " if ok else "FAIL", "tones seed flow: PIN, keypad mode, fingerprint", expected, "shown")
 
+    def stuck():  # a stuck microphone: no PIN is made up from it
+        nds.sim_mic_stuck = 40
+
     def check_made_up():
         from seedsigner.gui import nds_tones
         text = nds.sim_text(0)
@@ -684,6 +687,8 @@ def run_tones_seed_flow():
     events = [("call", dump), ("tap_label", "Scan"), ("key", 0), ("wait", 2),
               ("tap_label", "Listen to tones (experimental)"), ("key", 0), ("wait", 2),
               ("call", dump), ("tap_label", "PIN: none"), ("key", 0), ("wait", 2), ("call", dump),
+              ("call", stuck), ("tap_key", "Make one up"), ("key", 0), ("wait", 620), ("call", dump),
+              ("expect_top", "Too quiet or too regular"),
               ("tap_key", "Make one up"), ("key", 0), ("wait", 70), ("call", dump),
               ("expect_top", "Type it on the other device"), ("call", check_made_up)]
     events += [("tap_key", "Del"), ("key", 0)] * 12
@@ -736,14 +741,15 @@ def run_camera_seed_flow():
 
 def run_scribble_mic_flow():
     """Tools -> New seed -> Scribble + microphone: Done stays disabled until there are
-    256 distinct stylus points and 16 non-flat microphone buffers (three
-    flat ones are skipped); then 12 words: a valid new mnemonic, and the
-    microphone is off again."""
+    256 distinct stylus points and 16 healthy microphone buffers (three flat
+    and three stuck ones are skipped); then 12 words: a valid new mnemonic,
+    and the microphone is off again."""
     from seedsigner.views.view import Destination, MainMenuView
     state = {}
 
-    def silent():  # a dead microphone at first: those buffers must not count
+    def silent():  # a dead, then a stuck microphone at first: those buffers must not count
         nds.sim_mic_silent = 3
+        nds.sim_mic_stuck = 3
 
     def too_early():  # Done before enough entropy: nothing happens
         state["early"] = nds.mic_on

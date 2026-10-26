@@ -25,7 +25,7 @@ nobody else has looked at it.
 | Path | What it does |
 | :--- | :--- |
 | `mpy/overlay/seedsigner/gui/screens/tools_screens.py`, `mpy/overlay/seedsigner/views/nds_tools_views.py` | Scribble + microphone seed generation ([docs/entropy.md](docs/entropy.md)) |
-| `arm9/src/mic_entropy.c` | Microphone recording for entropy |
+| `arm9/src/mic_entropy.c`, `arm9/src/mic_health.c` | Microphone recording for entropy, and its SP 800-90B health tests |
 | `arm9/src/wipe.c`, `arm7/src/main.c` | Wiping RAM and powering off on lid close / power button |
 | `mpy/overlay/seedsigner/hardware/microsd.py` | Guarantees no SD card access |
 | `arm7/src/main.c`, `arm7/Makefile` | No network: the wireless driver is not linked and the wireless chips are powered off at start |

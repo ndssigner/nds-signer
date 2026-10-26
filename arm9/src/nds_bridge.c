@@ -99,7 +99,11 @@ int ndsbCameraGrab(uint8_t *dst, size_t len)
 
 bool ndsbMicStart(void) { return micEntropyStart(); }
 void ndsbMicStop(void) { micEntropyStop(); }
-size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak) { return micEntropyTake(dst, len, peak); }
+size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak, int *health)
+{
+	return micEntropyTake(dst, len, peak, health);
+}
+unsigned ndsbMicDropped(void) { return micEntropyDropped(); }
 
 bool ndsbTonesListen(bool on, int gain)
 {

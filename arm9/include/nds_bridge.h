@@ -47,7 +47,8 @@ bool ndsbCameraStart(bool inner);
 /* see mic_entropy.h */
 bool ndsbMicStart(void);
 void ndsbMicStop(void);
-size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak);
+size_t ndsbMicTake(uint8_t *dst, size_t len, int *peak, int *health);
+unsigned ndsbMicDropped(void);
 /* ur-tones (experimental, github.com/ndssigner/ur-tones): listening (see
  * tones_audio.h) and the conversions of third_party/ur-tones/c/ur_tones.h,
  * which return a length or a negative UT_ERR_* */

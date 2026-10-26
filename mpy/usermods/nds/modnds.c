@@ -129,18 +129,26 @@ static mp_obj_t nds_mic_stop(void)
 static MP_DEFINE_CONST_FUN_OBJ_0(nds_mic_stop_obj, nds_mic_stop);
 
 /* mic_take(buf): the last recorded buffer (16-bit samples, MIC_BUFFER_BYTES)
- * into `buf`, once: (bytes copied, peak magnitude); (0, 0) if none yet,
- * peak 0 for a flat buffer */
+ * into `buf`, once: (bytes copied, peak magnitude, health); (0, 0, 0) if none
+ * yet, peak 0 for a flat buffer, health 0 if it passed the SP 800-90B health
+ * tests (mic_health.h) */
 static mp_obj_t nds_mic_take(mp_obj_t buf_in)
 {
 	mp_buffer_info_t buf;
 	mp_get_buffer_raise(buf_in, &buf, MP_BUFFER_WRITE);
-	int peak = 0;
-	size_t n = ndsbMicTake(buf.buf, buf.len, &peak);
-	mp_obj_t items[2] = {mp_obj_new_int(n), mp_obj_new_int(peak)};
-	return mp_obj_new_tuple(2, items);
+	int peak = 0, health = 0;
+	size_t n = ndsbMicTake(buf.buf, buf.len, &peak, &health);
+	mp_obj_t items[3] = {mp_obj_new_int(n), mp_obj_new_int(peak), mp_obj_new_int(health)};
+	return mp_obj_new_tuple(3, items);
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(nds_mic_take_obj, nds_mic_take);
+
+/* mic_dropped(): buffers recorded since mic_start() but never taken */
+static mp_obj_t nds_mic_dropped(void)
+{
+	return mp_obj_new_int_from_uint(ndsbMicDropped());
+}
+static MP_DEFINE_CONST_FUN_OBJ_0(nds_mic_dropped_obj, nds_mic_dropped);
 
 /* ---- ur-tones (experimental, github.com/ndssigner/ur-tones) ---- */
 
@@ -572,6 +580,7 @@ static const mp_rom_map_elem_t nds_module_globals_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_mic_start), MP_ROM_PTR(&nds_mic_start_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_mic_stop), MP_ROM_PTR(&nds_mic_stop_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_mic_take), MP_ROM_PTR(&nds_mic_take_obj) },
+	{ MP_ROM_QSTR(MP_QSTR_mic_dropped), MP_ROM_PTR(&nds_mic_dropped_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_listen), MP_ROM_PTR(&nds_tones_listen_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_poll), MP_ROM_PTR(&nds_tones_poll_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_tones_frame_to_ur), MP_ROM_PTR(&nds_tones_frame_to_ur_obj) },

@@ -90,24 +90,29 @@ def frame_length(tones):
 
 
 def make_pin():
-    """A PIN made up from the microphone's noise (about a second of it,
-    hashed with SHA-256: no pseudo-random generator). None if the microphone
-    is not available."""
+    """A PIN made up from the microphone's noise (four buffers, about a
+    second, that pass the health tests, hashed with SHA-256: no
+    pseudo-random generator). None if the microphone is not available, or
+    gives no healthy noise within 10 s."""
     import hashlib
     import struct
     if not nds.mic_start():
         return None
     h = hashlib.sha256(b"NDS-Signer ur-tones PIN v1")
     buf = bytearray(nds.MIC_BUFFER_BYTES)
-    buffers = 0
+    buffers = taken = 0
     try:
         while buffers < 4:
             nds.frame()
-            n, peak = nds.mic_take(buf)
+            n, peak, health = nds.mic_take(buf)
             if n:
                 h.update(buf)
                 h.update(struct.pack("<I", nds.ticks_ms()))
-                buffers += 1
+                taken += 1
+                if health == 0:
+                    buffers += 1
+                elif taken >= 40:
+                    return None
     finally:
         nds.mic_stop()
     digest = h.digest()
@@ -122,6 +127,7 @@ class PinScreen:
     def __init__(self, pin=""):
         self.pin = pin
         self.made_up = False
+        self.no_noise = False      # the last "Make one up" heard no healthy noise
         self.keys = []
         for r, row in enumerate(self.ROWS):
             col = (nds_ui.COLS - len(row) * 3) // 2
@@ -136,7 +142,9 @@ class PinScreen:
         return self.keys + [self.make_key, self.del_key, self.back_key, self.save_key]
 
     def _top(self):
-        if self.made_up:
+        if self.no_noise:
+            notes = [("text", _("Too quiet or too regular: make some noise and try again, or type a PIN."))]
+        elif self.made_up:
             notes = [("label", _("Made up from the microphone's noise.")),
                      ("text", _("Type it on the other device, without the spaces, then Save."))]
         elif self.pin and len(self.pin) < PIN_LENGTH:
@@ -176,6 +184,7 @@ class PinScreen:
             if key.action == "make":
                 nds_ui.top_blocks(_("PIN"), [("text", _("Listening to the room's noise..."))])
                 pin = make_pin()
+                self.no_noise = pin is None
                 if pin is None:
                     nds_ui.sound("error")
                 else:
@@ -183,10 +192,10 @@ class PinScreen:
                     nds_ui.sound("success")
             elif key.action == "del":
                 self.pin = self.pin[:-1]
-                self.made_up = False
+                self.made_up = self.no_noise = False
             elif len(self.pin) < 32:
                 self.pin += key.action
-                self.made_up = False
+                self.made_up = self.no_noise = False
             self._draw()
 
 

@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "mic_entropy.h"
+#include "mic_health.h"
 
 #define BUF_BYTES (MIC_ENTROPY_SAMPLES * sizeof(s16))
 
@@ -18,11 +19,14 @@
 static s16 s_record[2][MIC_ENTROPY_SAMPLES] __attribute__((aligned(32)));
 static s16 s_ready[MIC_ENTROPY_SAMPLES];
 static volatile bool s_haveReady;
+static volatile u32 s_dropped;
 static bool s_running;
 
 static void onBuffer(void *user, void *buf, size_t size)
 {
 	(void)user;
+	if (s_haveReady)
+		s_dropped++;                    /* the last one was never taken */
 	DC_InvalidateRange(buf, size);
 	memcpy(s_ready, buf, size < BUF_BYTES ? size : BUF_BYTES);
 	s_haveReady = true;
@@ -49,6 +53,7 @@ bool micEntropyStart(void)
 	micSetCallback(onBuffer, NULL);
 	pmMicSetAmp(true, PmMicGain_80);
 	s_haveReady = false;
+	s_dropped = 0;
 	if (!micStart(s_record, BUF_BYTES, MicFmt_Pcm16, MicMode_DoubleBuffer)) {
 		pmMicSetAmp(false, 0);
 		return false;
@@ -73,7 +78,7 @@ void micEntropyStop(void)
 	s_haveReady = false;
 }
 
-size_t micEntropyTake(u8 *dst, size_t len, int *peak)
+size_t micEntropyTake(u8 *dst, size_t len, int *peak, int *health)
 {
 	if (!s_haveReady)
 		return 0;
@@ -92,5 +97,8 @@ size_t micEntropyTake(u8 *dst, size_t len, int *peak)
 		if ((v < 0 ? -v : v) > max) max = v < 0 ? -v : v;
 	}
 	*peak = lo == hi ? 0 : (max ? max : 1);
+	*health = micHealth(s, n / 2);
 	return n;
 }
+
+unsigned micEntropyDropped(void) { return s_dropped; }

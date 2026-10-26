@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Security: microphone entropy now goes through NIST SP 800-90B's
+  Repetition Count and Adaptive Proportion health tests, in C, on every
+  buffer; only buffers that pass count towards Done (a stuck or
+  near-silent microphone never gets there). A PIN made up for tones uses
+  the same tests: before, a dead microphone was accepted. Dropped buffers
+  are counted, and [docs/entropy.md](docs/entropy.md) says what "16
+  buffers" means ([#8](https://github.com/ndssigner/nds-signer/issues/8),
+  tofu_ai).
 - Security: closing the lid now also clears the app thread's whole stack,
   where C code that handles keys (libsecp256k1, hashlib, the seed PIN)
   leaves its locals, and the tones' buffers (a seed heard or played as
