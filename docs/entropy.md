@@ -62,7 +62,10 @@ of jitter, and noise that gets stuck all fail.
 
 These tests catch a source that has **broken down**; they are not an
 entropy measurement. A predictable but busy signal can pass: the low bits
-of mains hum look random to them. A made-up tones PIN uses the same tests
+of mains hum look random to them. A microphone covered with a finger
+passes too (checked on a DSi XL): the amplifier's own noise is still
+there. How much entropy that noise carries is part of the measurement
+below. A made-up tones PIN uses the same tests
 (four healthy buffers; none within 10 s, and it is refused).
 
 ### What comes out
