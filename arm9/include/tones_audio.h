@@ -39,4 +39,8 @@ bool tonesPlayStart(const char *tones, unsigned tone_ms, unsigned gap_ms, unsign
 int tonesPlayPoll(unsigned *index, unsigned *count);
 void tonesPlayStop(void);
 
+/* Stops listening and playing and clears every buffer that held tones (a
+ * seed's among them): for the wipe on lid close. */
+void tonesWipe(void);
+
 #endif /* NDS_SIGNER_TONES_AUDIO_H */

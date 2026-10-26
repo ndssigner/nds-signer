@@ -269,3 +269,17 @@ void tonesPlayStop(void)
 	wipePlay();
 	s_synth.count = count;              /* for the last poll's count only */
 }
+
+void tonesWipe(void)
+{
+	tonesListenStop();
+	tonesPlayStop();
+	s_synth.count = 0;
+#ifdef NDS_SIGNER_DEVBUILD
+	volatile char *p = s_loop;
+	for (size_t i = 0; i < sizeof s_loop; i++) p[i] = 0;
+	p = s_loop_group;
+	for (size_t i = 0; i < sizeof s_loop_group; i++) p[i] = 0;
+	s_loop_len = s_loop_at = 0;
+#endif
+}

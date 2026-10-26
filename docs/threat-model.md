@@ -18,7 +18,12 @@ NDS-Signer never writes to the SD card or any other non-volatile memory
 (`mpy/overlay/seedsigner/hardware/microsd.py` always reports no card).
 Closing the lid or pressing power overwrites everything that may hold a
 secret and switches the console off instead of sleeping
-(`arm9/src/wipe.c`, `arm7/src/main.c`).
+(`arm9/src/wipe.c`, `arm7/src/main.c`): the Python heap, the camera,
+microphone, tones and QR buffers, both screens, and the whole 128 KB stack
+of the app thread, where every C function that handles keys (libsecp256k1,
+hashlib, the tones' seed PIN) runs. The last steps run on a separate 1 KB
+stack, so the frames that led to the wipe are cleared too. The app stack is
+in `.bss`, zeroed at start-up like the heap.
 
 ## Trust chain
 

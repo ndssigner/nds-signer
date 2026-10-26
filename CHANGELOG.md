@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Security: closing the lid now also clears the app thread's whole stack,
+  where C code that handles keys (libsecp256k1, hashlib, the seed PIN)
+  leaves its locals, and the tones' buffers (a seed heard or played as
+  tones). `secureZero` clears any length, not only multiples of 4
+  ([#12](https://github.com/ndssigner/nds-signer/issues/12), tofu_ai).
+  Checked in melonDS over GDB: 6,841 non-zero stack bytes before, none
+  after, and the console then powers off.
 - ur-tones updated from v0.1.0 to v0.4.0. Same calls and behaviour for
   NDS-Signer; the library now also clears its own copies of seeds, PINs
   and keys, and clears `entropy` when a seed fails to decode (NDS-Signer
