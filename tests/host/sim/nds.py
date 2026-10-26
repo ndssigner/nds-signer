@@ -482,6 +482,10 @@ def tones_poll():
     return (None, "", -230 if tones_on else -990, 0, 0)
 
 
+def tones_benchmark():
+    return None   # developer builds of the ROM only
+
+
 def tones_loopback(groups):
     return False
 
