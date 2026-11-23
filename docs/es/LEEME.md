@@ -80,6 +80,13 @@ receptor es la librería en C de ur-tones, solo con enteros
 sin PIN, y una PSBT de Sparrow al aire a ritmo de cable, en los dos
 sentidos, en una habitación con ruido.
 
+**Un proyecto hermano:** [DTMF-Signer](https://github.com/ndssigner/dtmf-signer),
+nacido de este, es un firmador mínimo de hardware abierto alrededor de una
+Raspberry Pi Pico que habla el mismo formato ur-tones. Su montaje más
+barato, la [Centralita (PEX)](https://ndssigner.github.io/dtmf-signer/es/pex/),
+no tiene pantalla ni botones: un viejo teléfono de tonos es toda su
+interfaz.
+
 ## Seguridad
 
 - **Sin red:** el código del wifi ni siquiera está incluido, y los chips
