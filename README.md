@@ -86,6 +86,12 @@ ur-tones' C library, with integers only (`third_party/ur-tones/c`).
 Tested on a DSi XL: seeds through the air with and without a PIN, and a
 Sparrow PSBT through the air at cable pace, both ways, in a noisy room.
 
+**A sister project:** [DTMF-Signer](https://github.com/ndssigner/dtmf-signer),
+born from this one, is a minimal open-hardware signer built around a
+Raspberry Pi Pico that talks the same ur-tones format. Its cheapest build,
+the [Phone Exchange (PEX)](https://ndssigner.github.io/dtmf-signer/en/pex/),
+has no screen and no buttons: an old tone telephone is its whole interface.
+
 ## Compatible wallets
 
 NDS-Signer signs for a watch-only wallet ("coordinator") on your computer or
