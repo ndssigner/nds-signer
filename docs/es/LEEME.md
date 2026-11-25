@@ -17,6 +17,22 @@ mano cuesta menos que las piezas de un firmador casero, y en un cajón parece
 un juguete viejo, no una cartera de bitcoin. Por qué existe este proyecto:
 [por-que.md](por-que.md).
 
+**[▶ Míralo funcionar](https://odysee.com/@ndssigner:9/nds-signer-demo:2)** (2 min).
+
+**Nadie la fabricó pensando en Bitcoin.** No hay ningún aparato de Bitcoin
+que alguien pueda manipular camino de tu casa: compras una consola de
+segunda mano en cualquier parte, descargas la ROM (por Tor si quieres),
+compruebas su SHA-256 o la compilas tú (la compilación es reproducible) y la
+copias a una tarjeta SD. En 2026, dispositivos Ledger y Trezor vendidos por
+un revendedor llevaban implantes ocultos que leían la semilla de la
+pantalla; un implante pensado para usuarios de Bitcoin no tiene motivo para
+estar en una consola de una tienda de segunda mano.
+
+**Qué necesitas:** una Nintendo DSi o DSi XL (de segunda mano, unos 50 $),
+una tarjeta SD y el lanzador homebrew Unlaunch. La
+[guía de instalación](instalar.md) te lleva desde ahí hasta la primera firma
+de prueba.
+
 ## Capturas
 
 Pantalla de arriba y de abajo de la DSi, dibujadas con las fuentes de la ROM
