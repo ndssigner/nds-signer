@@ -96,12 +96,30 @@ receptor es la librería en C de ur-tones, solo con enteros
 sin PIN, y una PSBT de Sparrow al aire a ritmo de cable, en los dos
 sentidos, en una habitación con ruido.
 
-**Un proyecto hermano:** [DTMF-Signer](https://github.com/ndssigner/dtmf-signer),
+### Proyecto hermano: DTMF-Signer
+
+[DTMF-Signer](https://github.com/ndssigner/dtmf-signer),
 nacido de este, es un firmador mínimo de hardware abierto alrededor de una
 Raspberry Pi Pico que habla el mismo formato ur-tones. Su montaje más
 barato, la [Centralita (PEX)](https://ndssigner.github.io/dtmf-signer/es/pex/),
 no tiene pantalla ni botones: un viejo teléfono de tonos es toda su
 interfaz.
+
+También funciona en una Nintendo DS ([su versión para
+DS](https://github.com/ndssigner/dtmf-signer/blob/main/ports/nds/README.md), desde la v0.4.0-alpha). Es
+otro programa, no un NDS-Signer más ligero:
+
+| | NDS-Signer | DTMF-Signer en una DS |
+| :--- | :--- | :--- |
+| Código | El Python de SeedSigner, sin modificar, sobre MicroPython; embit y libsecp256k1 | Un pequeño programa en C propio (BIP-39, BIP-32, PSBT) más libsecp256k1; sin SeedSigner ni embit |
+| Consolas | DSi, DSi XL (3DS sin probar) | Todas las DS: DS, DS Lite, DSi, 3DS (probado de principio a fin en una DSi XL) |
+| Recibe | Códigos QR con la cámara, o tonos | Solo tonos, por el micrófono |
+| Semilla | Se escribe, se escanea como SeedQR o se crea en la consola; se muestra en palabras o SeedQR | Llega como tonos y nunca se muestra, solo su huella |
+| Hace | Todo lo que hace SeedSigner | Firma PSBT y muestra la xpub |
+
+Para una DS o DS Lite original, o para auditar menos código: DTMF-Signer.
+Para lo que ofrece SeedSigner en una DSi: NDS-Signer. La comparación de
+DTMF-Signer (en inglés): [DTMF-Signer or NDS-Signer?](https://github.com/ndssigner/dtmf-signer/blob/main/ports/nds/README.md#dtmf-signer-or-nds-signer).
 
 ## Seguridad
 
@@ -144,7 +162,7 @@ SeedSigner, pero aún no se han probado; se agradecen pruebas.
 
 | Consola | ¿Funciona? |
 | :--- | :---: |
-| Nintendo DS, DS Lite | ❌ No (4 MB de memoria: NDS-Signer necesita más de 8) |
+| Nintendo DS, DS Lite | ❌ No (4 MB de memoria: NDS-Signer necesita más de 8); [DTMF-Signer](#proyecto-hermano-dtmf-signer) sí funciona en ellas |
 | Nintendo DSi, DSi XL | ✅ Sí (probado en una DSi XL); también con la cámara rota, mediante tonos |
 | Familia Nintendo 3DS / 2DS | ❓ Sin probar |
 | Emuladores | ⚠️ Solo desarrollo: nunca una semilla de verdad |
@@ -154,7 +172,9 @@ sustituyen a la cámara: una DSi con la cámara estropeada puede recibir y
 firmar PSBT igualmente. Pero no hacen funcionar la DS ni la DS Lite: tienen
 micrófono y altavoz, pero 4 MB de memoria, y NDS-Signer reserva 6 MB para
 el Python de SeedSigner (ahí viven las PSBT y las semillas), además de sus
-2 MB de código. La DSi tiene 16 MB.
+2 MB de código. La DSi tiene 16 MB. Para una DS o DS Lite, el proyecto
+hermano [DTMF-Signer tiene versión para DS](https://github.com/ndssigner/dtmf-signer/blob/main/ports/nds/README.md):
+solo tonos, y la semilla nunca se muestra ([en qué se diferencian](#proyecto-hermano-dtmf-signer)).
 
 ## Instalar
 

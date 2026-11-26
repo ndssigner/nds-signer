@@ -17,6 +17,11 @@ Any region. A working camera scans QR codes; without one (or with a broken
 one), PSBTs and seeds can come in as [telephone tones](../README.md#telephone-tones-experimental)
 (experimental), by cable or through the air, so a DSi can still sign.
 
+**A DS or DS Lite?** The sister project DTMF-Signer has a
+[DS build](https://github.com/ndssigner/dtmf-signer/blob/main/ports/nds/README.md) that runs on every DS:
+tones only, and the seed is never shown. It is a different program; see
+[how they differ](../README.md#sister-project-dtmf-signer).
+
 ## What you need
 
 - A DSi or DSi XL and its charger.

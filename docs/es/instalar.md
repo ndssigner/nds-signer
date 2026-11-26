@@ -18,6 +18,11 @@ ella estropeada), las PSBT y las semillas pueden llegar como
 [tonos de teléfono](LEEME.md#tonos-de-teléfono-experimental) (experimental),
 por cable o al aire, así que una DSi puede firmar igualmente.
 
+**¿Una DS o DS Lite?** El proyecto hermano DTMF-Signer tiene una
+[versión para DS](https://github.com/ndssigner/dtmf-signer/blob/main/ports/nds/README.md) que funciona en
+todas las DS: solo tonos, y la semilla nunca se muestra. Es otro programa;
+mira [en qué se diferencian](LEEME.md#proyecto-hermano-dtmf-signer).
+
 ## Qué necesitas
 
 - Una DSi o DSi XL y su cargador.
